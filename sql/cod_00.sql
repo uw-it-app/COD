@@ -47,6 +47,24 @@ INSERT INTO cod.ref_app (name) VALUES
 
 /**********************************************************************************************/
 
+SELECT standard.create_enum_table('cod', 'support_model', 'Support Model -- determines workflow');
+
+ALTER TABLE cod.support_model ADD COLUMN reject boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE cod.support_model ADD COLUMN help_text boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE cod.support_model ADD COLUMN active_notification boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE cod_history.support_model ADD COLUMN reject boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE cod_history.support_model ADD COLUMN help_text boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE cod_history.support_model ADD COLUMN active_notification boolean NOT NULL DEFAULT FALSE;
+
+INSERT INTO cod.support_model (sort, name, description, reject, help_text, active_notification) VALUES
+    (99, '', 'No Model', false, false, false),
+    (10, 'A', 'Immediate escalation with active notification', false, false, true),
+    (20, 'B', 'L1 works help text then escalation with active notification', false, true, true),
+    (30, 'C', 'L1 works help text then escalation with passive notification', false, true, false),
+    (40, 'D', 'No support', true, false, false);
+
+/**********************************************************************************************/
+
 CREATE TABLE cod.item (
     modified_at     timestamptz NOT NULL DEFAULT now(),
     modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
@@ -57,6 +75,8 @@ CREATE TABLE cod.item (
     reference       varchar,
     state_id        integer     NOT NULL DEFAULT 1 REFERENCES cod.state(id) ON DELETE RESTRICT,
     itil_type_id    integer     NOT NULL DEFAULT 1 REFERENCES cod.itil_type(id) ON DELETE RESTRICT,
+    support_model_id integer    NOT NULL DEFAULT 1 REFERENCES cod.support_model(id) ON DELETE RESTRICT,
+    severity        tinyint     NOT NULL DEFAULT 3 CHECK (severity BETWEEN 1 AND 5),
     stage_id        integer     DEFAULT 1 REFERENCES cod.stage(id) ON DELETE RESTRICT,
     started_at      timestamptz NOT NULL DEFAULT now(),
     ended_at        timestamptz,
@@ -74,7 +94,57 @@ SELECT standard.standardize_table_and_trigger('cod', 'item');
 ALTER TABLE cod_history.item ADD CONSTRAINT ref_app_exists FOREIGN KEY (ref_app_id) REFERENCES cod.ref_app(id) ON DELETE RESTRICT;
 ALTER TABLE cod_history.item ADD CONSTRAINT state_exists FOREIGN KEY (state_id) REFERENCES cod.state(id) ON DELETE RESTRICT;
 ALTER TABLE cod_history.item ADD CONSTRAINT itil_type_exists FOREIGN KEY (itil_type_id) REFERENCES cod.itil_type(id) ON DELETE RESTRICT;
-ALTER TABLE cod_history.item ADD CONSTRAINT stage_exists FOREIGN KEY sStage_id) REFERENCES cod.stage(id) ON DELETE RESTRICT;
+ALTER TABLE cod_history.item ADD CONSTRAINT support_model_exists FOREIGN KEY (support_model_id) REFERENCES cod.support_model(id) ON DELETE CASCADE;
+ALTER TABLE cod_history.item ADD CONSTRAINT stage_exists FOREIGN KEY (stage_id) REFERENCES cod.stage(id) ON DELETE RESTRICT;
+
+/**********************************************************************************************/
+
+CREATE TABLE cod.event (
+    modified_at         timestamptz NOT NULL DEFAULT now(),
+    modified_by         varchar     NOT NULL DEFAULT standard.get_uwnetid(),
+    id                  serial      PRIMARY KEY,
+    host                varchar,
+    component           varchar,
+    support_model_id    integer     NOT NULL REFERENCES cod.support_model(id) ON DELETE RESTRICT,
+    severity            tinyint     NOT NULL DEFAULT 3 CHECK (severity BETWEEN 1 AND 5),
+    contact             varchar,
+    content             xml
+);
+
+COMMENT ON TABLE cod.event IS 'DR: Event associated with an item (incident) (2011-10-12)';
+
+GRANT SELECT, INSERT, UPDATE ON TABLE cod.event TO PUBLIC;
+
+ALTER TABLE cod_history.event ADD CONSTRAINT support_model_exists FOREIGN KEY (support_model_id) REFERENCES cod.support_model(id) ON DELETE CASCADE;
+
+/**********************************************************************************************/
+
+SELECT standard.create_enum_table('cod', 'action_type', 'Types of actions to prompt operators to perform');
+
+INSERT INTO cod.action_type (name, description) VALUES
+    ('HelpText', 'Work the help text for the component'),
+    ('PhoneCall', 'Call the listed person'),
+    ('SetOncallGroup', 'Set the oncall group for the incident');
+
+/**********************************************************************************************/
+
+CREATE TABLE cod.action (
+    modified_at     timestamptz NOT NULL DEFAULT now(),
+    modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
+    id              serial      PRIMARY KEY,
+    item_id         integer     NOT NULL REFERENCES cod.item(id) ON DELETE CASCADE,
+    action_type_id  integer     NOT NULL REFERENCES cod.action_type(id) ON DELETE RESTRICT,
+    completed_at    timestamptz,
+    completed_by    varchar,
+    successful      boolean,
+    content         xml   
+);
+
+COMMENT ON TABLE cod.actions IS 'DR: (2011-10-12)';
+
+GRANT SELECT, INSERT, UPDATE ON TABLE cod.actions TO PUBLIC;
+
+ALTER TABLE cod_history.action ADD CONSTRAINT action_type_exists FOREIGN KEY (action_type_id) REFERENCES cod.action_type(id) ON DELETE RESTRICT;
 
 /**********************************************************************************************/
 
