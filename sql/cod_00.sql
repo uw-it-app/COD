@@ -72,7 +72,7 @@ CREATE TABLE cod.item (
     created_at      timestamptz NOT NULL DEFAULT now(),
     created_by      varchar     NOT NULL DEFAULT standard.get_uwnetid(),
     ref_app_id      integer     NOT NULL DEFAULT 1 REFERENCES cod.ref_app(id) ON DELETE RESTRICT,
-    reference       varchar,
+    reference       integer,
     state_id        integer     NOT NULL DEFAULT 1 REFERENCES cod.state(id) ON DELETE RESTRICT,
     itil_type_id    integer     NOT NULL DEFAULT 1 REFERENCES cod.itil_type(id) ON DELETE RESTRICT,
     support_model_id integer    NOT NULL DEFAULT 1 REFERENCES cod.support_model(id) ON DELETE RESTRICT,
@@ -103,6 +103,7 @@ CREATE TABLE cod.event (
     modified_at         timestamptz NOT NULL DEFAULT now(),
     modified_by         varchar     NOT NULL DEFAULT standard.get_uwnetid(),
     id                  serial      PRIMARY KEY,
+    item_id             integer     REFERENCES cod.item(id) ON DELETE CASCADE;
     host                varchar,
     component           varchar,
     support_model_id    integer     NOT NULL REFERENCES cod.support_model(id) ON DELETE RESTRICT,
@@ -150,7 +151,7 @@ ALTER TABLE cod_history.action ADD CONSTRAINT action_type_exists FOREIGN KEY (ac
 
 SELECT standard.create_enum_table('cod', 'esc_state', 'COD escalation state');
 
-INSERT INTO cod.state (sort, name, description) VALUES
+INSERT INTO cod.esc_state (sort, name, description) VALUES
     (10, 'Act', 'COPS has an action to perform'),
     (30, 'Active', 'Active contact to Layer 2/3 support'),
     (40, 'Passive', 'Passive contact to Layer 2/3 support'),
@@ -169,7 +170,7 @@ CREATE TABLE cod.escalation (
     esc_state_id    integer     NOT NULL DEFAULT 1 REFERENCES cod.esc_state(id) ON DELETE RESTRICT,
     oncall_group    varchar     NOT NULL,
     queue           varchar     NOT NULL,
-    started_at      timestamptz NOT NULL DEFAULT now(),
+    escalated_at    timestamptz NOT NULL DEFAULT now(),
     owned_at        timestamptz,
     resolved_at     timestamptz,
     content         xml
