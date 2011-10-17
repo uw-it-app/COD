@@ -166,7 +166,7 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
      WHERE id = $1;
 $_$;
 
-COMMENT ON FUNCTION cod_v2.item_xml() IS 'DR: Retrive XML representation of an item (2011-10-17)';
+COMMENT ON FUNCTION cod_v2.item_xml(integer) IS 'DR: Retrive XML representation of an item (2011-10-17)';
 
 -- REST PUTItem
 
