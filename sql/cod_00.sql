@@ -5,8 +5,8 @@ SELECT standard.create_data_schema('cod', 'Data for the Computer Operations Dash
 SELECT standard.create_enum_table('cod', 'state', 'COD Item Activity State');
 
 INSERT INTO cod.state (sort, name, description) VALUES
+    (0,  'Building', 'Underconstruction'),
     (10, 'Act', 'COPS has an action to perform'),
-    (20, 'Waiting', 'Waiting for automated processes to finish'),
     (30, 'Escalating', 'Active contact to Layer 2/3 support'),
     (60, 'L2-3', 'Escalated to Layer 2/3'),
     (80, 'Cleared', 'Impact cleared but not resolved'),
@@ -102,6 +102,7 @@ CREATE TABLE cod.event (
     support_model_id    integer     NOT NULL REFERENCES cod.support_model(id) ON DELETE RESTRICT,
     severity            tinyint     NOT NULL DEFAULT 3 CHECK (severity BETWEEN 1 AND 5),
     contact             varchar[]   NOT NULL DEFAULT '{}'::varchar[],
+    helptext            varchar,
     content             xml
 );
 
@@ -110,6 +111,36 @@ COMMENT ON TABLE cod.event IS 'DR: Event associated with an item (incident) (201
 GRANT SELECT, INSERT, UPDATE ON TABLE cod.event TO PUBLIC;
 
 ALTER TABLE cod_history.event ADD CONSTRAINT support_model_exists FOREIGN KEY (support_model_id) REFERENCES cod.support_model(id) ON DELETE CASCADE;
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.event_check_helptext() RETURNS trigger
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.event_check_helptext()
+    Description:  Insert trigger to set default helptext if none present
+    Affects:      NEW current record
+    Arguments:    none
+    Returns:      NEW (current record)
+*/
+DECLARE
+BEGIN
+    IF NEW.helptext IS NULL AND NEW.component <> '' THEN
+        NEW.helptext := 'https://wiki.cac.washington.edu/display/monhelp/component-' || 
+            regexp_replace(regexp_replace(NEW.component, E'\\(.*\\)', '', 'g'), E'\\:\\,\\@ ', '_', 'g');
+    END IF;
+    RETURN NEW;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.event_check_helptext() IS 'DR: Insert trigger to set default helptext if none present (2011-10-20)';
+
+CREATE TRIGGER t_12_check_helptext
+    BEFORE INSERT ON cod.event
+    FOR EACH ROW
+    EXECUTE PROCEDURE cod.event_check_helptext();
 
 /**********************************************************************************************/
 
