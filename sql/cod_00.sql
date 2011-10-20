@@ -6,6 +6,7 @@ SELECT standard.create_enum_table('cod', 'state', 'COD Item Activity State');
 
 INSERT INTO cod.state (sort, name, description) VALUES
     (10, 'Act', 'COPS has an action to perform'),
+    (20, 'Waiting', 'Waiting for automated processes to finish'),
     (30, 'Escalating', 'Active contact to Layer 2/3 support'),
     (60, 'L2-3', 'Escalated to Layer 2/3'),
     (80, 'Cleared', 'Impact cleared but not resolved'),
@@ -38,15 +39,6 @@ INSERT INTO cod.stage (sort, name, description) VALUES
 
 /**********************************************************************************************/
 
-SELECT standard.create_enum_table('cod', 'ref_app', 'Application reference number is for');
-
-INSERT INTO cod.ref_app (name) VALUES
-    ('COD'),
-    ('RT'),
-    ('H&M');
-
-/**********************************************************************************************/
-
 SELECT standard.create_enum_table('cod', 'support_model', 'Support Model -- determines workflow');
 
 ALTER TABLE cod.support_model ADD COLUMN reject boolean NOT NULL DEFAULT FALSE;
@@ -71,8 +63,9 @@ CREATE TABLE cod.item (
     id              serial      PRIMARY KEY,
     created_at      timestamptz NOT NULL DEFAULT now(),
     created_by      varchar     NOT NULL DEFAULT standard.get_uwnetid(),
-    ref_app_id      integer     NOT NULL DEFAULT 1 REFERENCES cod.ref_app(id) ON DELETE RESTRICT,
-    reference       integer,
+    rt_ticket       integer,
+    hm_issue        integer,
+    subject         varchar     NOT NULL,
     state_id        integer     NOT NULL DEFAULT 1 REFERENCES cod.state(id) ON DELETE RESTRICT,
     itil_type_id    integer     NOT NULL DEFAULT 1 REFERENCES cod.itil_type(id) ON DELETE RESTRICT,
     support_model_id integer    NOT NULL DEFAULT 1 REFERENCES cod.support_model(id) ON DELETE RESTRICT,
@@ -108,7 +101,7 @@ CREATE TABLE cod.event (
     component           varchar,
     support_model_id    integer     NOT NULL REFERENCES cod.support_model(id) ON DELETE RESTRICT,
     severity            tinyint     NOT NULL DEFAULT 3 CHECK (severity BETWEEN 1 AND 5),
-    contact             varchar,
+    contact             varchar[]   NOT NULL DEFAULT '{}'::varchar[],
     content             xml
 );
 
@@ -125,7 +118,8 @@ SELECT standard.create_enum_table('cod', 'action_type', 'Types of actions to pro
 INSERT INTO cod.action_type (name, description) VALUES
     ('HelpText', 'Work the help text for the component'),
     ('PhoneCall', 'Call the listed person'),
-    ('SetOncallGroup', 'Set the oncall group for the incident');
+    ('SetOncallGroup', 'Set the oncall group for the incident'),
+    ('Resolve', 'Incident cleared and all escalations resolved');
 
 /**********************************************************************************************/
 
@@ -165,11 +159,12 @@ CREATE TABLE cod.escalation (
     modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
     id              serial      PRIMARY KEY,
     item_id         integer     NOT NULL REFERENCES cod.item(id) ON DELETE CASCADE,
-    ref_app_id      integer     NOT NULL DEFAULT 1 REFERENCES cod.ref_app(id) ON DELETE RESTRICT,
-    reference       varchar,
+    rt_ticket       integer,
+    hm_issue        integer,
     esc_state_id    integer     NOT NULL DEFAULT 1 REFERENCES cod.esc_state(id) ON DELETE RESTRICT,
     oncall_group    varchar     NOT NULL,
     queue           varchar     NOT NULL,
+    owner           varchar     NOT NULL DEFAULT 'nobody',
     escalated_at    timestamptz NOT NULL DEFAULT now(),
     owned_at        timestamptz,
     resolved_at     timestamptz,
