@@ -1,5 +1,8 @@
 SELECT standard.create_data_schema('cod', 'Data for the Computer Operations Dashboard');
 
+ALTER DEFAULT PRIVILEGES IN SCHEMA cod GRANT USAGE, SELECT ON SEQUENCES TO PUBLIC;
+ALTER DEFAULT PRIVILEGES IN SCHEMA cod_history GRANT USAGE, SELECT ON SEQUENCES TO PUBLIC;
+
 /**********************************************************************************************/
 
 SELECT standard.create_enum_table('cod', 'state', 'COD Item Activity State');
@@ -82,7 +85,7 @@ COMMENT ON TABLE cod.item IS 'DR: COD Line items -- incidents, notifications, et
 
 GRANT SELECT, INSERT, UPDATE ON TABLE cod.item TO PUBLIC;
 
-SELECT standard.standardize_table_and_trigger('cod', 'item');
+SELECT standard.standardize_table_history_and_trigger('cod', 'item');
 
 ALTER TABLE cod_history.item ADD CONSTRAINT ref_app_exists FOREIGN KEY (ref_app_id) REFERENCES cod.ref_app(id) ON DELETE RESTRICT;
 ALTER TABLE cod_history.item ADD CONSTRAINT state_exists FOREIGN KEY (state_id) REFERENCES cod.state(id) ON DELETE RESTRICT;
@@ -109,6 +112,8 @@ CREATE TABLE cod.event (
 COMMENT ON TABLE cod.event IS 'DR: Event associated with an item (incident) (2011-10-12)';
 
 GRANT SELECT, INSERT, UPDATE ON TABLE cod.event TO PUBLIC;
+
+SELECT standard.standardize_table_history_and_trigger('cod', 'event');
 
 ALTER TABLE cod_history.event ADD CONSTRAINT support_model_exists FOREIGN KEY (support_model_id) REFERENCES cod.support_model(id) ON DELETE CASCADE;
 
@@ -170,6 +175,8 @@ COMMENT ON TABLE cod.actions IS 'DR: (2011-10-12)';
 
 GRANT SELECT, INSERT, UPDATE ON TABLE cod.actions TO PUBLIC;
 
+SELECT standard.standardize_table_history_and_trigger('cod', 'action');
+
 ALTER TABLE cod_history.action ADD CONSTRAINT action_type_exists FOREIGN KEY (action_type_id) REFERENCES cod.action_type(id) ON DELETE RESTRICT;
 
 /**********************************************************************************************/
@@ -206,7 +213,7 @@ COMMENT ON TABLE cod.escalation IS 'DR: Track Tickets (etc) for escalation to L2
 
 GRANT SELECT, INSERT, UPDATE ON TABLE cod.escalation TO PUBLIC;
 
-SELECT standard.standardize_table_and_trigger('cod', 'escalation');
+SELECT standard.standardize_table_history_and_trigger('cod', 'escalation');
 
 ALTER TABLE cod_history.escalation ADD CONSTRAINT ref_app_exists FOREIGN KEY (ref_app_id) REFERENCES cod.ref_app(id) ON DELETE RESTRICT;
 ALTER TABLE cod_history.escalation ADD CONSTRAINT esc_state_exists FOREIGN KEY (esc_state_id) REFERENCES cod.esc_state(id) ON DELETE RESTRICT;
