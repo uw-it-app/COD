@@ -82,8 +82,8 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
 */
     SELECT xmlelement(name "Escalation", 
         xmlelement(name "Id", e.id),
-        xmlelement(name "ReferenceApplication", app.name),
-        xmlelement(name "Reference", e.reference),
+        xmlelement(name "RTTicket", e.rt_ticket),
+        xmlelement(name "HMIssue", e.hm_issue),
         xmlelement(name "State", state.name),
         xmlelement(name "OncallGroup", e.oncall_group),
         xmlelement(name "Queue", e.queue),
@@ -98,7 +98,6 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
             xmlelement(name "By", e.modified_by)
         )
     ) FROM cod.escalation AS e
-      JOIN cod.ref_app AS app ON (e.ref_app_id = app.id)
       JOIN cod.esc_state AS state ON (e.esc_state_id = state.id)
      WHERE id = $1;
 $_$;
@@ -120,8 +119,8 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
 */
     SELECT xmlelement(name "Item",
         xmlelement(name "Id", item.id),
-        xmlelement(name "ReferenceApplication", app.name),
-        xmlelement(name "Reference", item.reference),
+        xmlelement(name "RTTicket", item.rt_ticket),
+        xmlelement(name "HMIssue", item.hm_issue),
         xmlelement(name "State", state.name),
         xmlelement(name "ITILType", itil.name),
         xmlelement(name "SupportModel", model.name),
@@ -146,7 +145,7 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
         xmlelement(name "Escalations",
             (SELECT xmlagg(cod_v2.escalation_xml(x.id) FROM
                (SELECT id FROM cod.escalation WHERE item_id = $1 ORDER BY id) AS x
-            )  
+            )
         ),
         xmlelement(name "Content", item.content),
         xmlelement(name "Created",
@@ -158,7 +157,6 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
             xmlelement(name "By", item.modified_by)
         )
     ) FROM cod.item AS item
-      JOIN cod.ref_app AS app ON (item.ref_app_id = app.id)
       JOIN cod.state AS state ON (item.state_id = state.id)
       JOIN cod.itil_type AS itil ON (item.itil_type_id = itil.id)
       JOIN cod.support_model AS model ON (item.support_model_id = model.id)
@@ -173,6 +171,31 @@ COMMENT ON FUNCTION cod_v2.item_xml(integer) IS 'DR: Retrive XML representation 
 -- REST get cached list (active, all)
 
 -- REST spawn from alert
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod_v2.spawn_item_from_alert(xml) RETURNS xml
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     
+    Description:  
+    Affects:      
+    Arguments:    
+    Returns:      
+*/
+DECLARE
+BEGIN
+    -- read event data
+    -- check to see if duplicate
+        -- if dup return 
+    -- insert new item -- let IW trigger take over (create ticket)
+END;
+$_$;
+
+COMMENT ON FUNCTION () IS '';
+
 
 -- REST spawn from notification
 
