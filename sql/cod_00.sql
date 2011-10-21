@@ -104,7 +104,9 @@ CREATE TABLE cod.event (
     component           varchar,
     support_model_id    integer     NOT NULL REFERENCES cod.support_model(id) ON DELETE RESTRICT,
     severity            tinyint     NOT NULL DEFAULT 3 CHECK (severity BETWEEN 1 AND 5),
-    contact             varchar[]   NOT NULL DEFAULT '{}'::varchar[],
+    contact             varchar,
+    oncall_primary      varchar,
+    oncall_alternate    varchar,
     helptext            varchar,
     content             xml
 );
@@ -251,3 +253,20 @@ CREATE TRIGGER t_50_modified
     BEFORE INSERT OR UPDATE ON cod.dbcache
     FOR EACH ROW
     EXECUTE PROCEDURE standard.modified();
+
+/**********************************************************************************************/
+
+CREATE VIEW cod.item_event_duplicate (event_id, item_id, host, component, contact, rt_ticket, state) AS 
+  SELECT e.id,
+         i.id,
+         e.host,
+         e.component,
+         e.contact,
+         i.rt_ticket,
+         s.name
+    FROM cod.event AS e
+    JOIN cod.item AS i ON (i.id = e.item_id)
+    JOIN cod.state AS s ON (s.id = i.state_id)
+    WHERE s.sort < 90;
+
+COMMENT ON VIEW cod.item_event_duplicate IS 'DR: View to find duplicate event/items to an incoming event (2011-10-20)';
