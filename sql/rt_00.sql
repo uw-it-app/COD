@@ -68,7 +68,7 @@ DECLARE
     _payload     varchar;
 BEGIN
     _payload := E'===Create-Ticket: ssgrt\n' || v_payload;
-    RETURN (regexp_matches(rt.offline_submit(_payload), 'create-ssgrt: ticket (\\d+) created', 'i'))[1]::integer;
+    RETURN (regexp_matches(rt.offline_submit(_payload), E'create-ssgrt: ticket (\\d+) created', 'i'))[1]::integer;
 EXCEPTION
     WHEN OTHERS THEN NULL;
 END;
@@ -98,9 +98,9 @@ DECLARE
 BEGIN
     _payload := E'===Update-Ticket: ' || v_ticket::varchar || E'\n' || v_paylod;
     _output  := rt.offline_submit(_payload);
-    RETURN TRUE
+    RETURN TRUE;
 EXCEPTION
-    WHEN OTHERS THEN FALSE;
+    WHEN OTHERS THEN RETURN FALSE;
 END;
 $_$;
 

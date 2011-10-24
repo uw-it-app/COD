@@ -30,7 +30,7 @@ CREATE OR REPLACE FUNCTION cod_v2.event_xml(integer) RETURNS xml
         )
     ) FROM cod.event AS event
       JOIN cod.support_model AS model ON (event.support_model_id = model.id)
-     WHERE id = $1;
+     WHERE event.id = $1;
 $_$;
 
 COMMENT ON FUNCTION cod_v2.event_xml(integer) IS '';
@@ -62,7 +62,7 @@ CREATE OR REPLACE FUNCTION cod_v2.action_xml(integer) RETURNS xml
         )
     ) FROM cod.action AS action
       JOIN cod.action_type AS type ON (action.action_type_id = type.id)
-     WHERE id = $1;
+     WHERE action.id = $1;
 $_$;
 
 COMMENT ON FUNCTION cod_v2.action_xml(integer) IS '';
@@ -90,7 +90,7 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
         xmlelement(name "Times", 
             xmlelement(name "Escalated", date_trunc('second', e.escalated_at)::varchar),
             xmlelement(name "Owned", date_trunc('second', e.owned_at)::varchar),
-            xmlelement(name "Resolved", date_trunc('second', e.resolved_at)::varchar),
+            xmlelement(name "Resolved", date_trunc('second', e.resolved_at)::varchar)
         ),
         xmlelement(name "Content", e.content),
         xmlelement(name "Modified",
@@ -99,7 +99,7 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
         )
     ) FROM cod.escalation AS e
       JOIN cod.esc_state AS state ON (e.esc_state_id = state.id)
-     WHERE id = $1;
+     WHERE e.id = $1;
 $_$;
 
 COMMENT ON FUNCTION cod_v2.escalation_xml(integer) IS '';
@@ -130,20 +130,20 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
             xmlelement(name "Started", date_trunc('second', item.started_at)::varchar),
             xmlelement(name "Ended", date_trunc('second', item.ended_at)::varchar),
             xmlelement(name "Resolved", date_trunc('second', item.resolved_at)::varchar),
-            xmlelement(name "Closed", date_trunc('second', item.closed_at)::varchar),
+            xmlelement(name "Closed", date_trunc('second', item.closed_at)::varchar)
         ),
         xmlelement(name "Events",
-            (SELECT xmlagg(cod_v2.event_xml(e.id) FROM
+            (SELECT xmlagg(cod_v2.event_xml(e.id)) FROM
                (SELECT id FROM cod.event WHERE item_id = $1 ORDER BY id) AS e
             )  
         ),
         xmlelement(name "Actions",
-            (SELECT xmlagg(cod_v2.action_xml(a.id) FROM
+            (SELECT xmlagg(cod_v2.action_xml(a.id)) FROM
                (SELECT id FROM cod.action WHERE item_id = $1 ORDER BY id) AS a
             )  
         ),
         xmlelement(name "Escalations",
-            (SELECT xmlagg(cod_v2.escalation_xml(x.id) FROM
+            (SELECT xmlagg(cod_v2.escalation_xml(x.id)) FROM
                (SELECT id FROM cod.escalation WHERE item_id = $1 ORDER BY id) AS x
             )
         ),
@@ -161,7 +161,7 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
       JOIN cod.itil_type AS itil ON (item.itil_type_id = itil.id)
       JOIN cod.support_model AS model ON (item.support_model_id = model.id)
       LEFT JOIN cod.stage AS stage ON (item.stage_id = stage.id)
-     WHERE id = $1;
+     WHERE item.id = $1;
 $_$;
 
 COMMENT ON FUNCTION cod_v2.item_xml(integer) IS 'DR: Retrive XML representation of an item (2011-10-17)';
@@ -169,8 +169,6 @@ COMMENT ON FUNCTION cod_v2.item_xml(integer) IS 'DR: Retrive XML representation 
 -- REST PUTItem
 
 -- REST get cached list (active, all)
-
--- REST spawn from alert
 
 /**********************************************************************************************/
 
@@ -189,7 +187,7 @@ DECLARE
 BEGIN
     RETURN TRUE;
 EXCEPTION
-    WHEN OTHERS THEN FALSE;
+    WHEN OTHERS THEN RETURN FALSE;
 END;
 $_$;
 
@@ -230,7 +228,7 @@ DECLARE
     _nohelp     varchar;
     _helpurl    varchar;
     _starts     timestamptz;
-    _severity   tinyint;
+    _severity   smallint;
     _item_id    integer;
     _event_id   integer;
 BEGIN
@@ -244,16 +242,16 @@ BEGIN
     ELSE
         -- else return rejection
         RAISE EXCEPTION 'User is not authorized to create incidents via COD: %', _netid;
-    END IF
+    END IF;
 
     _ticket := xpath.get_integer('/Event/Alert/Ticket', v_xml);         -- check
     -- IF ticket is active then return that ticket's info else continue.
     IF _ticket IS NOT NULL AND _ticket > 0 THEN
         SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate WHERE rt_ticket = _ticket LIMIT 1;
         IF _row.id IS NOT NULL THEN
-            RETURN xmlelement(name 'Incident',
-                    xmlelement(name 'Id', _row.item_id),
-                    xmlelement(name 'Ticket', _row.rt_ticket)
+            RETURN xmlelement(name "Incident",
+                    xmlelement(name "Id", _row.item_id),
+                    xmlelement(name "Ticket", _row.rt_ticket)
             );
         END IF;
     END IF;
@@ -286,9 +284,9 @@ BEGIN
     -- check to see if exact duplicate
     SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate WHERE host = _host AND component = _component ORDER BY i.id ASC LIMIT 1;
     IF _row.id IS NOT NULL THEN
-        RETURN xmlelement(name 'Incident',
-                xmlelement(name 'Id', _row.item_id),
-                xmlelement(name 'Ticket', _row.rt_ticket)
+        RETURN xmlelement(name "Incident",
+                xmlelement(name "Id", _row.item_id),
+                xmlelement(name "Ticket", _row.rt_ticket)
         );
     END IF;
     -- check to see if similar duplicate to append alert to the same ticket
@@ -298,9 +296,9 @@ BEGIN
         INSERT INTO cod.event (item_id, host, component, support_model_id, severity, contact, 
                                oncall_primary, oncall_alternate, content)
             VALUES (_row.item_id, _host, _comp, _smid, _severity, _contact, _hostpri, _hostalt, v_xml);
-        RETURN xmlelement(name 'Incident',
-                xmlelement(name 'Id', i.id),
-                xmlelement(name 'Ticket', i.rt_ticket)
+        RETURN xmlelement(name "Incident",
+                xmlelement(name "Id", _row.item_id),
+                xmlelement(name "Ticket", _row.rt_ticket)
         );
     END IF;
 */
@@ -327,9 +325,9 @@ BEGIN
     UPDATE cod.item SET rt_ticket = _ticket, stage_id = standard.enum_value_id('cod.stage', 'Initial Diagnosis'), state_id = something
         WHERE id = _id;
     -- IW trigger should execute;
-    RETURN xmlelement(name 'Incident',
-        xmlelement(name 'Id', _id),
-        xmlelement(name 'Ticket', _ticket)
+    RETURN xmlelement(name "Incident",
+            xmlelement(name "Id", _row.item_id),
+            xmlelement(name "Ticket", _row.rt_ticket)
     );
 END;
 $_$;

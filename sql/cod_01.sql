@@ -42,7 +42,7 @@ BEGIN
     _tags := array2.ucat(_tags, _row.componenet);
     _tags := array2.ucat(_tags, 'COD');
 
-    _message := ''
+    _message := '';
     IF _row.host IS NOT NULL THEN
         _message := _message || 'Hostname: ' || _row.host || E'\n';
     END IF;
@@ -50,10 +50,10 @@ BEGIN
         _message := _message || 'Component: ' || _row.component || E'\n';
     END IF;
     IF _msg IS NOT NULL THEN
-        _message || _sep || _msg || E'\n';
+        _message := _message || _sep || _msg || E'\n';
     END IF;
     IF _lmsg IS NOT NULL OR _lmsg <> _msg THEN
-        _message || _sep || _lmsg || E'\n';
+        _message := _message || _sep || _lmsg || E'\n';
     END IF;
     _message := _message || _sep ||
         'Created By: ' || _row.modified_by || E'\n' ||
@@ -68,7 +68,7 @@ BEGIN
                 'Starts: ' || _row.start_at::varchar || E'\n' ||
                 'Cc: ' || _cc  || E'\n' ||
                 'Content: ' || _message ||
-                E'ENDOFCONTENT\n'
+                E'ENDOFCONTENT\n';
     RETURN rt.create_ticket(_payload);
 EXCEPTION
     WHEN OTHERS THEN null;
