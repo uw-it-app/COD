@@ -209,6 +209,30 @@ CREATE OR REPLACE FUNCTION cod_v2.spawn_item_from_alert(xml) RETURNS xml
     Returns:      
 */
 DECLARE
+    v_xml       ALIAS FOR $1;
+    _row        record;
+    _netid      varchar;
+    _ticket     integer;
+    _host       varchar;
+    _comp       varchar;
+    _model      varchar;
+    _smid       integer;
+    _contact    varchar;
+    _hostpri    varchar;
+    _hostalt    varchar;
+    _msg        varchar;
+    _lmsg       varchar;
+    _source     varchar;
+    _source_id  integer;
+    _subject    varchar;
+    _addtags    varchar;
+    _cc         varchar;
+    _nohelp     varchar;
+    _helpurl    varchar;
+    _starts     timestamptz;
+    _severity   tinyint;
+    _item_id    integer;
+    _event_id   integer;
 BEGIN
     -- read event data
     
@@ -224,7 +248,7 @@ BEGIN
 
     _ticket := xpath.get_integer('/Event/Alert/Ticket', v_xml);         -- check
     -- IF ticket is active then return that ticket's info else continue.
-    IF _ticket IS NOT NULL and _ticket > 0 THEN
+    IF _ticket IS NOT NULL AND _ticket > 0 THEN
         SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate WHERE rt_ticket = _ticket LIMIT 1;
         IF _row.id IS NOT NULL THEN
             RETURN xmlelement(name 'Incident',
@@ -242,8 +266,6 @@ BEGIN
     _hostalt := xpath.get_varchar('/Event/Event/AltOnCall', v_xml);     -- (event)
     _msg := xpath.get_varchar('/Event/Alert/Msg', v_xml);               -- for ticket
     _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', v_xml);          -- for ticket
-    _flavor := xpath.get_varchar('/Event/Alert/Flavor', v_xml);         -- for sending to prox, acc
-    _source := xpath.get_varchar('/Event/Source', v_xml);               -- for sending to prox, acc
 
     _source := COALESCE(xpath.get_varchar('/Event/Source', v_xml), xpath.get_varchar('/Event/Alert/Flavor', v_xml));
     _source_id := COALESCE(standard.enum_value_id('cod.source', _source), 1);
@@ -297,8 +319,8 @@ BEGIN
     -- create alert
     _event_id := nexval('cod.event_id_seq'::text);
     INSERT INTO cod.event (id, item_id, host, component, support_model_id, severity, contact, 
-                           oncall_primary, oncall_alternate, source_id, content)
-        VALUES (_event_id, _item_id, _host, _comp, _smid, _severity, _contact, _hostpri, _hostalt, _source_id, v_xml);
+                           oncall_primary, oncall_alternate, source_id, start_at, content)
+        VALUES (_event_id, _item_id, _host, _comp, _smid, _severity, _contact, _hostpri, _hostalt, _source_id, _starts, v_xml);
     -- get ticket # for item
     _ticket := cod.create_incident_ticket(_event_id); -- TODO: needs function
     -- update item for workflow
