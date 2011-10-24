@@ -234,7 +234,7 @@ DECLARE
 BEGIN
     -- read event data
     
-    _netid := xpath.get_varchar('/Event/Netid');
+    _netid := xpath.get_varchar('/Event/Netid', v_xml);
     -- can this netid spawn?
     IF cod_v2.can_spawn(_netid) IS TRUE THEN
         -- if yes set uwit.uwnetid
@@ -248,7 +248,7 @@ BEGIN
     -- IF ticket is active then return that ticket's info else continue.
     IF _ticket IS NOT NULL AND _ticket > 0 THEN
         SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate WHERE rt_ticket = _ticket LIMIT 1;
-        IF _row.id IS NOT NULL THEN
+        IF _row.item_id IS NOT NULL THEN
             RETURN xmlelement(name "Incident",
                     xmlelement(name "Id", _row.item_id),
                     xmlelement(name "Ticket", _row.rt_ticket)
@@ -282,8 +282,8 @@ BEGIN
     END IF;
 
     -- check to see if exact duplicate
-    SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate WHERE host = _host AND component = _component ORDER BY i.id ASC LIMIT 1;
-    IF _row.id IS NOT NULL THEN
+    SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate WHERE host = _host AND component = _comp ORDER BY item_id ASC LIMIT 1;
+    IF _row.item_id IS NOT NULL THEN
         RETURN xmlelement(name "Incident",
                 xmlelement(name "Id", _row.item_id),
                 xmlelement(name "Ticket", _row.rt_ticket)
@@ -291,8 +291,8 @@ BEGIN
     END IF;
     -- check to see if similar duplicate to append alert to the same ticket
 /*
-    SELECT * INTO _row FROM cod.item_event_duplicate WHERE host = _host AND contact = _contact ORDER BY i.id ASC LIMIT 1;
-    IF _row.id IS NOT NULL THEN
+    SELECT * INTO _row FROM cod.item_event_duplicate WHERE host = _host AND contact = _contact ORDER BY item_id ASC LIMIT 1;
+    IF _row.item_id IS NOT NULL THEN
         INSERT INTO cod.event (item_id, host, component, support_model_id, severity, contact, 
                                oncall_primary, oncall_alternate, content)
             VALUES (_row.item_id, _host, _comp, _smid, _severity, _contact, _hostpri, _hostalt, v_xml);
@@ -303,31 +303,33 @@ BEGIN
     END IF;
 */
     -- insert new (incident) item 
-    _item_id := nexval('cod.item_id_seq'::text);
-    INSERT INTO cod.item (id, state_id, itil_type_id, support_model_id, severity, stage_id, started_at, content) VALUES (
+    _item_id := nextval('cod.item_id_seq'::regclass);
+    INSERT INTO cod.item (id, subject, state_id, itil_type_id, support_model_id, severity, stage_id, started_at) VALUES (
         _item_id,
+        _subject,
         standard.enum_value_id('cod.state', 'Building'),
         standard.enum_value_id('cod.itil_type', 'Incident'),
         _smid,
         _severity,
         standard.enum_value_id('cod.stage', 'Identification'),
-        _starts,
-        v_xml
+        _starts
     );
     -- create alert
-    _event_id := nexval('cod.event_id_seq'::text);
+    _event_id := nextval('cod.event_id_seq'::regclass);
     INSERT INTO cod.event (id, item_id, host, component, support_model_id, severity, contact, 
                            oncall_primary, oncall_alternate, source_id, start_at, content)
-        VALUES (_event_id, _item_id, _host, _comp, _smid, _severity, _contact, _hostpri, _hostalt, _source_id, _starts, v_xml);
+        VALUES (_event_id, _item_id, _host, _comp, _smid, _severity, _contact, _hostpri, _hostalt, _source_id, _starts, v_xml::text::varchar);
     -- get ticket # for item
-    _ticket := cod.create_incident_ticket(_event_id); -- TODO: needs function
+    _ticket := cod.create_incident_ticket_from_event(_event_id); 
+    RAISE WARNING 'TICKET: %', _ticket;
     -- update item for workflow
-    UPDATE cod.item SET rt_ticket = _ticket, stage_id = standard.enum_value_id('cod.stage', 'Initial Diagnosis'), state_id = something
-        WHERE id = _id;
+    UPDATE cod.item SET rt_ticket = _ticket, stage_id = standard.enum_value_id('cod.stage', 'Initial Diagnosis'), 
+        state_id = standard.enum_value_id('cod.state', 'Processing')
+        WHERE id = _item_id;
     -- IW trigger should execute;
     RETURN xmlelement(name "Incident",
-            xmlelement(name "Id", _row.item_id),
-            xmlelement(name "Ticket", _row.rt_ticket)
+            xmlelement(name "Id", _item_id),
+            xmlelement(name "Ticket", _ticket)
     );
 END;
 $_$;
@@ -337,3 +339,5 @@ COMMENT ON FUNCTION () IS '';
 
 -- REST spawn from notification
 
+
+--select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>5000</VisTime><Alert><ProblemHost>ssgdbdev.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>&lt;Not Responding&gt;by ping</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);

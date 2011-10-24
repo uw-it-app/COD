@@ -10,6 +10,7 @@ SELECT standard.create_enum_table('cod', 'state', 'COD Item Activity State');
 INSERT INTO cod.state (sort, name, description) VALUES
     (0,  'Building', 'Underconstruction'),
     (10, 'Act', 'COPS has an action to perform'),
+    (20, 'Processing', 'COD is updating data in the background'),
     (30, 'Escalating', 'Active contact to Layer 2/3 support'),
     (60, 'L2-3', 'Escalated to Layer 2/3'),
     (80, 'Cleared', 'Impact cleared but not resolved'),
@@ -78,7 +79,7 @@ CREATE TABLE cod.item (
     ended_at        timestamptz,
     resolved_at     timestamptz,
     closed_at       timestamptz,
-    content         xml
+    content         varchar
 );
 
 COMMENT ON TABLE cod.item IS 'DR: COD Line items -- incidents, notifications, etc (2011-10-10)';
@@ -120,7 +121,7 @@ CREATE TABLE cod.event (
     source_id           integer     NOT NULL DEFAULT 1 REFERENCES cod.support_model(id) ON DELETE RESTRICT,
     start_at            timestamptz NOT NULL DEFAULT now(),
     end_at              timestamptz,
-    content             xml
+    content             varchar
 );
 
 COMMENT ON TABLE cod.event IS 'DR: Event associated with an item (incident) (2011-10-12)';
@@ -182,7 +183,7 @@ CREATE TABLE cod.action (
     completed_at    timestamptz,
     completed_by    varchar,
     successful      boolean,
-    content         xml   
+    content         varchar   
 );
 
 COMMENT ON TABLE cod.action IS 'DR: (2011-10-12)';
@@ -220,7 +221,7 @@ CREATE TABLE cod.escalation (
     escalated_at    timestamptz NOT NULL DEFAULT now(),
     owned_at        timestamptz,
     resolved_at     timestamptz,
-    content         xml
+    content         varchar
 );
 
 COMMENT ON TABLE cod.escalation IS 'DR: Track Tickets (etc) for escalation to L2/3 oncall groups';
@@ -238,7 +239,7 @@ CREATE TABLE cod.dbcache (
     modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
     id              serial      PRIMARY KEY,
     name            varchar     NOT NULL UNIQUE,
-    content         xml         NOT NULL
+    content         varchar     NOT NULL
 );
 
 COMMENT ON TABLE cod.dbcache IS 'DR: Cached XML for display (2011-10-10)';
@@ -281,3 +282,5 @@ CREATE VIEW cod.item_event_duplicate (event_id, item_id, host, component, contac
     WHERE s.sort < 90;
 
 COMMENT ON VIEW cod.item_event_duplicate IS 'DR: View to find duplicate event/items to an incoming event (2011-10-20)';
+
+GRANT SELECT ON TABLE cod.item_event_duplicate TO PUBLIC;

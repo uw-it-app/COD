@@ -13,9 +13,10 @@ CREATE OR REPLACE FUNCTION cod.create_incident_ticket_from_event(integer) RETURN
 */
     -- needs subject (host: component), message, queue (COPS), severity, tags, CCs, creator
 DECLARE
-    v_event_id  integer;
+    v_event_id  ALIAS FOR $1;
     _sep        varchar := E'------------------------------------------\n';
     _row        record;
+    _content    xml;
     _msg        varchar;
     _lmsg       varchar;
     _subject    varchar;
@@ -26,27 +27,28 @@ DECLARE
     _message    varchar;
     _payload    varchar;
 BEGIN
-    SELECT * INTO _row FROM cod.event WHERE id = v_id;
+    SELECT * INTO _row FROM cod.event WHERE id = v_event_id;
     IF _row.id IS NULL THEN
-        RAISE EXCEPTION 'InternalError: Event does not exist to create indicent ticket: %', v_id;
+        RAISE EXCEPTION 'InternalError: Event does not exist to create indicent ticket: %', v_event_id;
     END IF;
+    _content = _row.content::xml;
 
-    _msg := xpath.get_varchar('/Event/Alert/Msg', _row.content);
-    _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', _row.content);
-    _subject := COALESCE(xpath.get_varchar('/Event/Subject', _row.content), _row.host || ': ' || _row.component);
-    _addtags := xpath.get_varchar('/Event/AddTags', _row.content);
-    _cc := xpath.get_varchar('/Event/Cc', _row.content);
+    _msg := xpath.get_varchar('/Event/Alert/Msg', _content);
+    _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', _content);
+    _subject := COALESCE(xpath.get_varchar('/Event/Subject', _content), _row.host || ': ' || _row.component, _row.host, _row.component, 'Undefined Subject');
+    _addtags := xpath.get_varchar('/Event/AddTags', _content);
+    _cc := COALESCE(xpath.get_varchar('/Event/Cc', _content), '');
 
     _tags := regexp_split_to_array(_addtags, E'[, ]+', 'g');
-    _tags := array2.ucat(_tags, _row.host);
-    _tags := array2.ucat(_tags, _row.componenet);
-    _tags := array2.ucat(_tags, 'COD');
+    _tags := array2.ucat(_tags, 'COD-DEV'::varchar);
 
     _message := '';
     IF _row.host IS NOT NULL THEN
+        _tags := array2.ucat(_tags, _row.host);
         _message := _message || 'Hostname: ' || _row.host || E'\n';
     END IF;
     IF _row.component IS NOT NULL THEN
+        _tags := array2.ucat(_tags, _row.component);
         _message := _message || 'Component: ' || _row.component || E'\n';
     END IF;
     IF _msg IS NOT NULL THEN
@@ -60,18 +62,19 @@ BEGIN
         E'UW Information Technology - Computer Operations\n' ||
         E'Email: copstaff@uw.edu\n' ||
         E'Phone: 206-685-1270\n';
-        
+
     _payload := 'Subject: ' || _subject || E'\n' ||
-                E'Queue: COPS\n' ||
+                E'Queue: SSG::Test\n' ||
                 'Severity: ' || _row.severity::varchar ||  E'\n' ||
                 'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
                 'Starts: ' || _row.start_at::varchar || E'\n' ||
                 'Cc: ' || _cc  || E'\n' ||
                 'Content: ' || _message ||
                 E'ENDOFCONTENT\n';
+
     RETURN rt.create_ticket(_payload);
 EXCEPTION
-    WHEN OTHERS THEN null;
+    WHEN OTHERS THEN RETURN NULL;
 END;
 $_$;
 
