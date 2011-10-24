@@ -13,27 +13,29 @@ CREATE OR REPLACE FUNCTION cod.create_incident_ticket_from_event(integer) RETURN
 */
     -- needs subject (host: component), message, queue (COPS), severity, tags, CCs, creator
 DECLARE
+    v_event_id  integer;
     _sep        varchar := E'------------------------------------------\n';
+    _row        record;
+    _msg        varchar;
+    _lmsg       varchar;
+    _subject    varchar;
+    _addtags    varchar;
+    _cc         varchar;
+    _starts     timestamptz;
+    _tags       varchar[];
+    _message    varchar;
+    _payload    varchar;
 BEGIN
     SELECT * INTO _row FROM cod.event WHERE id = v_id;
     IF _row.id IS NULL THEN
         RAISE EXCEPTION 'InternalError: Event does not exist to create indicent ticket: %', v_id;
     END IF;
 
-    _model := standard.enum_id_for_value('cod.support_model', _row.support_model_id);
-    _msg := xpath.get_varchar('/Event/Alert/Msg', _row.content);               -- for ticket
-    _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', _row.content);          -- for ticket
-    
-    _subject := COALESCE(xpath.get_varchar('/Event/Subject', _row.content), _row.host || ': ' || _row.component); -- subject(item)
-    _addtags := xpath.get_varchar('/Event/AddTags', _row.content);             -- ticket
-    _cc := xpath.get_varchar('/Event/Cc', _row.content);                       -- ticket
-
-    _starts := now() - (COALESCE(xpath.get_integer('/Event/VisTime', _row.content), 0)::varchar || ' seconds')::interval; -- (item)
-
-    _severity := 3;                                                      -- (item); (event)
-    IF _model = 'A' OR _model = 'B' THEN
-        _severity := 2;
-    END IF;
+    _msg := xpath.get_varchar('/Event/Alert/Msg', _row.content);
+    _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', _row.content);
+    _subject := COALESCE(xpath.get_varchar('/Event/Subject', _row.content), _row.host || ': ' || _row.component);
+    _addtags := xpath.get_varchar('/Event/AddTags', _row.content);
+    _cc := xpath.get_varchar('/Event/Cc', _row.content);
 
     _tags := regexp_split_to_array(_addtags, E'[, ]+', 'g');
     _tags := array2.ucat(_tags, _row.host);
@@ -61,9 +63,9 @@ BEGIN
         
     _payload := 'Subject: ' || _subject || E'\n' ||
                 E'Queue: COPS\n' ||
-                'Severity: ' || _severity::varchar ||  E'\n' ||
+                'Severity: ' || _row.severity::varchar ||  E'\n' ||
                 'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
-                'Starts: ' || _starts::varchar || E'\n' ||
+                'Starts: ' || _row.start_at::varchar || E'\n' ||
                 'Cc: ' || _cc  || E'\n' ||
                 'Content: ' || _message ||
                 E'ENDOFCONTENT\n'
