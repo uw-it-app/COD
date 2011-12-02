@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+    <meta charset="utf-8"/>
+    <title>COD: Computer Operations Dashboard</title>
+    <link rel="stylesheet" href="/shared/local/core/4.4.8/tools-core.css"/>
+    <link rel="stylesheet" href="/shared/third-party/jquery-ui/1.8.14/css/local/vowel/jquery-ui-1.8.14.custom.css"/>
+    <link rel="stylesheet" href="css/cod.css"/>
+    <body>
+        <div id="tools-container">
+            <div id="tools-content">
+<!-- Local HTML -->
+
+<div id="codList">
+    <div>
+        <div class="tshort">State</div>
+        <div class="tmedium">ITIL Type</div>
+        <div class="tlong">Stage</div>
+        <div class="tmedium">RT Ticket</div>
+        <div class="tmedium">H&amp;M Issue</div>
+        <div class="tshort">Model</div>
+        <div class="tshort">Severity</div>
+        <div class="tlong">Modified</div>
+        <br/><hr/>
+<!--        <div>: <input id="Item." class="items_bind"/></div>-->
+    </div>
+    <div id="Items:Item" class="items_bind">
+        <div class="tshort items_bind" id="Item.State"></div>
+        <div class="tmedium items_bind" id="Item.ITILType"></div>
+        <div class="tlong items_bind" id="Item.Stage"></div>
+        <div class="tmedium items_bind" id="Item.RTTicket"></div>
+        <div class="tmedium items_bind" id="Item.HMIssue"></div>
+        <div class="tshort items_bind" id="Item.SupportModel"></div>
+        <div class="tshort items_bind" id="Item.Severity"></div>
+        <div class="tlong items_bind" id="Item.Modified.At"></div>
+        <br/>
+        <div class="items_bind" id="Item.Escalations:Escalation">
+            <div class="tshort"></div>
+            <div class="tmedium"></div>
+            <div class="tlong"></div>
+            <div class="tmedium items_bind" id="Escalation.RTTicket"></div>
+            <div class="tmedium items_bind" id="Escalation.HMIssue"></div>
+            <div class="tshort items_bind" id="Escalation.SupportModel"></div>
+            <div class="tshort items_bind" id="Escalation.Severity"></div>
+            <div class="tlong items_bind" id="Escalation.Modified.At"></div>
+        </div>
+        <br/><hr/>
+    </div>
+</div>
+
+<!-- End Local HTML -->
+            </div>
+        <!-- end #tools-content -->
+        </div>
+        <!-- end #tools-container -->
+<!-- Start Script block -->
+        <script src="/shared/third-party/log4js/1.0-local/log4js.js"></script>
+        <script src="/shared/third-party/jquery/1.7/jquery-1.7.min.js"></script>
+        <script src="/shared/third-party/jquery-ui/1.8.14/jquery-ui-1.8.14.custom.min.js"></script>
+        <script src="/shared/third-party/jquery/plugins/cookie/2.0.0/jquery.cookie.js"></script>
+        <script src="/shared/local/core/4.4.8/tools-core.min.js"></script>
+        <script src="/shared/local/jquery.jpop/1.0.3/jquery.jpop.js"></script>
+        <script type="text/javascript" src="/shared/local/badgerfishjs/1.0.0/badgerfish.js"></script>
+        <script type="text/javascript" src="/daw/js/RESTDataSource.js"></script>
+        <script type="text/javascript" src="/daw/js/badgerArray.js"></script>
+        <!--
+        <script src="/shared/third-party/underscore/1.1.6/underscore-min.js" ></script>
+        <script src="/shared/third-party/jquery-ui/jquery.ui.autocomplete.selectFirst/jquery.ui.autocomplete.selectFirst.js"></script>
+        -->
+        <script>
+            var toolsAppName = {title: 'COD', href: './'};
+            var toolsBreadcrumbs = [
+                {title: 'SSG', href: '/'},
+                {title: 'COD', href: './'}
+            ];
+            var COD = {};
+            $(document).ready( function() {
+                // stylize all the buttons with jQueryUI
+                $("button, input[type=image], input[type=submit], input[type=reset], input[type=button]").button();
+            });
+        </script>
+        <script src="js/cod.js"></script>
+<!-- End Script block -->
+    </body>
+</html>

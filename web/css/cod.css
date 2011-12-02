@@ -1,0 +1,28 @@
+/*
+Table of Contents (order of these sections is significant)
+    @media all (default styles or everything)
+    @media screen (changes for screen only)
+    @media print  (changes for printing only)
+*/
+
+@media all {
+    div.tshort {
+        float:  left;
+        width:  5em;
+        height: 1em;
+    }
+    div.tmedium {
+        float:  left;
+        width:  8em;
+        height: 1em;
+    }
+    div.tlong{
+        float:  left;
+        width:  15em;
+        height: 1em;
+    }
+}
+
+@media print {
+    /* ANY CHANGES FOR PRINTED PAGES */
+}
