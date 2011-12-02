@@ -1,6 +1,6 @@
-SELECT standard.create_data_schema('rt', 'RT related data');
+ --SELECT standard.create_data_schema('rt', 'RT related data');
 
-/**********************************************************************************************/
+/**********************************************************************************************
 
 CREATE TABLE rt.buffer (
     modified_at     timestamptz NOT NULL DEFAULT now(),
@@ -20,7 +20,7 @@ GRANT SELECT, INSERT ON TABLE rt.buffer TO PUBLIC;
 
 SELECT standard.standardize_table_and_trigger('rt', 'buffer');
 
-/**********************************************************************************************/
+**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION rt.offline_submit(payload varchar) RETURNS varchar
     LANGUAGE plpython2u
@@ -67,10 +67,11 @@ DECLARE
     v_payload    ALIAS FOR $1;
     _payload     varchar;
 BEGIN
+    SET LOCAL statement_timeout TO 180000; -- 3 minutes
     _payload := E'===Create-Ticket: ssgrt\n' || v_payload;
     RETURN (regexp_matches(rt.offline_submit(_payload), E'create-ssgrt: ticket (\\d+) created', 'i'))[1]::integer;
 EXCEPTION
-    WHEN OTHERS THEN NULL;
+    WHEN OTHERS THEN RETURN NULL;
 END;
 $_$;
 
@@ -96,6 +97,7 @@ DECLARE
     _payload    varchar;
     _output     varchar;
 BEGIN
+    SET LOCAL statement_timeout TO 180000; -- 3 minutes
     _payload := E'===Update-Ticket: ' || v_ticket::varchar || E'\n' || v_paylod;
     _output  := rt.offline_submit(_payload);
     RETURN TRUE;
