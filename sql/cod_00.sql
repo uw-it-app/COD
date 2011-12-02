@@ -11,8 +11,8 @@ INSERT INTO cod.state (sort, name, description) VALUES
     (0,  'Building', 'Underconstruction'),
     (10, 'Act', 'COPS has an action to perform'),
     (20, 'Processing', 'COD is updating data in the background'),
-    (30, 'Escalating', 'Active contact to Layer 2/3 support'),
-    (60, 'L2-3', 'Escalated to Layer 2/3'),
+    (30, 'Escalating', 'Active contact to Level 2/3 support'),
+    (60, 'L2-3', 'Escalated to Level 2/3'),
     (80, 'Cleared', 'Impact cleared but not resolved'),
     (90, 'Resolved', 'All work completed');
 
@@ -88,6 +88,12 @@ GRANT SELECT, INSERT, UPDATE ON TABLE cod.item TO PUBLIC;
 
 SELECT standard.standardize_table_history_and_trigger('cod', 'item');
 
+DROP TRIGGER t_30_distinct_update ON cod.item;
+CREATE TRIGGER t_30_distinct_update
+    BEFORE UPDATE ON cod.item
+    FOR EACH ROW
+    EXECUTE PROCEDURE standard.distinct_update();
+
 ALTER TABLE cod_history.item ADD CONSTRAINT state_exists FOREIGN KEY (state_id) REFERENCES cod.state(id) ON DELETE RESTRICT;
 ALTER TABLE cod_history.item ADD CONSTRAINT itil_type_exists FOREIGN KEY (itil_type_id) REFERENCES cod.itil_type(id) ON DELETE RESTRICT;
 ALTER TABLE cod_history.item ADD CONSTRAINT support_model_exists FOREIGN KEY (support_model_id) REFERENCES cod.support_model(id) ON DELETE CASCADE;
@@ -113,7 +119,7 @@ CREATE TABLE cod.event (
     host                varchar,
     component           varchar,
     support_model_id    integer     NOT NULL REFERENCES cod.support_model(id) ON DELETE RESTRICT,
-    severity            smallint     NOT NULL DEFAULT 3 CHECK (severity BETWEEN 1 AND 5),
+    severity            smallint    NOT NULL DEFAULT 3 CHECK (severity BETWEEN 1 AND 5),
     contact             varchar,
     oncall_primary      varchar,
     oncall_alternate    varchar,
@@ -180,8 +186,10 @@ CREATE TABLE cod.action (
     id              serial      PRIMARY KEY,
     item_id         integer     NOT NULL REFERENCES cod.item(id) ON DELETE CASCADE,
     action_type_id  integer     NOT NULL REFERENCES cod.action_type(id) ON DELETE RESTRICT,
+    started_at      timestamptz NOT NULL DEFAULT now(),
     completed_at    timestamptz,
     completed_by    varchar,
+    skipped         boolean,
     successful      boolean,
     content         varchar   
 );
@@ -199,6 +207,7 @@ ALTER TABLE cod_history.action ADD CONSTRAINT action_type_exists FOREIGN KEY (ac
 SELECT standard.create_enum_table('cod', 'esc_state', 'COD escalation state');
 
 INSERT INTO cod.esc_state (sort, name, description) VALUES
+    (0,  'Building', 'Underconstruction'),
     (10, 'Act', 'COPS has an action to perform'),
     (30, 'Active', 'Active contact to Layer 2/3 support'),
     (40, 'Passive', 'Passive contact to Layer 2/3 support'),
@@ -216,7 +225,7 @@ CREATE TABLE cod.escalation (
     hm_issue        integer,
     esc_state_id    integer     NOT NULL DEFAULT 1 REFERENCES cod.esc_state(id) ON DELETE RESTRICT,
     oncall_group    varchar     NOT NULL,
-    queue           varchar     NOT NULL,
+    queue           varchar,
     owner           varchar     NOT NULL DEFAULT 'nobody',
     escalated_at    timestamptz NOT NULL DEFAULT now(),
     owned_at        timestamptz,

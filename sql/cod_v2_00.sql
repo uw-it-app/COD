@@ -3,6 +3,8 @@
 CREATE SCHEMA cod_v2;
 GRANT ALL ON SCHEMA cod_v2 TO PUBLIC;
 
+COMMENT ON SCHEMA cod_v2 IS 'DR: COD REST API v2 (2011-11-16)';
+
 /**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION cod_v2.event_xml(integer) RETURNS xml
@@ -168,6 +170,28 @@ COMMENT ON FUNCTION cod_v2.item_xml(integer) IS 'DR: Retrive XML representation 
 
 -- REST PUTItem
 
+
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod_v2.items_xml() RETURNS xml
+    LANGUAGE sql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod_v2.items_xml()
+    Description:  List of cod items
+    Affects:      nothing
+    Arguments:    none
+    Returns:      XML list of items
+*/
+SELECT xmlelement(name "Items",
+    (SELECT xmlagg(cod_v2.item_xml(id)) FROM cod.item)
+);
+$_$;
+
+COMMENT ON FUNCTION cod_v2.items_xml() IS 'DR: List of cod items (2011-11-30)';
+
 -- REST get cached list (active, all)
 
 /**********************************************************************************************/
@@ -266,7 +290,7 @@ BEGIN
     _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', v_xml);          -- for ticket
 
     _source := COALESCE(xpath.get_varchar('/Event/Source', v_xml), xpath.get_varchar('/Event/Alert/Flavor', v_xml));
-    _source_id := COALESCE(standard.enum_value_id('cod.source', _source), 1);
+    _source_id := COALESCE(standard.enum_value_id('cod', 'source', _source), 1);
     
     _subject := COALESCE(xpath.get_varchar('/Event/Subject', v_xml), _host || ': ' || _comp); -- subject(item)
     _addtags := xpath.get_varchar('/Event/AddTags', v_xml);             -- ticket
@@ -275,7 +299,7 @@ BEGIN
     _helpurl := xpath.get_varchar('/Event/Helpurl', v_xml);             -- (event)
     _starts := now() - (COALESCE(xpath.get_integer('/Event/VisTime', v_xml), 0)::varchar || ' seconds')::interval; -- (item)
 
-    _smid = standard.enum_value_id('cod.support_model', _model);        -- (item); (event)
+    _smid = standard.enum_value_id('cod', 'support_model', _model);        -- (item); (event)
     _severity = 3;                                                      -- (item); (event)
     IF _model = 'A' OR _model = 'B' THEN
         _severity = 2;
@@ -307,11 +331,11 @@ BEGIN
     INSERT INTO cod.item (id, subject, state_id, itil_type_id, support_model_id, severity, stage_id, started_at) VALUES (
         _item_id,
         _subject,
-        standard.enum_value_id('cod.state', 'Building'),
-        standard.enum_value_id('cod.itil_type', 'Incident'),
+        standard.enum_value_id('cod', 'state', 'Building'),
+        standard.enum_value_id('cod', 'itil_type', 'Incident'),
         _smid,
         _severity,
-        standard.enum_value_id('cod.stage', 'Identification'),
+        standard.enum_value_id('cod', 'stage', 'Identification'),
         _starts
     );
     -- create alert
@@ -321,10 +345,9 @@ BEGIN
         VALUES (_event_id, _item_id, _host, _comp, _smid, _severity, _contact, _hostpri, _hostalt, _source_id, _starts, v_xml::text::varchar);
     -- get ticket # for item
     _ticket := cod.create_incident_ticket_from_event(_event_id); 
-    RAISE WARNING 'TICKET: %', _ticket;
     -- update item for workflow
-    UPDATE cod.item SET rt_ticket = _ticket, stage_id = standard.enum_value_id('cod.stage', 'Initial Diagnosis'), 
-        state_id = standard.enum_value_id('cod.state', 'Processing')
+    UPDATE cod.item SET rt_ticket = _ticket, stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis'), 
+        state_id = standard.enum_value_id('cod', 'state', 'Processing')
         WHERE id = _item_id;
     -- IW trigger should execute;
     RETURN xmlelement(name "Incident",
