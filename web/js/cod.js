@@ -24,7 +24,7 @@ $(function () {
     COD.itemsload = function(data){
         data.Items.Item = badgerArray(data.Items.Item);
         var count = data.Items.Item.length;
-        for (var i = 0; i < 1; i++) {
+        for (var i = 0; i < count; i++) {
             data.Items.Item[i].Escalations.Escalation = badgerArray(data.Items.Item[i].Escalations.Escalation);
         }
         COD.data.items = data;
