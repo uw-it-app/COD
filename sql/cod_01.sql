@@ -425,7 +425,7 @@ CREATE OR REPLACE FUNCTION cod.has_open_escalation(integer) RETURNS boolean
     );
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod.has_open_escalation(integer) IS '';
 
 /**********************************************************************************************/
 
@@ -446,7 +446,7 @@ CREATE OR REPLACE FUNCTION cod.has_unowned_escalation(integer) RETURNS boolean
     );
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod.has_unowned_escalation(integer) IS '';
 
 /**********************************************************************************************/
 
@@ -467,7 +467,7 @@ CREATE OR REPLACE FUNCTION cod.has_active_escalation(integer) RETURNS boolean
     );
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod.has_active_escalation(integer) IS '';
 
 /**********************************************************************************************/
 
@@ -488,7 +488,7 @@ CREATE OR REPLACE FUNCTION cod.has_active_helptext(integer) RETURNS boolean
     );
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod.has_active_helptext(integer) IS '';
 
 /**********************************************************************************************/
 
@@ -509,7 +509,7 @@ CREATE OR REPLACE FUNCTION cod.has_helptext_action(integer) RETURNS boolean
     );
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod.has_helptext_action(integer) IS '';
 
 /**********************************************************************************************/
 
@@ -529,7 +529,7 @@ CREATE OR REPLACE FUNCTION cod.has_active_action(integer) RETURNS boolean
     );
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod.has_active_action(integer) IS '';
 
 /**********************************************************************************************/
 
@@ -549,7 +549,7 @@ CREATE OR REPLACE FUNCTION cod.has_uncleared_event(integer) RETURNS boolean
     );
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod.has_uncleared_event(integer) IS '';
 
 /**********************************************************************************************/
 
@@ -581,4 +581,4 @@ BEGIN
 END;
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION standard.enum_id_name_compare_sort(varchar, varchar, integer, varchar, varchar) IS '';
