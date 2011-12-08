@@ -10,42 +10,51 @@
             <div id="tools-content">
 <!-- Local HTML -->
 
-<div id="codList">
-    <div>
-        <div class="tshort">State</div>
-        <div class="tmedium">ITIL Type</div>
-        <div class="tlong">Stage</div>
-        <div class="tmedium">RT Ticket</div>
-        <div class="tmedium">H&amp;M Issue</div>
-        <div class="tshort">Model</div>
-        <div class="tshort">Severity</div>
-        <div class="tlong">Modified</div>
-        <br/><hr/>
-<!--        <div>: <input id="Item." class="items_bind"/></div>-->
-    </div>
-    <div id="Items:Item" class="items_bind">
-        <div class="tshort items_bind" id="Item.State"></div>
-        <div class="tmedium items_bind" id="Item.ITILType"></div>
-        <div class="tlong items_bind" id="Item.Stage"></div>
-        <div class="tmedium items_bind" id="Item.RTTicket"></div>
-        <div class="tmedium items_bind" id="Item.HMIssue"></div>
-        <div class="tshort items_bind" id="Item.SupportModel"></div>
-        <div class="tshort items_bind" id="Item.Severity"></div>
-        <div class="tlong items_bind" id="Item.Modified.At"></div>
-        <br/>
-        <div class="items_bind" id="Item.Escalations:Escalation">
-            <div class="tshort"></div>
-            <div class="tmedium"></div>
-            <div class="tlong"></div>
-            <div class="tmedium items_bind" id="Escalation.RTTicket"></div>
-            <div class="tmedium items_bind" id="Escalation.HMIssue"></div>
-            <div class="tshort items_bind" id="Escalation.SupportModel"></div>
-            <div class="tshort items_bind" id="Escalation.Severity"></div>
-            <div class="tlong items_bind" id="Escalation.Modified.At"></div>
-        </div>
-        <br/><hr/>
-    </div>
-</div>
+<table class="full">
+    <thead>
+        <tr>
+            <th class="">State</th>
+            <th class="">ITIL Type</th>
+    <!--        <th class="">Stage</th> -->
+            <th class="">Subject</th>
+            <th class="">RT Ticket</th>
+            <th class="">H&amp;M Issue</th>
+            <th class="">Model</th>
+            <th class="">Severity</th>
+            <th class="">Escalations</th>
+            <th class="">Modified</th>
+        </tr>
+    </thead>
+    <tbody class="items_bind" id="Items:Item">
+        <tr class="clickable">
+            <td class="items_bind" id="Item.State"></td>
+            <td class="items_bind" id="Item.ITILType"></td>
+    <!--        <td class="items_bind" id="Item.Stage"></td> -->
+            <td class="items_bind" id="Item.Subject"></td>
+            <td class="items_bind" id="Item.RTTicket"></td>
+            <td class="items_bind" id="Item.HMIssue"></td>
+            <td class="items_bind" id="Item.SupportModel"></td>
+            <td class="items_bind" id="Item.Severity"></td>
+            <td>
+                <table class="full">
+                    <tr>
+                        <th class="">Oncall</th>
+                        <th class="">RT</th>
+                        <th class="">H&amp;M</th>
+                    </tr>
+                <tbody class="items_bind" id="Item.Escalations:Escalation">
+                    <tr>
+                        <td class="items_bind" id="Escalation.OncallGroup"></td>
+                        <td class="items_bind" id="Escalation.RTTicket"></td>
+                        <td class="items_bind" id="Escalation.HMIssue"></td>
+                    </tr>
+                </tbody>
+                </table>
+            </td>
+            <td class="items_bind" id="Item.Modified.At"></td>
+        </tr>
+    </tbody>
+</table>
 
 <!-- End Local HTML -->
             </div>

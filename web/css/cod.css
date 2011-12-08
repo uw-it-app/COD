@@ -6,20 +6,17 @@ Table of Contents (order of these sections is significant)
 */
 
 @media all {
-    div.tshort {
-        float:  left;
-        width:  5em;
-        height: 1em;
+    .full{
+        width: 100%;
     }
-    div.tmedium {
-        float:  left;
-        width:  8em;
-        height: 1em;
+    div.minor{
+        float: left;
     }
-    div.tlong{
-        float:  left;
-        width:  15em;
-        height: 1em;
+    .clickable{
+        cursor: pointer;
+    }
+    .clickable:hover{
+        background-color: #FEF;
     }
 }
 
