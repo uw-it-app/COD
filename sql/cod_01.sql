@@ -177,6 +177,9 @@ DECLARE
     _event      cod.event%ROWTYPE;
     _payload    varchar;
     _content    xml;
+    _msg        varchar;
+    _lmsg       varchar;
+    _message    varchar;
     _tags       varchar[];
 BEGIN
     -- get queue from H&M
@@ -190,19 +193,19 @@ BEGIN
         SELECT * INTO _event FROM cod.event WHERE item_id = NEW.item_id ORDER BY id ASC LIMIT 1;
        _content = _event.content::xml;
 
-        _msg := xpath.get_varchar('/Event/Alert/Msg', _content);
+        _msg  := xpath.get_varchar('/Event/Alert/Msg', _content);
         _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', _content);
 
         _tags := array2.ucat(_tags, 'COD-DEV'::varchar);
 
         _message := '';
-        IF _row.host IS NOT NULL THEN
+        IF _event.host IS NOT NULL THEN
             _tags := array2.ucat(_tags, _event.host);
-            _message := _message || 'Hostname: ' || _row.host || E'\n';
+            _message := _message || 'Hostname: ' || _event.host || E'\n';
         END IF;
-        IF _row.component IS NOT NULL THEN
+        IF _event.component IS NOT NULL THEN
             _tags := array2.ucat(_tags, _event.component);
-            _message := _message || 'Component: ' || _row.component || E'\n';
+            _message := _message || 'Component: ' || _event.component || E'\n';
         END IF;
         IF _msg IS NOT NULL THEN
             _message := _message || _sep || _msg || E'\n';
@@ -212,14 +215,15 @@ BEGIN
         END IF;
 
         _payload := 'Subject: ' || _item.subject || E'\n' ||
-                    'Queue: ' || _NEW.queue || E'\n' ||
+                    'Queue: ' || NEW.queue || E'\n' ||
                     'Severity: ' || _item.severity::varchar ||  E'\n' ||
                     'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
                     -- 'Starts: ' || _row.start_at::varchar || E'\n' ||
                     'Content: ' || _message || E'\n' ||
                     E'ENDOFCONTENT\n';
         
-        NEW.rt_ticket := rt.create_ticket(_payload);
+        NEW.rt_ticket    := rt.create_ticket(_payload);
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Act');
     END IF;
     RETURN NEW;
 --EXCEPTION
