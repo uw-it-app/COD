@@ -340,7 +340,7 @@ BEGIN
         IF (cod.has_active_escalation(NEW.id)) THEN
             NEW.state_id = standard.enum_value_id('cod', 'state', 'Escalating');
         ELSE
-            NEW.state_id = standard.enum_value_id('cod', 'state', 'L2-3');
+            NEW.state_id = standard.enum_value_id('cod', 'state', 'T2-3');
         END IF;
     ELSE
         -- else set to processing (no open escalations/actions and not cleared means something needs to happen)
