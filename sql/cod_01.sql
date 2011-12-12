@@ -256,6 +256,7 @@ CREATE OR REPLACE FUNCTION cod.escalation_workflow() RETURNS trigger
 DECLARE
     _payload        varchar;
 BEGIN
+    RAISE NOTICE 'COD Escalation Workflow';
     -- active escalation & owner = nobody & no H&M?
     IF NEW.hm_issue IS NULL AND NEW.owner = 'nobody' AND 
        (SELECT sm.active_notification FROM cod.support_model AS sm JOIN cod.item AS i ON (i.support_model_id = sm.id) WHERE i.id = NEW.item_id) IS TRUE 
@@ -263,12 +264,17 @@ BEGIN
         RAISE NOTICE 'PROMPT H&M to start notification';
         -- prompt H&M
     END IF;
-    IF OLD.owner <> NEW.owner AND NEW.owner <> 'nobody' THEN
-        IF NEW.hm_issue IS NOT NULL THEN
-            RAISE NOTICE 'Tell H&M to stop notification';
-            -- flag H&M to stop escalation with owner
+    IF NEW.owner <> 'nobody' THEN
+        IF (TG_OP = 'UPDATE' AND OLD.owner = NEW.owner) THEN
+            -- Do nothing
+            NULL;
         ELSE
-            RAISE NOTICE 'Tell RT the new owner';
+            IF NEW.hm_issue IS NOT NULL THEN
+                RAISE NOTICE 'Tell H&M to stop notification';
+                -- flag H&M to stop escalation with owner
+            ELSE
+                RAISE NOTICE 'Tell RT the new owner';
+            END IF;
         END IF;
     END IF;
     RETURN NULL;
@@ -307,7 +313,7 @@ BEGIN
 END;
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod.update_item() IS '';
 
 CREATE TRIGGER t_91_update_item
     AFTER INSERT OR UPDATE ON cod.action
