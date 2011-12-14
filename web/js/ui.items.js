@@ -23,7 +23,7 @@
             var _this = this;
             window.clearTimeout(COD.rid.items);
             COD.REST.items.get(
-                {},
+                {time: Number(new Date())},
                 function (data) {
                     var count, i;
                     if (COD.data.items.Items.ModifiedAt === data.Items.ModifiedAt) {
