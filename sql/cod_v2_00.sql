@@ -186,7 +186,8 @@ CREATE OR REPLACE FUNCTION cod_v2.items_xml() RETURNS xml
     Returns:      XML list of items
 */
 SELECT xmlelement(name "Items",
-    (SELECT xmlagg(cod_v2.item_xml(id)) FROM cod.item)
+    (SELECT xmlagg(cod_v2.item_xml(id)) FROM cod.item),
+    xmlelement(name "ModifiedAt", (SELECT max(modified_at) FROM cod.item))
 );
 $_$;
 

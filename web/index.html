@@ -10,7 +10,7 @@
             <div id="tools-content">
 <!-- Local HTML -->
 
-<table class="full">
+<table id="itemsTable" class="full">
     <thead>
         <tr>
             <th class="">State</th>
@@ -75,18 +75,19 @@
         <script src="/shared/third-party/underscore/1.1.6/underscore-min.js" ></script>
         <script src="/shared/third-party/jquery-ui/jquery.ui.autocomplete.selectFirst/jquery.ui.autocomplete.selectFirst.js"></script>
         -->
+        <script src="js/cod.js"></script>
+        <script src="js/ui.items.js"></script>
         <script>
-            var toolsAppName = {title: 'COD', href: './'};
             var toolsBreadcrumbs = [
                 {title: 'SSG', href: '/'},
                 {title: 'COD', href: './'}
             ];
             $(document).ready( function() {
+                $('#itemsTable').items();
                 // stylize all the buttons with jQueryUI
                 //$("button, input[type=image], input[type=submit], input[type=reset], input[type=button]").button();
             });
         </script>
-        <script src="js/cod.js"></script>
 <!-- End Script block -->
     </body>
 </html>
