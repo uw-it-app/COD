@@ -28,6 +28,24 @@ var COD = {},
 
     // Refresh ID namespace
     COD.rid = {};
+    
+    COD.hash = undefined;
+
+    COD.getHash = function () {
+        var i, segments,
+            hash = COD.hash;
+        if (COD.hash === undefined) {
+            hash = {};
+            segments = $(location).attr('hash').replace(/^#/, '').split(/\//);
+            if (segments.length >= 2) {
+                for (i= 0; i < segments.length; i += 2) {
+                    hash[segments[i]] = segments[i+1];
+                }
+            }
+            COD.hash = hash;
+        }
+        return hash;
+    }
 
 }());
 

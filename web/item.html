@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+    <meta charset="utf-8"/>
+    <title></title>
+    <link rel="stylesheet" href="/shared/local/core/4.4.8/tools-core.css"/>
+    <link rel="stylesheet" href="/shared/third-party/jquery-ui/1.8.14/css/local/vowel/jquery-ui-1.8.14.custom.css"/>
+    <link rel="stylesheet" href="css/cod.css"/>
+    <body>
+        <div id="tools-container">
+            <div id="tools-content">
+<!-- Local HTML -->
+<div id="item_container">
+    <div id="item_header">
+        <div class="tile_row">
+            <div>Subject: <input id="Item.Subject" class="item_bind"/></div>
+            <div>RT Ticket: <input id="Item.RTTicket" class="item_bind"/></div>
+            <div>H&amp;M Issue: <input id="Item.HMIssue" class="item_bind"/></div>
+            <div>State: <input id="Item.State" class="item_bind"/></div>
+            <div>ITIL Type: <input id="Item.ITILType" class="item_bind"/></div>
+            <div>Support Model: <input id="Item.SupportModel" class="item_bind"/></div>
+            <div>Severity: <input id="Item.Severity" class="item_bind"/></div>
+            <div>Stage: <input id="Item.Stage" class="item_bind"/></div>
+        </div>
+    </div>
+</div>
+<!-- End Local HTML -->
+            </div>
+        <!-- end #tools-content -->
+        </div>
+        <!-- end #tools-container -->
+<!-- Start Script block -->
+        <script src="/shared/third-party/log4js/1.0-local/log4js.js"></script>
+        <script src="/shared/third-party/jquery/1.7/jquery-1.7.min.js"></script>
+        <script src="/shared/third-party/jquery-ui/1.8.14/jquery-ui-1.8.14.custom.min.js"></script>
+        <script src="/shared/third-party/jquery-ui/jquery.ui.autocomplete.selectFirst/jquery.ui.autocomplete.selectFirst.js"></script>
+        <script src="/shared/third-party/jquery/plugins/cookie/2.0.0/jquery.cookie.js"></script>
+        <script src="/shared/local/core/4.4.8/tools-core.min.js"></script>
+        <script src="/shared/local/jquery.jpop/1.0.3/jquery.jpop.js"></script>
+        <script src="/shared/local/badgerfishjs/1.0.0/badgerfish.js"></script>
+        <script src="/daw/js/RESTDataSource.js"></script>
+        <script src="/daw/js/badgerArray.js"></script>
+        <!--
+        <script src="/shared/third-party/underscore/1.1.6/underscore-min.js" ></script>
+        -->
+        <script src="js/cod.js"></script>
+        <script src="js/ui.item.js"></script>
+        <script>
+            var itemId = COD.getHash().Id,
+                toolsBreadcrumbs = [
+                    {title: 'SSG', href: '/'},
+                    {title: 'COD', href: './'},
+                    {title: 'Item '+itemId, href: './item.html#Id/'+itemId}
+                ];
+            $(document).ready( function() {
+                $('#item_container').item({Id: itemId});
+                // stylize all the buttons with jQueryUI
+                //$("button, input[type=image], input[type=submit], input[type=reset], input[type=button]").button();
+            });
+        </script>
+<!-- End Script block -->
+    </body>
+</html>
