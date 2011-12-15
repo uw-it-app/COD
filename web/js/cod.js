@@ -3,6 +3,7 @@
 /*global logger */
 /*global RESTDataSource */
 /*global badgerArray */
+/*global location */
 var COD = {},
     toolsAppName = {title: 'COD', href: './'};
 
@@ -28,7 +29,7 @@ var COD = {},
 
     // Refresh ID namespace
     COD.rid = {};
-    
+
     COD.hash = undefined;
 
     COD.getHash = function () {
@@ -38,14 +39,14 @@ var COD = {},
             hash = {};
             segments = $(location).attr('hash').replace(/^#/, '').split(/\//);
             if (segments.length >= 2) {
-                for (i= 0; i < segments.length; i += 2) {
-                    hash[segments[i]] = segments[i+1];
+                for (i = 0; i < segments.length; i += 2) {
+                    hash[segments[i]] = segments[i + 1];
                 }
             }
             COD.hash = hash;
         }
         return hash;
-    }
+    };
 
 }());
 

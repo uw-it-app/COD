@@ -13,7 +13,7 @@
             this._connectControllerStuff();
             this.refreshData();
         },
-        
+
         _connectControllerStuff: function () {
             COD.data.item = {Item: {}};
             COD.REST.item = new RESTDataSource(COD.dataSources.item, COD.RESTErrorHandler);
