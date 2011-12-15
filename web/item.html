@@ -12,17 +12,51 @@
 <div id="item_container">
     <div id="item_header">
         <div class="tile_row">
-            <div>Subject: <input id="Item.Subject" class="item_bind"/></div>
-            <div>RT Ticket: <input id="Item.RTTicket" class="item_bind"/></div>
-            <div>H&amp;M Issue: <input id="Item.HMIssue" class="item_bind"/></div>
-            <div>State: <input id="Item.State" class="item_bind"/></div>
-            <div>ITIL Type: <input id="Item.ITILType" class="item_bind"/></div>
-            <div>Support Model: <input id="Item.SupportModel" class="item_bind"/></div>
-            <div>Severity: <input id="Item.Severity" class="item_bind"/></div>
-            <div>Stage: <input id="Item.Stage" class="item_bind"/></div>
+            <div class="tile_block">
+                <input id="Item.Subject" class="item_bind xlong"/>
+                <div class="label"><span class="help">Subject</span></div>
+            </div>
+            <div class="tile_block">
+                <input id="Item.ITILType" class="item_bind short"/>
+                <div class="label"><span class="help">ITIL Type</span></div>
+            </div>
         </div>
-    </div>
-</div>
+        <div class="tile_row">
+            <div class="tile_block">
+                <input id="Item.State" class="item_bind short"/>
+                <div class="label"><span class="help">State</span></div>
+            </div>
+            <div class="tile_block">
+                <input id="Item.RTTicket" class="item_bind short"/>
+                <div class="label"><span class="help">RT Ticket</span></div>
+            </div>
+            <div class="tile_block">
+                <input id="Item.HMIssue" class="item_bind short"/>
+                <div class="label"><span class="help">H&amp;M Issue</span></div>
+            </div>
+            <div class="tile_block">
+                <input id="Item.Stage" class="item_bind long"/>
+                <div class="label"><span class="help">Stage</span></div>
+            </div>
+            <div class="tile_block">
+                <input id="Item.SupportModel" class="item_bind short"/>
+                <div class="label"><span class="help">Model</span></div>
+            </div>
+            <div class="tile_block">
+                <input id="Item.Severity" class="item_bind short"/>
+                <div class="label"><span class="help">Severity</span></div>
+            </div>
+        </div>
+        <div class="tile_row">
+            <div id="Item.Actions:Action"></div>
+            <div id="Item.Events:Event"></div>
+        </div>
+        <div class="tile_row">
+            <div id="Item.Escalations:Escalation"></div>
+        </div>
+
+    </div><!-- End item_header -->
+</div><!-- End item_container -->
 <!-- End Local HTML -->
             </div>
         <!-- end #tools-content -->

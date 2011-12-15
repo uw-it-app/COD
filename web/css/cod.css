@@ -18,6 +18,51 @@ Table of Contents (order of these sections is significant)
     .clickable:hover{
         background-color: #FEF;
     }
+    
+    .tile_row {
+        width: 100%;
+    }
+    .tile_block {
+        display: inline-block;
+        zoom:1; /* hack for IE7 http://foohack.com/2007/11/cross-browser-support-for-inline-block-styling/ */
+        *display:inline;
+
+        vertical-align: top;
+    }
+
+    #item_control_tile{
+        float: right;
+    }
+    #item_header {
+        padding-left: 1em;
+    }
+    #item_header * {
+        font-size: medium;
+    }
+    #item_header .tile_block {
+        margin-bottom: 15px;
+        margin-right: 10px;
+    }
+    #item_header .label {
+        margin-top: .2em;
+    }
+    #item_header .label * {
+        font-size: small;
+    }
+    #item_header input.xlong,
+    #item_header select.xlong {
+        width: 40em;
+    }
+    #item_header input.long,
+    #item_header select.long {
+        width: 15em;
+    }
+    #item_header input.short,
+    #item_header select.short {
+        width: 5em;
+    }
+
+    
 }
 
 @media print {
