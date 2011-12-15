@@ -25,6 +25,8 @@ CREATE OR REPLACE FUNCTION cod_v2.event_xml(integer) RETURNS xml
         xmlelement(name "SupportModel", model.name),
         xmlelement(name "Severity", event.severity),
         xmlelement(name "Contact", event.contact),
+        xmlelement(name "Message", xpath.get_varchar('/Event/Alert/Msg', event.content::xml)),
+        xmlelement(name "LongMessage", xpath.get_varchar('/Event/Alert/LongMsg', event.content::xml)),
         xmlelement(name "Content", event.content),
         xmlelement(name "Modified",
             xmlelement(name "At", date_trunc('second', event.modified_at)::varchar),
