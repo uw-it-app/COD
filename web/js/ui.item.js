@@ -11,12 +11,20 @@
     $.widget('ui.item', {
         _init: function () {
             this._connectControllerStuff();
+            this._pretty();
             this.refreshData();
         },
 
         _connectControllerStuff: function () {
             COD.data.item = {Item: {}};
             COD.REST.item = new RESTDataSource(COD.dataSources.item, COD.RESTErrorHandler);
+        },
+        
+        _pretty: function() {
+            $('title').text('COD Item');
+            $('.tile_action').tile({title:"Actions"});
+            $('.tile_event').tile({title:"Events"});
+            $('.tile_escalate').tile({title:"Escalations"});
         },
 
         refreshData: function () {
@@ -35,7 +43,9 @@
         },
 
         jpopSync: function () {
+            $('title').text('COD: ('+COD.data.item.Item.Id+') '+COD.data.item.Item.Subject);
             $('.item_bind').jpop(COD.data.item, {});
+            $('#item_container').show();
         },
 
         destroy: function () {

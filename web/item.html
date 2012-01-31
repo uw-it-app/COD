@@ -5,20 +5,17 @@
     <link rel="stylesheet" href="/shared/local/core/4.4.8/tools-core.css"/>
     <link rel="stylesheet" href="/shared/third-party/jquery-ui/1.8.14/css/local/vowel/jquery-ui-1.8.14.custom.css"/>
     <link rel="stylesheet" href="css/cod.css"/>
+    <link rel="stylesheet" href="css/mobile.css" media="only screen and (max-device-width: 480px)"/>
     <body>
         <div id="tools-container">
             <div id="tools-content">
 <!-- Local HTML -->
-<div id="item_container">
+<div id="item_container" style="display:none">
     <div id="item_header">
         <div class="tile_row">
-            <div class="tile_block">
-                <input id="Item.Subject" class="item_bind xlong"/>
+            <div class="tile_block full">
+                <input id="Item.Subject" class="item_bind full"/>
                 <div class="label"><span class="help">Subject</span></div>
-            </div>
-            <div class="tile_block">
-                <input id="Item.ITILType" class="item_bind short"/>
-                <div class="label"><span class="help">ITIL Type</span></div>
             </div>
         </div>
         <div class="tile_row">
@@ -46,16 +43,58 @@
                 <input id="Item.Severity" class="item_bind short"/>
                 <div class="label"><span class="help">Severity</span></div>
             </div>
+            <div class="tile_block">
+                <input id="Item.ITILType" class="item_bind short"/>
+                <div class="label"><span class="help">ITIL Type</span></div>
+            </div>
         </div>
-        <div class="tile_row">
-            <div id="Item.Actions:Action"></div>
-            <div id="Item.Events:Event"></div>
-        </div>
-        <div class="tile_row">
-            <div id="Item.Escalations:Escalation"></div>
-        </div>
-
     </div><!-- End item_header -->
+    <div class="item_content">
+        <div class="tile_row">
+            <div class="half tile_block">
+                <div  id="Item.Actions:Action" class="item_bindx tile_action">
+                    
+                </div>
+            </div>
+            <div class="half tile_block">
+                <div id="Item.Events:Event" class="item_bind  tile_event">
+                    <table cellspacing="0" class="item full">
+                        <tr>
+                            <th class="vertical">Host</th>
+                            <td class="vertical"><input id="Event.Host" class="item_bind full"/></td>
+                        </tr>
+                        <tr>
+                            <th class="vertical">Component</th>
+                            <td class="vertical"><input id="Event.Component" class="item_bind full"/></td>
+                        </tr>
+                        <tr>
+                            <th class="vertical">Support Model</th>
+                            <td class="vertical"><input id="Event.SupportModel" class="item_bind full"/></td>
+                        </tr>
+                        <tr>
+                            <th class="vertical">Severity</th>
+                            <td class="vertical"><input id="Event.Severity" class="item_bind full"/></td>
+                        </tr>
+                        <tr>
+                            <th class="vertical">Contact</th>
+                            <td class="vertical"><input id="Event.Contact" class="item_bind full"/></td>
+                        </tr>
+                        <tr>
+                            <th class="vertical">Message</th>
+                            <td class="vertical"><input id="Event.Message" class="item_bind full"/></td>
+                        </tr>
+                        <tr>
+                            <th class="vertical">Contact</th>
+                            <td class="vertical"><textarea id="Event.LongMessage" class="item_bind full"></textarea></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="tile_row">
+            <div id="Item.Escalations:Escalation" class="tile_block item_bind tile_escalate"></div>
+        </div>
+    </div><!-- End item_content -->
 </div><!-- End item_container -->
 <!-- End Local HTML -->
             </div>
@@ -71,6 +110,7 @@
         <script src="/shared/local/core/4.4.8/tools-core.min.js"></script>
         <script src="/shared/local/jquery.jpop/1.0.3/jquery.jpop.js"></script>
         <script src="/shared/local/badgerfishjs/1.0.0/badgerfish.js"></script>
+        <script src="/shared/local/jquery.ui.tile/0.0.5/jquery.ui.tile.js"></script>
         <script src="/daw/js/RESTDataSource.js"></script>
         <script src="/daw/js/badgerArray.js"></script>
         <!--

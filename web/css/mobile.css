@@ -1,0 +1,16 @@
+/* 
+    Document   : mobile
+    Created on : Jan 31, 2012, 1:21:30 PM
+    Author     : joby
+    Description:
+        Purpose of the stylesheet follows.
+*/
+
+body {
+    -webkit-text-size-adjust: none;
+}
+
+.half{
+    width: 100%;
+}
+

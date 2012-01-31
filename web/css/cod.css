@@ -9,6 +9,12 @@ Table of Contents (order of these sections is significant)
     .full{
         width: 100%;
     }
+    .half{
+        width: 49.5%;
+    }
+    .third{
+        width: 33%;
+    }
     div.minor{
         float: left;
     }
@@ -24,17 +30,19 @@ Table of Contents (order of these sections is significant)
     }
     .tile_block {
         display: inline-block;
-        zoom:1; /* hack for IE7 http://foohack.com/2007/11/cross-browser-support-for-inline-block-styling/ */
-        *display:inline;
-
-        vertical-align: top;
+        vertical-align:top;
     }
 
+    th.vertical{
+        width: 9em;
+    }
+    
     #item_control_tile{
         float: right;
     }
     #item_header {
         padding-left: 1em;
+        padding-right: 2em;
     }
     #item_header * {
         font-size: medium;
