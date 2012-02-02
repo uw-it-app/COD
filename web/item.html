@@ -51,9 +51,177 @@
     </div><!-- End item_header -->
     <div class="item_content">
         <div class="tile_row">
+            <div class="tile_block tile_escalate">
+                <table cellspacing="0" class="full item">
+                    <thead>
+                        <tr>
+                            <th>State</th>
+                            <th>RT Ticket</th>
+                            <th>H&amp;M Issue</th>
+                            <th>Oncall</th>
+                            <th>Queue</th>
+                            <th>Owner</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="Item.Escalations:Escalation" class="item_bind">
+                        <tr>
+                            <td id="Esclation.State" class="item_bind"></td>
+                            <td id="Esclation.RTTicket" class="item_bind"></td>
+                            <td id="Esclation.HMIssue" class="item_bind"></td>
+                            <td id="Esclation.OncallGroup" class="item_bind"></td>
+                            <td id="Esclation.Queue" class="item_bind"></td>
+                            <td id="Esclation.Owner" class="item_bind"></td>
+                            <td>SetOwner | Message</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="tile_row">
             <div class="half tile_block">
-                <div  id="Item.Actions:Action" class="item_bindx tile_action">
-                    
+                <div id="ActionsTile" class="tile_action">
+                    <div class="tile_clear tile_block">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Message</th>
+                            </tr>
+                            <tr>
+                                <td class="vertical"><textarea id="clearMessage" name="clearMessage" class="full" placeholder="Message"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td class="vertical"><input id="clear" type="submit" value="Submit" class="full"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="tile_reactivate tile_block">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Message</th>
+                            </tr>
+                            <tr>
+                                <td class="vertical"><textarea id="reactivateMessage" name="reactivateMessage" class="full" placeholder="Message"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td class="vertical"><input id="ractivate" type="submit" value="Submit" class="full"/></td>
+                            </tr>
+                        </table>                        
+                    </div>
+                    <div class="tile_resolve tile_block">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Message</th>
+                            </tr>
+                            <tr>
+                                <td class="vertical"><textarea id="resolveMessage" name="resolveMessage" class="full" placeholder="Message"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td class="vertical"><input id="resolve" type="submit" value="Submit" class="full"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="tile_helptext tile_block">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Helptext</th>
+                                <td class="vertical"><a id="HelpTextLink" href="" target="HelpText">Helptext Link</a></td>
+                            </tr>
+                            <!--<tr>
+                                <th class="vertical">Message</th>
+                            </tr>-->
+                            <tr>
+                                <td class="vertical" colspan="2"><textarea id="helptextMessage" name="helptextMessage" class="full" placeholder="Message"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><input id="helptextClear" type="submit" value="Clear" class="half"/><input id="helptextFail" type="Submit" value="Fail" class="half"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="tile_refnumber tile_block">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Reference#</th>
+                                <td class="vertical">
+                                    <input id="refNoValue" class="short" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><input id="refNo" type="submit" value="Submit" class="full"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="tile_setnag tile_block">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Nag in</th>
+                                <td class="vertical">
+                                    <input id="setnagInt" class="short" value="30"/>
+                                    <select id="setnagPeriod"><option value="minutes">minutes</option><option value="hours">hours</option></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><input id="setnag" type="submit" value="Submit" class="full"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="tile_nag tile_block">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Message</th>
+                            </tr>
+                            <tr>
+                                <td class="vertical"><textarea id="nagMessage" name="nagMessage" class="full" placeholder="Message"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td class="vertical"><input id="nag" type="submit" value="Submit" class="full"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="tile_message tile_block">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Type</th>
+                                <td>
+                                    <select id="msgType"><option value="comment">comment</option><option value="reply">reply</option></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="vertical">Send to Subs?</th>
+                                <td>
+                                    <select id="msgSubs"><option value="yes">yes</option><option value="no">no</option></select>
+                                </td>
+                            </tr>
+                            <!--<tr>
+                                <th class="vertical" colspan="2">Message</th>
+                            </tr>-->
+                            <tr>
+                                <td class="vertical" colspan="2"><textarea id="msgMessage" name="clearMessage" class="full" placeholder="Message"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><input id="msg" type="submit" value="Submit" class="full"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="tile_createesc tile_block">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Oncall</th>
+                                <td>
+                                    <select id="createEscGroup"><option value=""></option><option value="_">Custom</option></select>
+                                    <input id="createEscGroupCustom" value="" placeholder="Enter custom oncall" class="full suggest_oncall"/>
+                                </td>
+                            </tr>
+                            <!--<tr>
+                                <th class="vertical" colspan="2">Message</th>
+                            </tr>-->
+                            <tr>
+                                <td class="vertical" colspan="2"><textarea id="createEscMsg" name="clearMessage" class="full" placeholder="Message"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><input id="cerateEsc" type="submit" value="Submit" class="full"/></td>
+                            </tr>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="half tile_block">
@@ -91,9 +259,6 @@
                 </div>
             </div>
         </div>
-        <div class="tile_row">
-            <div id="Item.Escalations:Escalation" class="tile_block item_bind tile_escalate"></div>
-        </div>
     </div><!-- End item_content -->
 </div><!-- End item_container -->
 <!-- End Local HTML -->
@@ -128,7 +293,7 @@
             $(document).ready( function() {
                 $('#item_container').item({Id: itemId});
                 // stylize all the buttons with jQueryUI
-                //$("button, input[type=image], input[type=submit], input[type=reset], input[type=button]").button();
+                $("button, input[type=image], input[type=submit], input[type=reset], input[type=button]").button();
             });
         </script>
 <!-- End Script block -->
