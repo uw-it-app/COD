@@ -410,7 +410,7 @@ BEGIN
         NEW.ended_at   := NULL;
     ELSE
         NEW.started_at := (SELECT min(start_at) FROM cod.event WHERE item_id = NEW.id);
-        IF EXISTS(SELECT id FROM cod.event WHERE item_id = NEW.id AND end_at IS NULL) THEN
+        IF EXISTS(SELECT NULL FROM cod.event WHERE item_id = NEW.id AND end_at IS NULL) THEN
             NEW.ended_at  := NULL;
             NEW.closed_at := NULL;
         ELSE
@@ -503,24 +503,30 @@ CREATE OR REPLACE FUNCTION cod.incident_stage_check() RETURNS trigger
 */
 DECLARE
 BEGIN
-    IF NEW.state_id = standard.enum_value_id('cod', 'stage', 'Cleared') THEN
-        IF (NEW.escalated_at IS NOT NULL and NEW.resolved_at IS NULL) THEN
-            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Resolution and Recovery');
-        ELSE
+    IF NEW.closed_at IS NOT NULL THEN -- Incident is closed
+        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
+    ELSEIF NEW.resolved_at IS NOT NULL THEN -- Escalations resolved
+        IF NEW.ended_at IS NOT NULL OR NEW.started_at IS NULL THEN -- Event cleared or no event
             NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
+        ELSE -- Open event
+            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
         END IF;
-    ELSEIF (cod.has_unowned_escalation(NEW.id)) THEN
-        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Functional Escalation');
-    ELSEIF (cod.has_active_helptext(NEW.id) OR cod.has_open_escalation(NEW.id)) THEN
+    ELSEIF NEW.escalated_at IS NOT NULL THEN -- open Escalations
+        IF NEW.ended_at IS NOT NULL THEN -- Event cleared 
+            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Resolution and Recovery');
+        ELSEIF (cod.has_open_unowned_escalation(NEW.id)) THEN -- unowned escalation
+            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Functional Escalation');
+        ELSE -- owned escalation
+            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
+        END IF;
+    ELSEIF NEW.ended_at IS NOT NULL THEN -- No escalation, closed event
+        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
+    ELSEIF cod.has_active_helptext(NEW.id) THEN -- active helptext action
         NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
-    ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Building') THEN
-        IF NEW.rt_ticket IS NULL THEN
-            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Logging');
-        ELSE
-            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis');
-        END IF;
-    ELSE 
-        -- what to do?
+    ELSEIF NEW.rt_ticket IS NULL THEN
+        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Logging');
+    ELSE
+        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis');
     END IF;
     RETURN NEW;
 END;
@@ -549,8 +555,7 @@ CREATE OR REPLACE FUNCTION cod.has_open_escalation(integer) RETURNS boolean
     Returns:      
 */
     SELECT EXISTS(
-        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND 
-            esc_state_id <> standard.enum_value_id('cod', 'esc_state', 'Resolved')
+        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND resolved_at IS NOT NULL 
     );
 $_$;
 
@@ -558,7 +563,7 @@ COMMENT ON FUNCTION cod.has_open_escalation(integer) IS '';
 
 /**********************************************************************************************/
 
-CREATE OR REPLACE FUNCTION cod.has_unowned_escalation(integer) RETURNS boolean
+CREATE OR REPLACE FUNCTION cod.has_open_unowned_escalation(integer) RETURNS boolean
     LANGUAGE sql
     STABLE
     SECURITY INVOKER
@@ -570,12 +575,11 @@ CREATE OR REPLACE FUNCTION cod.has_unowned_escalation(integer) RETURNS boolean
     Returns:      
 */
     SELECT EXISTS(
-        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND 
-            standard.enum_id_name_compare('cod', 'esc_state', esc_state_id, 'Owned', '<')
+        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND resolved_at IS NOT NULL AND owned_at IS NOT NULL
     );
 $_$;
 
-COMMENT ON FUNCTION cod.has_unowned_escalation(integer) IS '';
+COMMENT ON FUNCTION cod.has_open_unowned_escalation(integer) IS '';
 
 /**********************************************************************************************/
 
