@@ -11,12 +11,17 @@
     $.widget('ui.items', {
         _init: function () {
             this._connectControllerStuff();
+            $('#tools-app-title-bar-right').append('<div id="last-updated">Last Updated: <span id="last-updated-time">____-__-__ __:__:__</span></div>')
             this.refreshData();
         },
 
         _connectControllerStuff: function () {
             COD.data.items = {Items: {}};
             COD.REST.items = new RESTDataSource(COD.dataSources.items, COD.RESTErrorHandler);
+        },
+
+        updateTime: function () {
+            $('#last-updated-time').html(moment().format('YYYY-MM-DD HH:mm:ss'));
         },
 
         refreshData: function () {
@@ -27,6 +32,7 @@
                 function (data) {
                     var count, i;
                     if (COD.data.items.Items.ModifiedAt === data.Items.ModifiedAt) {
+                        _this.updateTime();
                         return;
                     }
                     data.Items.Item = badgerArray(data.Items.Item);
@@ -57,6 +63,7 @@
             } else {
                 $('.ref_no').show();
             }
+            this.updateTime();
         },
 
         destroy: function () {
