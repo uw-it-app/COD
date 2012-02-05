@@ -1,3 +1,4 @@
+BEGIN;
 -- create schema
 
 CREATE SCHEMA cod_v2;
@@ -25,12 +26,17 @@ CREATE OR REPLACE FUNCTION cod_v2.event_xml(integer) RETURNS xml
         xmlelement(name "SupportModel", model.name),
         xmlelement(name "Severity", event.severity),
         xmlelement(name "Contact", event.contact),
+        xmlelement(name "HelpText", event.helptext),
         xmlelement(name "Message", xpath.get_varchar('/Event/Alert/Msg', event.content::xml)),
         xmlelement(name "LongMessage", xpath.get_varchar('/Event/Alert/LongMsg', event.content::xml)),
         xmlelement(name "Content", event.content),
         xmlelement(name "Modified",
             xmlelement(name "At", date_trunc('second', event.modified_at)::varchar),
             xmlelement(name "By", event.modified_by)
+        ),
+        xmlelement(name "Times",
+            xmlelement(name "Start", date_trunc('second', event.start_at)::varchar),
+            xmlelement(name "End", date_trunc('second', event.end_at)::varchar)
         )
     ) FROM cod.event AS event
       JOIN cod.support_model AS model ON (event.support_model_id = model.id)
@@ -91,6 +97,7 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
         xmlelement(name "State", state.name),
         xmlelement(name "OncallGroup", e.oncall_group),
         xmlelement(name "Queue", e.queue),
+        xmlelement(name "Owner", e.owner),
         xmlelement(name "Times", 
             xmlelement(name "Escalated", date_trunc('second', e.escalated_at)::varchar),
             xmlelement(name "Owned", date_trunc('second', e.owned_at)::varchar),
@@ -123,6 +130,7 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
 */
     SELECT xmlelement(name "Item",
         xmlelement(name "Id", item.id),
+        xmlelement(name "Subject", item.subject),
         xmlelement(name "RTTicket", item.rt_ticket),
         xmlelement(name "HMIssue", item.hm_issue),
         xmlelement(name "State", state.name),
@@ -133,6 +141,7 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
         xmlelement(name "Times",
             xmlelement(name "Started", date_trunc('second', item.started_at)::varchar),
             xmlelement(name "Ended", date_trunc('second', item.ended_at)::varchar),
+            xmlelement(name "Escalated", date_trunc('second', item.escalated_at)::varchar),
             xmlelement(name "Resolved", date_trunc('second', item.resolved_at)::varchar),
             xmlelement(name "Closed", date_trunc('second', item.closed_at)::varchar)
         ),
@@ -349,9 +358,10 @@ BEGIN
     -- get ticket # for item
     _ticket := cod.create_incident_ticket_from_event(_event_id); 
     -- update item for workflow
-    UPDATE cod.item SET rt_ticket = _ticket, stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis'), 
-        state_id = standard.enum_value_id('cod', 'state', 'Processing')
-        WHERE id = _item_id;
+    UPDATE cod.item SET 
+        rt_ticket = _ticket, stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis'), 
+        state_id  = standard.enum_value_id('cod', 'state', 'Processing')
+        WHERE id  = _item_id;
     -- IW trigger should execute;
     RETURN xmlelement(name "Incident",
             xmlelement(name "Id", _item_id),
@@ -360,10 +370,11 @@ BEGIN
 END;
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod_v2.spawn_item_from_alert(xml) IS '';
 
 
 -- REST spawn from notification
 
+COMMIT;
 
---select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>5000</VisTime><Alert><ProblemHost>ssgdbdev.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>&lt;Not Responding&gt;by ping</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
+--select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdbdev.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);

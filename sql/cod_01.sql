@@ -1,3 +1,5 @@
+BEGIN;
+
 /**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION cod.create_incident_ticket_from_event(integer) RETURNS integer
@@ -100,21 +102,32 @@ DECLARE
 BEGIN
     -- need to create ticket?
         -- TODO: request new ticket
+    -- IF closed THEN
+        -- clear actions
+        -- unset nag
+        -- RETURN NULL;
+    -- END IF;
+
     -- if  cleared
-    IF standard.enum_value_id('cod', 'state', 'Cleared') = NEW.state_id THEN
+    IF NEW.started_at IS NOT NULL and NEW.ended_at IS NOT NULL THEN
         -- if just set to cleared
-        IF NEW.state_id IS DISTINCT FROM OLD.state_id THEN
+        IF NEW.ended_at IS DISTINCT FROM OLD.ended_at THEN
             -- TODO: set message to RT (push to children)
             -- TODO: cancel H&M active notifications
         END IF;
         -- If no escalations are unresolved prompt operator to resolve ticket
-        IF NOT cod.has_open_escalation(NEW.id) THEN
+        IF ((NEW.escalated_at IS NOT NULL AND NEW.resolved_at IS NOT NULL) OR
+            (NEW.escalated_at IS NULL AND NEW.resolved_at IS NULL) THEN
             INSERT INTO cod.action (item_id, action_type_id) VALUES 
                 (NEW.id, standard.enum_value_id('cod', 'action_type', 'Resolve'));
         END IF;
         -- exit
         RETURN NULL;
     END IF;
+
+    -- IF resolved (all esc resolved) THEN
+        -- create action to clear or re-escalate to resolve
+    -- END IF;
 
     -- if support model calls for helptext and no unsatisfied helptext action
     IF NOT cod.has_helptext_action(NEW.id) THEN
@@ -123,13 +136,14 @@ BEGIN
             INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'HelpText'));
             -- cod.action trigger should do something
         ELSE
-            INSERT INTO cod.action (item.id, action_type_id, completed_at, completed_by, skipped, sucessful) VALUES 
+            INSERT INTO cod.action (item_id, action_type_id, completed_at, completed_by, skipped, successful) VALUES 
                 (NEW.id, standard.enum_value_id('cod', 'action_type', 'HelpText'), now(), 'ssg-cod', true, false);
         END IF;
     END IF;
+
     -- if not helptexting or requesting oncall group or have an escalation, escalate
     IF NOT EXISTS (SELECT NULL FROM cod.action AS a JOIN cod.action_type AS t ON (a.action_type_id=t.id) 
-            WHERE a.item_id = NEW.id AND (t.name = 'HelpText' OR t.name = 'SetOncallGroup') AND completed_at IS NULL) AND
+            WHERE a.item_id = NEW.id AND (t.name = 'HelpText' OR t.name = 'Escalate') AND completed_at IS NULL) AND
        NOT EXISTS (SELECT NULL FROM cod.escalation WHERE item_id = NEW.id)
     THEN
         SELECT * INTO _row FROM cod.event WHERE item_id = NEW.id ORDER BY id DESC LIMIT 1;
@@ -137,13 +151,12 @@ BEGIN
         -- if no valid oncall group 
         IF _oncall IS NULL THEN
             -- create action to prompt to correct oncall group
-            INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'SetOncallGroup'));
+            INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'));
         ELSE
             -- create escalation (see escalation_workflow)
             INSERT INTO cod.escalation (item_id, oncall_group) VALUES (NEW.id, _oncall);
         END IF;
     END IF;
-    -- if not cleared and esclalations resolved -- do something
     RETURN NULL;
 --EXCEPTION
 --    WHEN OTHERS THEN RETURN NULL;
@@ -219,6 +232,7 @@ BEGIN
                     'Severity: ' || _item.severity::varchar ||  E'\n' ||
                     'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
                     -- 'Starts: ' || _row.start_at::varchar || E'\n' ||
+                    'Super: ' || _item.rt_ticket || E'\n' ||
                     'Content: ' || _message || E'\n' ||
                     E'ENDOFCONTENT\n';
         
@@ -238,6 +252,52 @@ CREATE TRIGGER t_40_escalation_build
     FOR EACH ROW
     WHEN (NEW.esc_state_id = 1)
     EXECUTE PROCEDURE cod.escalation_build();
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.escalation_check() RETURNS trigger
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.escalation_check()
+    Description:  Ensures escalation data is consistent
+    Affects:      Single cod.escalation row
+    Arguments:    none
+    Returns:      trigger
+*/
+DECLARE
+BEGIN
+    IF NEW.owner <> 'nobody' THEN
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Owned');
+        IF NEW.owned_at IS NULL THEN
+            NEW.owned_at := now();
+        END IF;
+    ELSE
+        IF ACTIVENOTIFICATION THEN
+            NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
+        ELSE
+            NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
+        END IF;
+    END IF;
+
+    IF NEW.resolved_at IS NOT NULL THEN
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Resolved');
+    ELSE
+        NEW.resolved_at := NULL;
+    END IF;
+    RETURN NEW;
+--EXCEPTION
+--    WHEN OTHERS THEN null;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.escalation_check() IS 'DR: Ensures escalation data is consistent (2012-02-04)';
+
+CREATE TRIGGER t_20_check
+    BEFORE INSERT OR UPDATE ON cod.escalation
+    FOR EACH ROW
+    EXECUTE PROCEDURE cod.escalation_check();
 
 
 /**********************************************************************************************/
@@ -272,9 +332,8 @@ BEGIN
             IF NEW.hm_issue IS NOT NULL THEN
                 RAISE NOTICE 'Tell H&M to stop notification';
                 -- flag H&M to stop escalation with owner
-            ELSE
-                RAISE NOTICE 'Tell RT the new owner';
             END IF;
+            RAISE NOTICE 'Tell RT the new owner';
         END IF;
     END IF;
     RETURN NULL;
@@ -325,6 +384,66 @@ CREATE TRIGGER t_91_update_item
     FOR EACH ROW
     EXECUTE PROCEDURE cod.update_item();
 
+CREATE TRIGGER t_91_update_item
+    AFTER INSERT OR UPDATE ON cod.event
+    FOR EACH ROW
+    EXECUTE PROCEDURE cod.update_item();
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.incident_time_check() RETURNS trigger
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.incident_time_check()
+    Description:  Set time fields based on related objects
+    Affects:      single cod.item record
+    Arguments:    none
+    Returns:      trigger
+*/
+DECLARE
+BEGIN
+    -- set event related times
+    IF NOT EXISTS(SELECT NULL FROM cod.event WHERE item_id = NEW.id) THEN
+        NEW.started_at := NULL;
+        NEW.ended_at   := NULL;
+    ELSE
+        NEW.started_at := (SELECT min(start_at) FROM cod.event WHERE item_id = NEW.id);
+        IF EXISTS(SELECT id FROM cod.event WHERE item_id = NEW.id AND end_at IS NULL) THEN
+            NEW.ended_at  := NULL;
+            NEW.closed_at := NULL;
+        ELSE
+            NEW.ended_at := (SELECT max(end_at) FROM cod.event WHERE item_id = NEW.id);
+        END IF;
+    END IF;
+
+    -- set escalation related times
+    IF NOT EXISTS(SELECT NULL FROM cod.escalation WHERE item_id = NEW.id) THEN
+        NEW.escalated_at := NULL;
+        NEW.resolved_at  := NULL;
+    ELSE
+        NEW.escalated_at := (SELECT min(escalated_at) FROM cod.escalation WHERE item_id = NEW.id);
+        IF EXISTS(SELECT id FROM cod.escalation WHERE item_id = NEW.id AND resolved_at IS NULL) THEN
+            NEW.resolved_at := NULL;
+            NEW.closed_at   := NULL;
+        ELSE
+            NEW.resolved_at := (SELECT max(resolved_at) FROM cod.escalation WHERE item_id = NEW.id);
+        END IF;
+    END IF;
+    RETURN NEW;
+-- EXCEPTION
+--     WHEN OTHERS THEN null;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.incident_time_check() IS 'DR: Set time fields based on related objects (2012-02-02)';
+
+CREATE TRIGGER t_15_update_times
+    BEFORE INSERT OR UPDATE ON cod.item
+    FOR EACH ROW
+    EXECUTE PROCEDURE cod.incident_time_check();
+
 /**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION cod.incident_state_check() RETURNS trigger
@@ -342,11 +461,11 @@ DECLARE
 BEGIN
     If (cod.has_active_action(NEW.id)) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Act');
-    ELSEIF (NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved')) THEN
-        -- do nothing
-    ELSEIF (cod.has_uncleared_event(New.id) IS FALSE) THEN
+    ELSEIF (NEW.closed_at IS NOT NULL) THEN
+        NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved');
+    ELSEIF (NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Cleared');
-    ELSEIF (cod.has_open_escalation(NEW.id)) THEN
+    ELSEIF (NEW.escalated_at IS NOT NULL AND NEW.resolved_at IS NULL) THEN
         IF (cod.has_active_escalation(NEW.id)) THEN
             NEW.state_id = standard.enum_value_id('cod', 'state', 'Escalating');
         ELSE
@@ -361,7 +480,7 @@ BEGIN
 END;
 $_$;
 
-COMMENT ON FUNCTION () IS '';
+COMMENT ON FUNCTION cod.incident_state_check() IS '';
 
 CREATE TRIGGER t_20_incident_state_check
     BEFORE INSERT OR UPDATE ON cod.item
@@ -385,7 +504,7 @@ CREATE OR REPLACE FUNCTION cod.incident_stage_check() RETURNS trigger
 DECLARE
 BEGIN
     IF NEW.state_id = standard.enum_value_id('cod', 'stage', 'Cleared') THEN
-        IF (cod.has_open_escalation(NEW.id)) THEN
+        IF (NEW.escalated_at IS NOT NULL and NEW.resolved_at IS NULL) THEN
             NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Resolution and Recovery');
         ELSE
             NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
@@ -592,3 +711,5 @@ END;
 $_$;
 
 COMMENT ON FUNCTION standard.enum_id_name_compare_sort(varchar, varchar, integer, varchar, varchar) IS '';
+
+COMMIT;

@@ -1,3 +1,5 @@
+BEGIN;
+
 SELECT standard.create_data_schema('cod', 'Data for the Computer Operations Dashboard');
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA cod GRANT USAGE, SELECT ON SEQUENCES TO PUBLIC;
@@ -75,8 +77,9 @@ CREATE TABLE cod.item (
     support_model_id integer    NOT NULL DEFAULT 1 REFERENCES cod.support_model(id) ON DELETE RESTRICT,
     severity        smallint    NOT NULL DEFAULT 3 CHECK (severity BETWEEN 1 AND 5),
     stage_id        integer     DEFAULT 1 REFERENCES cod.stage(id) ON DELETE RESTRICT,
-    started_at      timestamptz NOT NULL DEFAULT now(),
+    started_at      timestamptz,
     ended_at        timestamptz,
+    escalated_at    timestamptz,
     resolved_at     timestamptz,
     closed_at       timestamptz,
     content         varchar
@@ -175,7 +178,7 @@ SELECT standard.create_enum_table('cod', 'action_type', 'Types of actions to pro
 INSERT INTO cod.action_type (name, description) VALUES
     ('HelpText', 'Work the help text for the component'),
     ('PhoneCall', 'Call the listed person'),
-    ('SetOncallGroup', 'Set the oncall group for the incident'),
+    ('Escalate', 'Manually escalate to an oncall group'),
     ('Resolve', 'Incident cleared and all escalations resolved');
 
 /**********************************************************************************************/
@@ -293,3 +296,5 @@ CREATE VIEW cod.item_event_duplicate (event_id, item_id, host, component, contac
 COMMENT ON VIEW cod.item_event_duplicate IS 'DR: View to find duplicate event/items to an incoming event (2011-10-20)';
 
 GRANT SELECT ON TABLE cod.item_event_duplicate TO PUBLIC;
+
+COMMIT;
