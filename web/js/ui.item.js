@@ -22,18 +22,11 @@
 
         _pretty: function () {
             $('title').text('COD Item');
-            $('.tile_action').tile({title: "Actions", nocookie: true});
-            $('.tile_event').tile({title: "Events", nocookie: true});
-            $('.tile_escalate').tile({title: "Escalations", nocookie: true});
-            $('.tile_clear').tile({title: "Clear Alert", nocookie: true, close: true});
-            $('.tile_reactivate').tile({title: "Reactivate Alert", nocookie: true, close: true});
-            $('.tile_resolve').tile({title: "Resolve", nocookie: true, close: true});
-            $('.tile_helptext').tile({title: "Work Helptext", nocookie: true, close: true});
-            $('.tile_refnumber').tile({title: "Set Reference Number", nocookie: true, close: true});
-            $('.tile_setnag').tile({title: "Set Nag Time", nocookie: true, close: true});
-            $('.tile_nag').tile({title: "Nag", nocookie: true, close: true});
-            $('.tile_message').tile({title: "Send message", nocookie: true, close: true});
-            $('.tile_createesc').tile({title: "Create Escalation", nocookie: true, close: true});
+            $('.tile_action').tile({title: "Actions", cookie: false});
+            $('.tile_times').tile({title: "Times", cookie: false});
+            $('.tile_event').tile({title: "Events", cookie: false});
+            $('.tile_escalate').tile({title: "Escalations", cookie: false});
+            $('.action_tile').actionTile();
         },
 
         refreshData: function () {
@@ -41,9 +34,21 @@
             COD.REST.item.get(
                 {Id: this.options.Id},
                 function (data) {
-                    data.Item.Escalations.Escalation = badgerArray(data.Item.Escalations.Escalation);
-                    data.Item.Actions.Action = badgerArray(data.Item.Actions.Action);
-                    data.Item.Events.Event = badgerArray(data.Item.Events.Event);
+                    if (data.Item.Escalations.Escalation === undefined) {
+                        data.Item.Escalations = {Escalation: []};
+                    } else {
+                        data.Item.Escalations.Escalation = badgerArray(data.Item.Escalations.Escalation);
+                    }
+                    if (data.Item.Actions.Action === undefined) {
+                        data.Item.Actions = {Actions: []};
+                    } else {
+                        data.Item.Actions.Action = badgerArray(data.Item.Actions.Action);
+                    }
+                    if (data.Item.Events === undefined) {
+                        data.Item.Events = {Event: []};
+                    } else {
+                        data.Item.Events.Event = badgerArray(data.Item.Events.Event);
+                    }
                     COD.data.item = data;
                     _this.jpopSync();
                 },
@@ -52,8 +57,54 @@
         },
 
         jpopSync: function () {
-            $('title').text('COD: (' + COD.data.item.Item.Id + ') ' + COD.data.item.Item.Subject);
+            var Item = COD.data.item.Item;
+            $('title').text('COD: (' + Item.Id + ') ' + Item.Subject);
             $('.item_bind').jpop(COD.data.item, {});
+            $('.datetime').each(function () {
+                var _content = $(this).text();
+                if (_content === "") {
+                    $(this).parent().hide();
+                } else {
+                    $(this).parent().show();
+                }
+            });
+            $('.helpText').each(function () {
+                var _content = $(this).text();
+                $(this).attr({"href": _content});
+                _content = _content.replace(/https?:\/\//, '').replace(/\.washington\.edu/, ': ').replace(/\/display\/monhelp\/component-/, '');
+                $(this).text(_content);
+            });
+            if (Item.Times.Started) {
+                if (Item.Times.Ended) {
+                    $('#ActionClear').tile('hide');
+                    $('#ActionReactivate').tile('show');
+                } else {
+                    $('#ActionClear').tile('show');
+                    $('#ActionReactivate').tile('hide');
+                }
+            } else {
+                $('#ActionClear').tile('hide');
+                $('#ActionReactivate').tile('hide');
+            }
+            if (Item.Times.Resolved) {
+                $('ActionNag').tile('hide');
+                $('ActionSetNag').tile('hide');
+            } else {
+                $('ActionNag').tile('show');
+                $('ActionSetNag').tile('show');
+            }
+            $('.prompted_action').tile('hide');
+            $.each(Item.Actions.Action, function () {
+                if (!this.Completed.At) {
+                    $('#Action' + this.Type).actionTile('highlight');
+                };
+            });
+            //if prompted for helptext $('#ActionHelpText').actionTile('highlight'); else hide
+            //if prompted for nag $('#ActionNag').actionTile('highlight'); else hide
+            //if prompted for phonecall $('#ActionPhone').actionTile('highlight'); else hide
+            //if prompted for resolve $('#ActionResolve').actionTile('highlight'); else hide
+            //if prompted for oncallgroup -- highlight create escalation
+            //if prompted for clear...
             $('#item_container').show();
         },
 

@@ -24,6 +24,9 @@ Table of Contents (order of these sections is significant)
     .clickable:hover{
         background-color: #FEF;
     }
+    .highlight {
+        background-color: #EDE;
+    }
     
     .tile_row {
         width: 100%;
@@ -34,7 +37,11 @@ Table of Contents (order of these sections is significant)
     }
 
     th.vertical{
-        width: 9em;
+        width: 10em;
+    }
+
+    textarea {
+        min-height: 7em;
     }
     
     #item_control_tile{
