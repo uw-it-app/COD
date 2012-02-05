@@ -247,7 +247,7 @@ $_$;
 
 COMMENT ON FUNCTION cod.escalation_build() IS '';
 
-CREATE TRIGGER t_40_escalation_build
+CREATE TRIGGER t_20_escalation_build
     BEFORE INSERT OR UPDATE ON cod.escalation
     FOR EACH ROW
     WHEN (NEW.esc_state_id = 1)
@@ -274,7 +274,8 @@ BEGIN
             NEW.owned_at := now();
         END IF;
     ELSE
-        IF ACTIVENOTIFICATION THEN
+        IF NEW.hm_issue IS NULL AND NEW.owner = 'nobody' AND 
+            (SELECT sm.active_notification FROM cod.support_model AS sm JOIN cod.item AS i ON (i.support_model_id = sm.id) WHERE i.id = NEW.item_id) IS TRUE THEN
             NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
         ELSE
             NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
@@ -294,9 +295,10 @@ $_$;
 
 COMMENT ON FUNCTION cod.escalation_check() IS 'DR: Ensures escalation data is consistent (2012-02-04)';
 
-CREATE TRIGGER t_20_check
+CREATE TRIGGER t_30_check
     BEFORE INSERT OR UPDATE ON cod.escalation
     FOR EACH ROW
+    WHEN (NEW.esc_state_id <> 1)
     EXECUTE PROCEDURE cod.escalation_check();
 
 
