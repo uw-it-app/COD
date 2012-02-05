@@ -138,6 +138,7 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
         xmlelement(name "SupportModel", model.name),
         xmlelement(name "Severity", item.severity),
         xmlelement(name "Stage", stage.name),
+        xmlelement(name "ReferenceNumber", item.reference_no),
         xmlelement(name "Times",
             xmlelement(name "Started", date_trunc('second', item.started_at)::varchar),
             xmlelement(name "Ended", date_trunc('second', item.ended_at)::varchar),

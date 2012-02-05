@@ -43,7 +43,20 @@
         },
 
         jpopSync: function () {
+            var _hm = true, _refno = true;
             $('.items_bind').jpop(COD.data.items, {});
+            $('td.hm_issue').each(function(){ if ($(this).html()) { _hm = false;}});
+            $('td.ref_no').each(function(){ if ($(this).html()) { _refno = false;}});
+            if (_hm === true) {
+                $('.hm_issue').hide();
+            } else {
+                $('.hm_issue').show();
+            }
+            if (_refno === true) {
+                $('.ref_no').hide();
+            } else {
+                $('.ref_no').show();
+            }
         },
 
         destroy: function () {

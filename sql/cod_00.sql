@@ -77,6 +77,7 @@ CREATE TABLE cod.item (
     support_model_id integer    NOT NULL DEFAULT 1 REFERENCES cod.support_model(id) ON DELETE RESTRICT,
     severity        smallint    NOT NULL DEFAULT 3 CHECK (severity BETWEEN 1 AND 5),
     stage_id        integer     DEFAULT 1 REFERENCES cod.stage(id) ON DELETE RESTRICT,
+    reference_no    varchar,
     started_at      timestamptz,
     ended_at        timestamptz,
     escalated_at    timestamptz,
