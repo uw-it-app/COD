@@ -4,6 +4,7 @@
 /*global RESTDataSource */
 /*global badgerArray */
 /*global location */
+/*global moment*/
 var COD = {},
     toolsAppName = {title: 'COD', href: './'};
 
@@ -47,6 +48,15 @@ var COD = {},
         }
         return hash;
     };
+
+    COD.createLastUpdated = function () {
+        $('#tools-app-title-bar-right').append('<div id="last-updated">Last Updated: <span id="last-updated-time">____-__-__ __:__:__</span></div>');
+    }
+
+    COD.updateLastUpdated = function () {
+        $('#last-updated-time').html(moment().format('YYYY-MM-DD HH:mm:ss'))
+                .animate({backgroundColor:'#EDE'},500).delay(500).animate({backgroundColor:'#FFF'}, 500);
+    }
 
 }());
 

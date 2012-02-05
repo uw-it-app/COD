@@ -27,6 +27,7 @@
             $('.tile_event').tile({title: "Events", cookie: false});
             $('.tile_escalate').tile({title: "Escalations", cookie: false});
             $('.action_tile').actionTile();
+            COD.createLastUpdated();
         },
 
         refreshData: function () {
@@ -105,6 +106,7 @@
             //if prompted for resolve $('#ActionResolve').actionTile('highlight'); else hide
             //if prompted for oncallgroup -- highlight create escalation
             //if prompted for clear...
+            COD.updateLastUpdated();
             $('#item_container').show();
         },
 
