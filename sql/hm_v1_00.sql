@@ -76,14 +76,7 @@ COMMENT ON FUNCTION hm_v1.create_issue(xml) IS 'DR: Function to create a notific
     -- owner
     -- current squawk (name, contact data)
 
--- failed notification
-    -- prompt operator to contact duty manageer
-
--- current method so 
-    -- if phone call create action to perform phone call
-    -- else cancel phone call action
-
--- success -- set owner
+    -- just generate XML of Issue & current and push to cod_v2 function.
 
 
 -- new version of hm.oncall_methods_xml that grabs active and loops from oncall group definition.

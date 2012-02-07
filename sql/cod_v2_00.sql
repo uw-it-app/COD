@@ -374,6 +374,22 @@ $_$;
 COMMENT ON FUNCTION cod_v2.spawn_item_from_alert(xml) IS '';
 
 
+-- on issue update COD via trigger with:
+    -- state
+    -- owner
+    -- current squawk (name, contact data)
+
+-- failed notification
+    -- prompt operator to contact duty manageer
+
+-- current method so 
+    -- if phone call create action to perform phone call
+    -- else cancel phone call action
+
+-- success -- set owner
+
+
+
 -- REST spawn from notification
 
 COMMIT;
