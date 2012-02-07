@@ -212,10 +212,11 @@ SELECT standard.create_enum_table('cod', 'esc_state', 'COD escalation state');
 
 INSERT INTO cod.esc_state (sort, name, description) VALUES
     (0,  'Building', 'Underconstruction'),
-    (10, 'Act', 'COPS has an action to perform'),
-    (30, 'Active', 'Active contact to Layer 2/3 support'),
-    (40, 'Passive', 'Passive contact to Layer 2/3 support'),
-    (60, 'Owned', 'Layer 2/3 acknowedged issue'),
+--    (10, 'Act', 'COPS has an action to perform'),
+    (30, 'Active', 'Active contact to Tier 2/3 support'),
+    (33, 'Failed', 'Failed notification to Tier 2/3 support')
+    (40, 'Passive', 'Passive contact to Tier 2/3 support'),
+    (60, 'Owned', 'Tier 2/3 acknowedged issue'),
     (90, 'Resolved', 'All work completed');
 
 /**********************************************************************************************/
