@@ -1,7 +1,9 @@
+<?php include('info.php'); ?>
 <!DOCTYPE html>
 <html lang="en">
     <meta charset="utf-8"/>
     <title></title>
+<?php include('css.php'); ?>
     <link rel="stylesheet" href="/shared/local/core/4.4.8/tools-core.css"/>
     <link rel="stylesheet" href="/shared/third-party/jquery-ui/1.8.14/css/local/vowel/jquery-ui-1.8.14.custom.css"/>
     <link rel="stylesheet" href="css/cod.css"/>
@@ -291,33 +293,16 @@
         </div>
         <!-- end #tools-container -->
 <!-- Start Script block -->
-        <script src="/shared/third-party/log4js/1.0-local/log4js.js"></script>
-        <script src="/shared/third-party/jquery/1.7/jquery-1.7.min.js"></script>
-        <script src="/shared/third-party/jquery-ui/1.8.14/jquery-ui-1.8.14.custom.min.js"></script>
-        <script src="/shared/third-party/jquery-ui/jquery.ui.autocomplete.selectFirst/jquery.ui.autocomplete.selectFirst.js"></script>
-        <script src="/shared/third-party/jquery/plugins/cookie/2.0.0/jquery.cookie.js"></script>
-        <!--<script src="/shared/third-party/moment/1.7/moment.min.js"></script>-->
-        <script src="js/moment.min.js"></script>
-        <script src="/shared/local/core/4.4.8/tools-core.min.js"></script>
-        <script src="/shared/local/jquery.jpop/1.0.3/jquery.jpop.js"></script>
-        <script src="/shared/local/badgerfishjs/1.0.0/badgerfish.js"></script>
-        <!--<script src="/shared/local/jquery.ui.tile/0.0.5/jquery.ui.tile.js"></script>-->
-        <script src="/daw/js/RESTDataSource.js"></script>
-        <script src="/daw/js/badgerArray.js"></script>
-        <!--
-        <script src="/shared/third-party/underscore/1.1.6/underscore-min.js" ></script>
-        -->
-        <script src="js/cod.js"></script>
-        <script src="js/ui.item.js"></script>
-        <script src="js/ui.actionTile.js"></script>
-        <script src="js/jquery.ui.tile.js"></script>
+<?php include('js.php'); ?>
+        <script src="/.cod/js/ui.item.js"></script>
+        <script src="/.cod/js/ui.actionTile.js"></script>
         <script>
-            var itemId, toolsBreadcrumbs, urlHash = COD.getHash();
+            var itemId, toolsBreadcrumbs, urlHash = JSON.parse('<?php echo json_encode(pathinfoToHash()) ?>');
             itemId = urlHash.Id;
             toolsBreadcrumbs = [
                     {title: 'SSG', href: '/'},
-                    {title: 'COD', href: './'},
-                    {title: 'Item ' + itemId, href: './item.html#Id/' + itemId}
+                    {title: 'COD', href: '/.cod/'},
+                    {title: 'Item ' + itemId, href: '/.cod/item/Id/' + itemId}
             ];
             $(document).ready( function() {
                 $('#item_container').item({Id: itemId});

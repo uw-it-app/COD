@@ -25,7 +25,7 @@ Table of Contents (order of these sections is significant)
         background-color: #FEF;
     }
     .highlight {
-        background-color: #EDE;
+        background-color: #EDE !important;
     }
     
     .tile_row {

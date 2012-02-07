@@ -1,0 +1,5 @@
+RewriteEngine On
+RewriteBase /.cod
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^/.cod/item(/.*)$ /.cod/item.php [QSA,L]

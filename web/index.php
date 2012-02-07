@@ -1,11 +1,9 @@
+<?php include('info.php'); ?>
 <!DOCTYPE html>
 <html lang="en">
     <meta charset="utf-8"/>
     <title>COD: Computer Operations Dashboard</title>
-    <link rel="stylesheet" href="/shared/local/core/4.4.8/tools-core.css"/>
-    <link rel="stylesheet" href="/shared/third-party/jquery-ui/1.8.14/css/local/vowel/jquery-ui-1.8.14.custom.css"/>
-    <link rel="stylesheet" href="css/cod.css"/>
-    <link rel="stylesheet" href="css/mobile.css" media="only screen and (max-device-width: 480px)"/>
+<?php include('css.php'); ?>
     <body>
         <div id="tools-container">
             <div id="tools-content">
@@ -16,7 +14,6 @@
         <tr>
             <th class="">State</th>
             <th class="">ITIL Type</th>
-    <!--        <th class="">Stage</th> -->
             <th class="">Subject</th>
             <th class="">RT Ticket</th>
             <th class="hm_issue">H&amp;M Issue</th>
@@ -31,7 +28,6 @@
         <tr class="clickable">
             <td class="items_bind" id="Item.State"></td>
             <td class="items_bind" id="Item.ITILType"></td>
-    <!--        <td class="items_bind" id="Item.Stage"></td> -->
             <td class="items_bind" id="Item.Subject"></td>
             <td class="items_bind" id="Item.RTTicket"></td>
             <td class="items_bind hm_issue" id="Item.HMIssue"></td>
@@ -65,32 +61,17 @@
         </div>
         <!-- end #tools-container -->
 <!-- Start Script block -->
-        <script src="/shared/third-party/log4js/1.0-local/log4js.js"></script>
-        <script src="/shared/third-party/jquery/1.7/jquery-1.7.min.js"></script>
-        <script src="/shared/third-party/jquery-ui/1.8.14/jquery-ui-1.8.14.custom.min.js"></script>
-        <script src="/shared/third-party/jquery/plugins/cookie/2.0.0/jquery.cookie.js"></script>
-        <!--<script src="/shared/third-party/moment/1.7/moment.min.js"></script>-->
-        <script src="js/moment.min.js"></script>
-        <script src="/shared/local/core/4.4.8/tools-core.min.js"></script>
-        <script src="/shared/local/jquery.jpop/1.0.3/jquery.jpop.js"></script>
-        <script src="/shared/local/badgerfishjs/1.0.0/badgerfish.js"></script>
-        <script src="/daw/js/RESTDataSource.js"></script>
-        <script src="/daw/js/badgerArray.js"></script>
-        <!--
-        <script src="/shared/third-party/underscore/1.1.6/underscore-min.js" ></script>
-        <script src="/shared/third-party/jquery-ui/jquery.ui.autocomplete.selectFirst/jquery.ui.autocomplete.selectFirst.js"></script>
-        -->
-        <script src="js/cod.js"></script>
-        <script src="js/ui.items.js"></script>
+<?php include('js.php'); ?>
+        <script src="/.cod/js/ui.items.js"></script>
         <script>
             var toolsBreadcrumbs = [
                 {title: 'SSG', href: '/'},
-                {title: 'COD', href: './'}
+                {title: 'COD', href: '/.cod/'}
             ];
             $(document).ready( function() {
                 $('#itemsTable').items();
                 // stylize all the buttons with jQueryUI
-                //$("button, input[type=image], input[type=submit], input[type=reset], input[type=button]").button();
+                $("button, input[type=image], input[type=submit], input[type=reset], input[type=button]").button();
             });
         </script>
 <!-- End Script block -->
