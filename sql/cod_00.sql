@@ -174,40 +174,6 @@ CREATE TRIGGER t_12_check_helptext
 
 /**********************************************************************************************/
 
-SELECT standard.create_enum_table('cod', 'action_type', 'Types of actions to prompt operators to perform');
-
-INSERT INTO cod.action_type (name, description) VALUES
-    ('HelpText', 'Work the help text for the component'),
-    ('PhoneCall', 'Call the listed person'),
-    ('Escalate', 'Manually escalate to an oncall group'),
-    ('Resolve', 'Incident cleared and all escalations resolved');
-
-/**********************************************************************************************/
-
-CREATE TABLE cod.action (
-    modified_at     timestamptz NOT NULL DEFAULT now(),
-    modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
-    id              serial      PRIMARY KEY,
-    item_id         integer     NOT NULL REFERENCES cod.item(id) ON DELETE CASCADE,
-    action_type_id  integer     NOT NULL REFERENCES cod.action_type(id) ON DELETE RESTRICT,
-    started_at      timestamptz NOT NULL DEFAULT now(),
-    completed_at    timestamptz,
-    completed_by    varchar,
-    skipped         boolean,
-    successful      boolean,
-    content         varchar   
-);
-
-COMMENT ON TABLE cod.action IS 'DR: (2011-10-12)';
-
-GRANT SELECT, INSERT, UPDATE ON TABLE cod.action TO PUBLIC;
-
-SELECT standard.standardize_table_history_and_trigger('cod', 'action');
-
-ALTER TABLE cod_history.action ADD CONSTRAINT action_type_exists FOREIGN KEY (action_type_id) REFERENCES cod.action_type(id) ON DELETE RESTRICT;
-
-/**********************************************************************************************/
-
 SELECT standard.create_enum_table('cod', 'esc_state', 'COD escalation state');
 
 INSERT INTO cod.esc_state (sort, name, description) VALUES
@@ -245,6 +211,41 @@ GRANT SELECT, INSERT, UPDATE ON TABLE cod.escalation TO PUBLIC;
 SELECT standard.standardize_table_history_and_trigger('cod', 'escalation');
 
 ALTER TABLE cod_history.escalation ADD CONSTRAINT esc_state_exists FOREIGN KEY (esc_state_id) REFERENCES cod.esc_state(id) ON DELETE RESTRICT;
+
+/**********************************************************************************************/
+
+SELECT standard.create_enum_table('cod', 'action_type', 'Types of actions to prompt operators to perform');
+
+INSERT INTO cod.action_type (name, description) VALUES
+    ('HelpText', 'Work the help text for the component'),
+    ('PhoneCall', 'Call the listed person'),
+    ('Escalate', 'Manually escalate to an oncall group'),
+    ('Resolve', 'Incident cleared and all escalations resolved');
+
+/**********************************************************************************************/
+
+CREATE TABLE cod.action (
+    modified_at     timestamptz NOT NULL DEFAULT now(),
+    modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
+    id              serial      PRIMARY KEY,
+    item_id         integer     NOT NULL REFERENCES cod.item(id) ON DELETE CASCADE,
+    escalation_id   integer     REFERENCES cod.escalation(id) ON DELETE CASCADE,
+    action_type_id  integer     NOT NULL REFERENCES cod.action_type(id) ON DELETE RESTRICT,
+    started_at      timestamptz NOT NULL DEFAULT now(),
+    completed_at    timestamptz,
+    completed_by    varchar,
+    skipped         boolean,
+    successful      boolean,
+    content         varchar   
+);
+
+COMMENT ON TABLE cod.action IS 'DR: (2011-10-12)';
+
+GRANT SELECT, INSERT, UPDATE ON TABLE cod.action TO PUBLIC;
+
+SELECT standard.standardize_table_history_and_trigger('cod', 'action');
+
+ALTER TABLE cod_history.action ADD CONSTRAINT action_type_exists FOREIGN KEY (action_type_id) REFERENCES cod.action_type(id) ON DELETE RESTRICT;
 
 /**********************************************************************************************/
 
