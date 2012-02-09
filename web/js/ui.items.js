@@ -19,6 +19,11 @@
             COD.data.items = {Items: {}};
             COD.createLastUpdated();
             COD.REST.items = new RESTDataSource(COD.dataSources.items, COD.RESTErrorHandler);
+            $('.item_click').live('click', function () {
+                var item_id = $(this).children('.item_id').text();
+                window.open('/.cod/item/Id/' + item_id);
+                return false;
+            });
         },
 
         refreshData: function () {
@@ -34,6 +39,11 @@
                     }
                     data.Items.Item = badgerArray(data.Items.Item);
                     count = data.Items.Item.length;
+                    if (count > 1 && data.Items.Item[0].State === 'Act') {
+                        $('title').text('ACT - COD: Computer Operations Dashboard');
+                    } else {
+                        $('title').text('COD: Computer Operations Dashboard');
+                    }
                     for (i = 0; i < count; i += 1) {
                         data.Items.Item[i].Escalations.Escalation = badgerArray(data.Items.Item[i].Escalations.Escalation);
                     }

@@ -12,6 +12,7 @@
 <table id="itemsTable" class="full">
     <thead>
         <tr>
+            <th class="" style="display:none"></th>
             <th class="">State</th>
             <th class="">ITIL Type</th>
             <th class="">Subject</th>
@@ -25,7 +26,8 @@
         </tr>
     </thead>
     <tbody class="items_bind" id="Items:Item">
-        <tr class="clickable">
+        <tr class="clickable item_click">
+            <td class="items_bind item_id" id="Item.Id" style="display:none"></td>
             <td class="items_bind" id="Item.State"></td>
             <td class="items_bind" id="Item.ITILType"></td>
             <td class="items_bind" id="Item.Subject"></td>
