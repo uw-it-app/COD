@@ -268,26 +268,29 @@ CREATE OR REPLACE FUNCTION cod.escalation_check() RETURNS trigger
 */
 DECLARE
 BEGIN
+    
+    IF NEW.resolved_at IS NOT NULL THEN
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Resolved');
+        RETURN NEW;
+    ELSE
+        NEW.resolved_at := NULL;
+    END IF;
+
     IF NEW.owner <> 'nobody' THEN
         NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Owned');
         IF NEW.owned_at IS NULL THEN
             NEW.owned_at := now();
         END IF;
+    ELSEIF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Failed') THEN
+        NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Failed');
+    ELSEIF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Cancelled') OR
+        NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Passive')
+    THEN
+        NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Passive');
     ELSE
-        IF NEW.hm_issue IS NULL AND NEW.owner = 'nobody' AND 
-            (SELECT sm.active_notification FROM cod.support_model AS sm JOIN cod.item AS i ON (i.support_model_id = sm.id) WHERE i.id = NEW.item_id) IS TRUE THEN
-            NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
-        ELSE
-            NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
-        END IF;
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
     END IF;
 
-    IF NEW.resolved_at IS NOT NULL THEN
-        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Resolved');
-    ELSE
-        NEW.resolved_at := NULL;
-    END IF;
-    RETURN NEW;
 --EXCEPTION
 --    WHEN OTHERS THEN null;
 END;
@@ -319,26 +322,31 @@ DECLARE
     _payload        varchar;
 BEGIN
     RAISE NOTICE 'COD Escalation Workflow';
-    -- active escalation & owner = nobody & no H&M?
-    IF NEW.hm_issue IS NULL AND NEW.owner = 'nobody' AND 
-       (SELECT sm.active_notification FROM cod.support_model AS sm JOIN cod.item AS i ON (i.support_model_id = sm.id) WHERE i.id = NEW.item_id) IS TRUE 
-    THEN
-        RAISE NOTICE 'PROMPT H&M to start notification';
-        -- prompt H&M
-    END IF;
-    IF NEW.owner <> 'nobody' THEN
-        IF (TG_OP = 'UPDATE' AND OLD.owner = NEW.owner) THEN
-            -- Do nothing
-            NULL;
+
+    IF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Resolved')) THEN
+        -- flag H&M if paging = act/escalating
+        -- remove actions related to this escalation
+    ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Owned')) THEN
+        -- flag H&M if paging = act/escalating
+        -- send owner to RT if just updated owner.
+        -- remove actions realted to this escalation
+    ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Passive')) THEN
+        -- remove actions related to this escalation
+    ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Failed')) THEN
+        -- only action should be to prompt for duty manager escalation
+    ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Active')) THEN
+        IF ** escalating ** THEN
+            -- no actions
+        ELSEIF ** act ** THEN
+            -- should be phonecall
+        ELSEIF NEW.hm_issue IS NULL THEN
+            RAISE NOTICE 'PROMPT H&M to start notification';
+            -- prompt H&M
         ELSE
-            IF NEW.hm_issue IS NOT NULL THEN
-                RAISE NOTICE 'Tell H&M to stop notification';
-                -- flag H&M to stop escalation with owner
-            END IF;
-            RAISE NOTICE 'Tell RT the new owner';
+            -- should not be here.
         END IF;
     END IF;
-    RETURN NULL;
+    RETURN NEW;
 --EXCEPTION
 --    WHEN OTHERS THEN RETURN NULL;
 END;

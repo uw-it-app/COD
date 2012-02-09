@@ -96,6 +96,26 @@
                             </tr>
                         </table>
                     </div>
+                    <div id="ActionPhonecall" class="action_tile tile_block prompted_action" data-title="Phonecall">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">To</th>
+                                <td>
+                                    <span id="Action.FullName"></span> (<span id="Action.Name"></span>)
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="vertical">At</th>
+                                <td id="Action.Data"></td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><textarea id="msgMessage" name="clearMessage" class="full" placeholder="Message"></textarea></td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><input id="msg" type="submit" value="Submit" class="full"/></td>
+                            </tr>
+                        </table>
+                    </div>
                     <div id="ActionNag" class="action_tile tile_block prompted_action" data-title="Nag">
                         <table cellspacing="0" class="item full">
                             <tr>

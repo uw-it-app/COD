@@ -187,6 +187,19 @@ INSERT INTO cod.esc_state (sort, name, description) VALUES
 
 /**********************************************************************************************/
 
+SELECT standard.create_enum_table('cod', 'page_state', 'Status of paging for an escalation');
+
+INSERT INTO cod.page_state (sort, name, description) VALUES
+    (0,  'Passive', 'No paging'),
+    (10, 'Active', 'Paging to start'),
+    (20, 'Act', 'Action required -- make phone call'),
+    (30, 'Escalating', 'Paging happening in the background'),
+    (40, 'Closed', 'Found an owner'),
+    (50, 'Cancelled', 'Paging cancelled'),
+    (60, 'Failed', 'Paging failed to find an owner')
+
+/**********************************************************************************************/
+
 CREATE TABLE cod.escalation (
     modified_at     timestamptz NOT NULL DEFAULT now(),
     modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
@@ -195,6 +208,7 @@ CREATE TABLE cod.escalation (
     rt_ticket       integer,
     hm_issue        integer,
     esc_state_id    integer     NOT NULL DEFAULT 1 REFERENCES cod.esc_state(id) ON DELETE RESTRICT,
+    page_state_id   integer     NOT NULL DEFAULT 0 REFERENCES cod.page_state(id) ON DELETE RESTRICT,
     oncall_group    varchar     NOT NULL,
     queue           varchar,
     owner           varchar     NOT NULL DEFAULT 'nobody',

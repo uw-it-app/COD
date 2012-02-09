@@ -387,6 +387,60 @@ COMMENT ON FUNCTION cod_v2.spawn_item_from_alert(xml) IS '';
     -- else cancel phone call action
 
 -- success -- set owner
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod_v2.process_hm_update(xml) RETURNS boolean
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod_v2.process_hm_update(xml)
+    Description:  Process HM Issues state for COD
+    Affects:      COD.item/escalation/action associated with this H&M notification
+    Arguments:    
+    Returns:      xml
+*/
+DECLARE
+    v_xml       ALIAS FOR $1;
+    _hm_id      integer;
+    _activity   varchar;
+    _row        record;
+BEGIN
+    _hm_id    := xpath.get_integer('/Issue/Id', v_xml);
+    _activity := xpath.get_varchar('/Issue/Activity', v_xml);
+    SELECT * INTO _row FROM cod.escalation WHERE hm_issue = _hm_id;
+    IF _row.id IS NOT NULL THEN
+        IF _activity = 'closed' THEN
+            IF _row.owner = 'nobody' && xpath.get_varchar('/Issue/Owner', v_xml) <> 'nobody' THEN
+                Update cod.escalation set owner = xpath.get_varchar('/Issue/Owner', v_xml) WHERE id = _row.id;
+                -- trigger on cod.escalation should remove any actions related to this escalation
+            END IF;    
+        ELSEIF _activity = 'cancelled' THEN
+            -- status to cancelled
+            -- trigger should remove any actions related to this escalation
+        ELSEIF _activity = 'failed' THEN
+            -- update to failed
+            -- trigger should remove any actions related to this escalation and prompt for escalation to duty manager
+        ELSEIF _activity = 'escalating' THEN
+            -- remove current actions for phone call
+        ELSEIF _activity = 'act' THEN
+            -- ensure current action related to escalation is this call
+        END IF;
+        RETURN TRUE;
+    END IF;
+
+    SELECT * INTO _row FROM cod.item WHERE hm_issue = _hm_id;
+    IF _row.id IS NOT NULL THEN
+        RETURN TRUE;
+    END IF;
+
+    -- TODO: Insert notification into item.
+EXCEPTION
+    WHEN OTHERS THEN RETURN FALSE;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod_v2.process_hm_update(xml) IS 'DR: Process HM Issues state for COD (2012-02-07)';
 
 
 

@@ -51,7 +51,7 @@ BEGIN
     _id := nextval('hm_issue_seq'::text);
     INSERT INTO hm_issue (id, oncall_id, ticket, subject, message, short_message, origin) VALUES (
         _id,
-        xpath.get_integer('/Issue/Ticket'),
+        xpath.get_integer('/Issue/Ticket', v_xml),
     );
 
 
@@ -65,19 +65,6 @@ END;
 $_$;
 
 COMMENT ON FUNCTION hm_v1.create_issue(xml) IS 'DR: Function to create a notification (2012-02-06)';
-
-
---
--- update COD
---
-
--- on issue update COD via trigger with:
-    -- state
-    -- owner
-    -- current squawk (name, contact data)
-
-    -- just generate XML of Issue & current and push to cod_v2 function.
-
 
 -- new version of hm.oncall_methods_xml that grabs active and loops from oncall group definition.
 /**********************************************************************************************/
