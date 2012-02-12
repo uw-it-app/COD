@@ -100,8 +100,11 @@ DECLARE
     _oncall     varchar;
     _row        record;
 BEGIN
-    -- need to create ticket?
-        -- TODO: request new ticket
+    IF NEW.rt_ticket IS NULL THEN
+        RAISE NOTICE 'Try to create an ticket again or try to find';
+        -- RETURN NEW;
+    END IF;
+
     -- IF closed THEN
         -- clear actions
         -- unset nag
@@ -109,15 +112,15 @@ BEGIN
     -- END IF;
 
     -- if  cleared
-    IF NEW.started_at IS NOT NULL and NEW.ended_at IS NOT NULL THEN
+    IF NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL THEN
         -- if just set to cleared
         IF NEW.ended_at IS DISTINCT FROM OLD.ended_at THEN
-            -- TODO: set message to RT (push to children)
-            -- TODO: cancel H&M active notifications
+            RAISE NOTICE 'Send message to RT';
+            RAISE NOTICE 'Cancel H&M active notification';
         END IF;
         -- If no escalations are unresolved prompt operator to resolve ticket
         IF ((NEW.escalated_at IS NOT NULL AND NEW.resolved_at IS NOT NULL) OR
-            (NEW.escalated_at IS NULL AND NEW.resolved_at IS NULL) THEN
+            (NEW.escalated_at IS NULL AND NEW.resolved_at IS NULL)) THEN
             INSERT INTO cod.action (item_id, action_type_id) VALUES 
                 (NEW.id, standard.enum_value_id('cod', 'action_type', 'Resolve'));
         END IF;
@@ -157,7 +160,7 @@ BEGIN
             INSERT INTO cod.escalation (item_id, oncall_group) VALUES (NEW.id, _oncall);
         END IF;
     END IF;
-    RETURN NULL;
+    RETURN NEW;
 --EXCEPTION
 --    WHEN OTHERS THEN RETURN NULL;
 END;
@@ -200,7 +203,6 @@ BEGIN
         NEW.queue := hm_v1.get_oncall_queue(NEW.oncall_group);
     END IF;
     IF NEW.rt_ticket IS NULL THEN
-        -- RAISE NOTICE 'CREATE ESCALATION TICKET';
         -- create ticket
         SELECT * INTO _item FROM cod.item WHERE id = NEW.item_id;
         SELECT * INTO _event FROM cod.event WHERE item_id = NEW.item_id ORDER BY id ASC LIMIT 1;
@@ -237,7 +239,13 @@ BEGIN
                     E'ENDOFCONTENT\n';
         
         NEW.rt_ticket    := rt.create_ticket(_payload);
-        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Act');
+    END IF;
+    IF (SELECT active_notification FROM cod.support_model WHERE id = _item.support_model_id) IS TRUE THEN
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
+        NEW.page_state_id := standard.enum_value_id('cod', 'page_state', 'Active');
+    ELSE
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
+        NEW.page_state_id := standard.enum_value_id('cod', 'page_state', 'Passive');
     END IF;
     RETURN NEW;
 --EXCEPTION
@@ -282,17 +290,15 @@ BEGIN
             NEW.owned_at := now();
         END IF;
     ELSEIF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Failed') THEN
-        NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Failed');
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Failed');
     ELSEIF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Cancelled') OR
         NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Passive')
     THEN
-        NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Passive');
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
     ELSE
         NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
     END IF;
-
---EXCEPTION
---    WHEN OTHERS THEN null;
+    RETURN NEW;
 END;
 $_$;
 
@@ -319,31 +325,46 @@ CREATE OR REPLACE FUNCTION cod.escalation_workflow() RETURNS trigger
     Returns:      
 */
 DECLARE
-    _payload        varchar;
+    _payload        xml;
 BEGIN
-    RAISE NOTICE 'COD Escalation Workflow';
-
     IF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Resolved')) THEN
-        -- flag H&M if paging = act/escalating
-        -- remove actions related to this escalation
+        IF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') OR
+            NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating')
+        THEN
+            RAISE NOTICE 'Inform H&M of owner or cancel';
+        END IF;
+        PERFORM cod.remove_esc_actions(NEW.id);
+        IF NEW.owner <> OLD.owner THEN
+            PERFORM rt.update_ticket(NEW.rt_ticket, 'Owner: ' || NEW.owner || E'\n');
+        END IF;
     ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Owned')) THEN
-        -- flag H&M if paging = act/escalating
-        -- send owner to RT if just updated owner.
-        -- remove actions realted to this escalation
+        IF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') OR
+            NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating')
+        THEN
+            RAISE NOTICE 'Inform H&M of owner or cancel';
+        END IF;
+        PERFORM cod.remove_esc_actions(NEW.id);
+        IF NEW.owner <> OLD.owner THEN
+            PERFORM rt.update_ticket(NEW.rt_ticket, 'Owner: ' || NEW.owner || E'\n');
+        END IF;
     ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Passive')) THEN
-        -- remove actions related to this escalation
+        PERFORM cod.remove_esc_actions(NEW.id);
     ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Failed')) THEN
-        -- only action should be to prompt for duty manager escalation
+        PERFORM cod.remove_esc_actions(NEW.id);
+        RAISE NOTICE 'Create duty manager escalation if it does not exist';
     ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Active')) THEN
-        IF ** escalating ** THEN
-            -- no actions
-        ELSEIF ** act ** THEN
-            -- should be phonecall
-        ELSEIF NEW.hm_issue IS NULL THEN
-            RAISE NOTICE 'PROMPT H&M to start notification';
-            -- prompt H&M
-        ELSE
-            -- should not be here.
+        IF NEW.hm_issue IS NULL THEN
+            _payload := xmlelement(name "Issue", 
+                xmlforest(
+                    NEW.oncall_group AS "Oncall",
+                    NEW.rt_ticket AS "Ticket",
+                    (SELECT subject FROM cod.item WHERE id = NEW.item_id) AS "Subject",
+                    null AS "Message",
+                    null AS "ShortMessage",
+                    'COPS' AS "Origin"
+                )
+            );
+            UPDATE cod.escalation SET hm_issue = hm_v1.create_issue(_payload) WHERE id=NEW.id;
         END IF;
     END IF;
     RETURN NEW;
@@ -359,6 +380,30 @@ CREATE TRIGGER t_90_escalation_workflow
     FOR EACH ROW
     WHEN (NEW.esc_state_id <> 1)
     EXECUTE PROCEDURE cod.escalation_workflow();
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.remove_esc_actions(integer) RETURNS boolean
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.remove_esc_actions(integer)
+    Description:  Remove any actions associated with the provided escalation id
+    Affects:      All incomplete actions associated with the provided escalation id
+    Arguments:    integer: escalation_id
+    Returns:      boolean
+*/
+DECLARE
+    v_esc_id    ALIAS FOR $1;
+BEGIN
+    UPDATE cod.action SET completed_at = now(), successful = false WHERE escalation_id = v_esc_id AND completed_at IS NULL;
+    RETURN TRUE;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.remove_esc_actions(integer) IS 'DR: Remove any actions associated with the provided escalation id (2012-02-09)';
+
 
 /**********************************************************************************************/
 
@@ -565,7 +610,7 @@ CREATE OR REPLACE FUNCTION cod.has_open_escalation(integer) RETURNS boolean
     Returns:      
 */
     SELECT EXISTS(
-        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND resolved_at IS NOT NULL 
+        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND resolved_at IS NULL 
     );
 $_$;
 
@@ -585,7 +630,7 @@ CREATE OR REPLACE FUNCTION cod.has_open_unowned_escalation(integer) RETURNS bool
     Returns:      
 */
     SELECT EXISTS(
-        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND resolved_at IS NOT NULL AND owned_at IS NOT NULL
+        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND resolved_at IS NULL AND owned_at IS NULL
     );
 $_$;
 

@@ -95,6 +95,7 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
         xmlelement(name "RTTicket", e.rt_ticket),
         xmlelement(name "HMIssue", e.hm_issue),
         xmlelement(name "State", state.name),
+        xmlelement(name "PageState", page.name),
         xmlelement(name "OncallGroup", e.oncall_group),
         xmlelement(name "Queue", e.queue),
         xmlelement(name "Owner", e.owner),
@@ -110,6 +111,7 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
         )
     ) FROM cod.escalation AS e
       JOIN cod.esc_state AS state ON (e.esc_state_id = state.id)
+      JOIN cod.page_state AS page ON (e.page_state_id = page.id)
      WHERE e.id = $1;
 $_$;
 
@@ -198,7 +200,7 @@ CREATE OR REPLACE FUNCTION cod_v2.items_xml() RETURNS xml
     Returns:      XML list of items
 */
 SELECT xmlelement(name "Items",
-    (SELECT xmlagg(cod_v2.item_xml(id)) FROM cod.item),
+    (SELECT xmlagg(cod_v2.item_xml(id)) FROM (SELECT i.id FROM cod.item i JOIN cod.state s ON (i.state_id=s.id) WHERE s.sort < 90 ORDER BY s.sort ASC, i.rt_ticket DESC) AS foo),
     xmlelement(name "ModifiedAt", (SELECT max(modified_at) FROM cod.item))
 );
 $_$;
@@ -373,20 +375,6 @@ $_$;
 
 COMMENT ON FUNCTION cod_v2.spawn_item_from_alert(xml) IS '';
 
-
--- on issue update COD via trigger with:
-    -- state
-    -- owner
-    -- current squawk (name, contact data)
-
--- failed notification
-    -- prompt operator to contact duty manageer
-
--- current method so 
-    -- if phone call create action to perform phone call
-    -- else cancel phone call action
-
--- success -- set owner
 /**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION cod_v2.process_hm_update(xml) RETURNS boolean
@@ -403,49 +391,71 @@ CREATE OR REPLACE FUNCTION cod_v2.process_hm_update(xml) RETURNS boolean
 DECLARE
     v_xml       ALIAS FOR $1;
     _hm_id      integer;
+    _ticket     integer;
     _activity   varchar;
+    _content    varchar;
     _row        record;
 BEGIN
+    RAISE NOTICE 'From HM: %', v_xml::varchar;
     _hm_id    := xpath.get_integer('/Issue/Id', v_xml);
+    _ticket   := xpath.get_integer('/Issue/Ticket', v_xml);
     _activity := xpath.get_varchar('/Issue/Activity', v_xml);
-    SELECT * INTO _row FROM cod.escalation WHERE hm_issue = _hm_id;
+    SELECT * INTO _row FROM cod.escalation WHERE rt_ticket = _ticket AND (hm_issue IS NULL OR hm_issue = _hm_id);
     IF _row.id IS NOT NULL THEN
         IF _activity = 'closed' THEN
-            IF _row.owner = 'nobody' && xpath.get_varchar('/Issue/Owner', v_xml) <> 'nobody' THEN
-                Update cod.escalation set owner = xpath.get_varchar('/Issue/Owner', v_xml) WHERE id = _row.id;
-                -- trigger on cod.escalation should remove any actions related to this escalation
+            IF _row.owner = 'nobody' AND xpath.get_varchar('/Issue/Owner', v_xml) <> 'nobody' THEN
+                Update cod.escalation SET 
+                    owner = xpath.get_varchar('/Issue/Owner', v_xml),
+                    page_state_id = standard.enum_value_id('cod', 'page_state', 'Closed')
+                    WHERE id = _row.id;
+            ELSE
+                Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Closed') WHERE id = _row.id;
             END IF;    
         ELSEIF _activity = 'cancelled' THEN
-            -- status to cancelled
-            -- trigger should remove any actions related to this escalation
+            PERFORM cod.remove_esc_actions(_row.id);
+            Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Cancelled') WHERE id = _row.id;
         ELSEIF _activity = 'failed' THEN
-            -- update to failed
-            -- trigger should remove any actions related to this escalation and prompt for escalation to duty manager
+            PERFORM cod.remove_esc_actions(_row.id);
+            Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Failed') WHERE id = _row.id;
         ELSEIF _activity = 'escalating' THEN
-            -- remove current actions for phone call
+            PERFORM cod.remove_esc_actions(_row.id);
+            Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating') WHERE id = _row.id;
         ELSEIF _activity = 'act' THEN
-            -- ensure current action related to escalation is this call
+            _content := xpath('/Issue/CurrentSquawk', v_xml)::text::varchar;
+            UPDATE cod.action SET completed_at = now(), successful = FALSE
+                WHERE escalation_id = _row.id AND completed_at IS NULL AND content <> _content;
+            IF NOT EXISTS(SELECT NULL FROM cod.action WHERE escalation_id = _row.id AND completed_at IS NULL AND content <> _content) THEN
+                INSERT INTO cod.action (item_id, escalation_id, action_type_id, content) VALUES (
+                    _row.item_id,
+                    _row.id,
+                    standard.enum_value_id('cod', 'action_type', 'PhoneCall'),
+                    _content
+                );
+            END IF;
+            Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') WHERE id = _row.id;
         END IF;
         RETURN TRUE;
     END IF;
 
-    SELECT * INTO _row FROM cod.item WHERE hm_issue = _hm_id;
+    SELECT * INTO _row FROM cod.item 
+        WHERE (rt_ticket IS NULL OR rt_ticket = _ticket) 
+          AND (hm_issue IS NULL OR hm_issue = _hm_id)
+          AND (rt_ticket IS NOT NULL OR hm_issue IS NOT NULL);
     IF _row.id IS NOT NULL THEN
+        RAISE NOTICE 'H&M direct interaction with Item';
         RETURN TRUE;
     END IF;
 
-    -- TODO: Insert notification into item.
-EXCEPTION
-    WHEN OTHERS THEN RETURN FALSE;
+    RAISE NOTICE 'Create item for this H&M notification';
+    RETURN TRUE;
+--EXCEPTION
+--    WHEN OTHERS THEN RETURN FALSE;
 END;
 $_$;
 
 COMMENT ON FUNCTION cod_v2.process_hm_update(xml) IS 'DR: Process HM Issues state for COD (2012-02-07)';
 
-
-
--- REST spawn from notification
-
 COMMIT;
 
 --select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
+--select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>A</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev15.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
