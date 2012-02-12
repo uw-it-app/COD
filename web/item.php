@@ -69,8 +69,11 @@
                     <tbody id="Item.Escalations:Escalation" class="item_bind">
                         <tr>
                             <td id="Esclation.State" class="item_bind"></td>
-                            <td id="Esclation.RTTicket" class="item_bind"></td>
-                            <td id="Esclation.HMIssue" class="item_bind"></td>
+                            <td><a id="Esclation.RTTicket" class="item_bind rtlink" href='#' target='RTSub'></a></td>
+                            <td>
+                                <a id="Esclation.HMIssue" class="item_bind hmlink" href='#' target='HM'></a> 
+                                (<span id="Esclation.PageState" class="item_bind"></span>)
+                            </td>
                             <td id="Esclation.OncallGroup" class="item_bind"></td>
                             <td id="Esclation.Queue" class="item_bind"></td>
                             <td id="Esclation.Owner" class="item_bind"></td>
@@ -96,7 +99,7 @@
                             </tr>
                         </table>
                     </div>
-                    <div id="ActionPhonecall" class="action_tile tile_block prompted_action" data-title="Phonecall">
+                    <div id="ActionPhoneCall" class="action_tile tile_block prompted_action" data-title="Phonecall">
                         <table cellspacing="0" class="item full">
                             <tr>
                                 <th class="vertical">To</th>

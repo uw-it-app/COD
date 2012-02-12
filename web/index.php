@@ -8,8 +8,8 @@
         <div id="tools-container">
             <div id="tools-content">
 <!-- Local HTML -->
-
-<table id="itemsTable" class="full">
+<div id="itemsWrap" style="display:none">
+<table id="itemsTable" class="full" >
     <thead>
         <tr>
             <th class="" style="display:none"></th>
@@ -31,8 +31,8 @@
             <td class="items_bind" id="Item.State"></td>
             <td class="items_bind" id="Item.ITILType"></td>
             <td class="items_bind" id="Item.Subject"></td>
-            <td class="items_bind" id="Item.RTTicket"></td>
-            <td class="items_bind hm_issue" id="Item.HMIssue"></td>
+            <td><a id="Item.RTTicket" class="items_bind rtlink" href='#'></a></td>
+            <td class="hm_issue"><a id="Item.HMIssue" class="items_bind hmlink" href='#' target='RTSuper'></a></td>
             <td class="items_bind ref_no" id="Item.ReferenceNumber"></td>
             <td class="items_bind" id="Item.SupportModel"></td>
             <td class="items_bind" id="Item.Severity"></td>
@@ -56,7 +56,7 @@
         </tr>
     </tbody>
 </table>
-
+</div>
 <!-- End Local HTML -->
             </div>
         <!-- end #tools-content -->

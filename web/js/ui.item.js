@@ -106,6 +106,8 @@
             //if prompted for resolve $('#ActionResolve').actionTile('highlight'); else hide
             //if prompted for oncallgroup -- highlight create escalation
             //if prompted for clear...
+            COD.rtLinker();
+            COD.hmLinker();
             COD.updateLastUpdated();
             $('#item_container').show();
         },

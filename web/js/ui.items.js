@@ -5,13 +5,13 @@
 /*global badgerArray */
 /*global COD */
 /*global window */
+/*global document */
 (function () {
     'use strict';
 
     $.widget('ui.items', {
         _init: function () {
             this._connectControllerStuff();
-            
             this.refreshData();
         },
 
@@ -19,11 +19,16 @@
             COD.data.items = {Items: {}};
             COD.createLastUpdated();
             COD.REST.items = new RESTDataSource(COD.dataSources.items, COD.RESTErrorHandler);
-            $('.item_click').live('click', function () {
-                var item_id = $(this).children('.item_id').text();
-                window.open('/.cod/item/Id/' + item_id);
+            $(document).on('click', '.item_click', function (e) {
+                if ($(e.originalEvent.srcElement).hasClass('rtlink') ||
+                    $(e.originalEvent.srcElement).hasClass('hmlink')
+                ) {
+                    return false;
+                };
+                window.open('/.cod/item/Id/' + $(this).children('.item_id').text());
                 return false;
             });
+            COD.linker();
         },
 
         refreshData: function () {
@@ -58,7 +63,7 @@
         jpopSync: function () {
             var _hm = true, _refno = true;
             $('.items_bind').jpop(COD.data.items, {});
-            $('td.hm_issue').each(function(){ if ($(this).html()) { _hm = false;}});
+            $('td.hm_issue').each(function(){ if ($(this).children().text()) { _hm = false;}});
             $('td.ref_no').each(function(){ if ($(this).html()) { _refno = false;}});
             if (_hm === true) {
                 $('.hm_issue').hide();
@@ -70,7 +75,10 @@
             } else {
                 $('.ref_no').show();
             }
+            COD.rtLinker();
+            COD.hmLinker();
             COD.updateLastUpdated();
+            $('#itemsWrap').show();
         },
 
         destroy: function () {
