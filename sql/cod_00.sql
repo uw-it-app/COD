@@ -180,7 +180,7 @@ INSERT INTO cod.esc_state (sort, name, description) VALUES
     (0,  'Building', 'Underconstruction'),
 --    (10, 'Act', 'COPS has an action to perform'),
     (30, 'Active', 'Active contact to Tier 2/3 support'),
-    (33, 'Failed', 'Failed notification to Tier 2/3 support')
+    (33, 'Failed', 'Failed notification to Tier 2/3 support'),
     (40, 'Passive', 'Passive contact to Tier 2/3 support'),
     (60, 'Owned', 'Tier 2/3 acknowedged issue'),
     (90, 'Resolved', 'All work completed');
@@ -196,7 +196,7 @@ INSERT INTO cod.page_state (sort, name, description) VALUES
     (30, 'Escalating', 'Paging happening in the background'),
     (40, 'Closed', 'Found an owner'),
     (50, 'Cancelled', 'Paging cancelled'),
-    (60, 'Failed', 'Paging failed to find an owner')
+    (60, 'Failed', 'Paging failed to find an owner');
 
 /**********************************************************************************************/
 
@@ -208,7 +208,7 @@ CREATE TABLE cod.escalation (
     rt_ticket       integer,
     hm_issue        integer,
     esc_state_id    integer     NOT NULL DEFAULT 1 REFERENCES cod.esc_state(id) ON DELETE RESTRICT,
-    page_state_id   integer     NOT NULL DEFAULT 0 REFERENCES cod.page_state(id) ON DELETE RESTRICT,
+    page_state_id   integer     NOT NULL DEFAULT 1 REFERENCES cod.page_state(id) ON DELETE RESTRICT,
     oncall_group    varchar     NOT NULL,
     queue           varchar,
     owner           varchar     NOT NULL DEFAULT 'nobody',
