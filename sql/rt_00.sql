@@ -98,7 +98,7 @@ DECLARE
     _output     varchar;
 BEGIN
     SET LOCAL statement_timeout TO 180000; -- 3 minutes
-    _payload := E'===Update-Ticket: ' || v_ticket::varchar || E'\n' || v_paylod;
+    _payload := E'===Update-Ticket: ' || v_ticket::varchar || E'\n' || v_payload;
     _output  := rt.offline_submit(_payload);
     RETURN TRUE;
 EXCEPTION
