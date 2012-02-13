@@ -85,6 +85,160 @@ COMMENT ON FUNCTION cod.create_incident_ticket_from_event(integer) IS 'DR: Creat
 
 /**********************************************************************************************/
 
+CREATE OR REPLACE FUNCTION cod.incident_time_check() RETURNS trigger
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.incident_time_check()
+    Description:  Set time fields based on related objects
+    Affects:      single cod.item record
+    Arguments:    none
+    Returns:      trigger
+*/
+DECLARE
+BEGIN
+    -- set event related times
+    IF NOT EXISTS(SELECT NULL FROM cod.event WHERE item_id = NEW.id) THEN
+        NEW.started_at := NULL;
+        NEW.ended_at   := NULL;
+    ELSE
+        NEW.started_at := (SELECT min(start_at) FROM cod.event WHERE item_id = NEW.id);
+        IF EXISTS(SELECT NULL FROM cod.event WHERE item_id = NEW.id AND end_at IS NULL) THEN
+            NEW.ended_at  := NULL;
+            NEW.closed_at := NULL;
+        ELSE
+            NEW.ended_at := (SELECT max(end_at) FROM cod.event WHERE item_id = NEW.id);
+        END IF;
+    END IF;
+
+    -- set escalation related times
+    IF NOT EXISTS(SELECT NULL FROM cod.escalation WHERE item_id = NEW.id) THEN
+        NEW.escalated_at := NULL;
+        NEW.resolved_at  := NULL;
+    ELSE
+        NEW.escalated_at := (SELECT min(escalated_at) FROM cod.escalation WHERE item_id = NEW.id);
+        IF EXISTS(SELECT id FROM cod.escalation WHERE item_id = NEW.id AND resolved_at IS NULL) THEN
+            NEW.resolved_at := NULL;
+            NEW.closed_at   := NULL;
+        ELSE
+            NEW.resolved_at := (SELECT max(resolved_at) FROM cod.escalation WHERE item_id = NEW.id);
+        END IF;
+    END IF;
+    RETURN NEW;
+-- EXCEPTION
+--     WHEN OTHERS THEN null;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.incident_time_check() IS 'DR: Set time fields based on related objects (2012-02-02)';
+
+CREATE TRIGGER t_15_update_times
+    BEFORE INSERT OR UPDATE ON cod.item
+    FOR EACH ROW
+    EXECUTE PROCEDURE cod.incident_time_check();
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.incident_state_check() RETURNS trigger
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     
+    Description:  
+    Affects:      
+    Arguments:    
+    Returns:      
+*/
+DECLARE
+BEGIN
+    If (cod.has_active_action(NEW.id)) THEN
+        NEW.state_id = standard.enum_value_id('cod', 'state', 'Act');
+    ELSEIF (NEW.closed_at IS NOT NULL) THEN
+        NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed');
+    ELSEIF (NEW.resolved_at IS NOT NULL) THEN
+        NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved');
+    ELSEIF (NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL) THEN
+        NEW.state_id = standard.enum_value_id('cod', 'state', 'Cleared');
+    ELSEIF (NEW.escalated_at IS NOT NULL AND NEW.resolved_at IS NULL) THEN
+        IF (cod.has_active_escalation(NEW.id)) THEN
+            NEW.state_id = standard.enum_value_id('cod', 'state', 'Escalating');
+        ELSE
+            NEW.state_id = standard.enum_value_id('cod', 'state', 'T2-3');
+        END IF;
+    ELSE
+        NEW.state_id = standard.enum_value_id('cod', 'state', 'Processing');
+        -- else set to processing (no open escalations/actions and not cleared means something needs to happen)
+    END IF;
+    RETURN NEW;
+--EXCEPTION
+--    WHEN OTHERS THEN null;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.incident_state_check() IS '';
+
+CREATE TRIGGER t_20_incident_state_check
+    BEFORE INSERT OR UPDATE ON cod.item
+    FOR EACH ROW
+    WHEN (NEW.state_id <> 1 AND NEW.itil_type_id = 1)
+    EXECUTE PROCEDURE cod.incident_state_check();
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.incident_stage_check() RETURNS trigger
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     
+    Description:  
+    Affects:      
+    Arguments:    
+    Returns:      
+*/
+DECLARE
+BEGIN
+    IF NEW.closed_at IS NOT NULL THEN -- Incident is closed
+        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
+    ELSEIF NEW.resolved_at IS NOT NULL THEN -- Escalations resolved
+        IF NEW.ended_at IS NOT NULL OR NEW.started_at IS NULL THEN -- Event cleared or no event
+            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
+        ELSE -- Open event
+            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
+        END IF;
+    ELSEIF NEW.escalated_at IS NOT NULL THEN -- open Escalations
+        IF NEW.ended_at IS NOT NULL THEN -- Event cleared 
+            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Resolution and Recovery');
+        ELSEIF (cod.has_open_unowned_escalation(NEW.id)) THEN -- unowned escalation
+            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Functional Escalation');
+        ELSE -- owned escalation
+            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
+        END IF;
+    ELSEIF NEW.ended_at IS NOT NULL THEN -- No escalation, closed event
+        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
+    ELSEIF cod.has_active_helptext(NEW.id) THEN -- active helptext action
+        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
+    ELSEIF NEW.rt_ticket IS NULL THEN
+        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Logging');
+    ELSE
+        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis');
+    END IF;
+    RETURN NEW;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.incident_stage_check() IS '';
+
+CREATE TRIGGER t_25_incident_stage_check
+    BEFORE INSERT OR UPDATE ON cod.item
+    FOR EACH ROW
+    WHEN (NEW.itil_type_id = 1)
+    EXECUTE PROCEDURE cod.incident_stage_check();
+
+/**********************************************************************************************/
+
 CREATE OR REPLACE FUNCTION cod.incident_workflow() RETURNS trigger
     LANGUAGE plpgsql
     VOLATILE
@@ -105,64 +259,70 @@ BEGIN
         -- RETURN NEW;
     END IF;
 
-    -- IF closed THEN
-        -- clear actions
-        -- unset nag
-        -- RETURN NULL;
-    -- END IF;
-
-    -- if  cleared
-    IF NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL THEN
-        -- if just set to cleared
-        IF NEW.ended_at IS DISTINCT FROM OLD.ended_at THEN
+    IF NEW.ended_at IS DISTINCT FROM OLD.ended_at THEN
+        IF NEW.ended_at IS NOT NULL THEN
             RAISE NOTICE 'Send message to RT';
-            RAISE NOTICE 'Cancel H&M active notification';
+            -- cancel all active escalations
+            PERFORM hm_v1.close_issue(hm_issue, owner) FROM cod.escalation WHERE item_id = NEW.id;
+        ELSE 
+            RAISE NOTICE 'Send message to RT -- alert reoccured';
         END IF;
+    END IF;
+
+
+    IF NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed') THEN
+        -- unset nag
+        RETURN NEW;
+    ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved') THEN
+        -- if event is not cleared
+        IF NEW.ended_at IS NULL THEN
+            RAISE NOTICE 'action to clear or re-escalate';
+        END IF;
+        RETURN NEW;
+    ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Cleared') THEN
         -- If no escalations are unresolved prompt operator to resolve ticket
         IF ((NEW.escalated_at IS NOT NULL AND NEW.resolved_at IS NOT NULL) OR
-            (NEW.escalated_at IS NULL AND NEW.resolved_at IS NULL)) THEN
+            (NEW.escalated_at IS NULL AND NEW.resolved_at IS NULL)) AND
+            NOT EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Resolve') AND completed_at IS NULL)
+        THEN
             INSERT INTO cod.action (item_id, action_type_id) VALUES 
                 (NEW.id, standard.enum_value_id('cod', 'action_type', 'Resolve'));
         END IF;
-        -- exit
-        RETURN NULL;
+        RETURN NEW;
     END IF;
 
-    -- IF resolved (all esc resolved) THEN
-        -- create action to clear or re-escalate to resolve
-    -- END IF;
-
-    -- if support model calls for helptext and no unsatisfied helptext action
-    IF NOT cod.has_helptext_action(NEW.id) THEN
-        IF (SELECT help_text FROM cod.support_model WHERE id = NEW.support_model_id) IS TRUE THEN
-            -- create action to prompt for acting on helptext
-            INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'HelpText'));
-            -- cod.action trigger should do something
-        ELSE
-            INSERT INTO cod.action (item_id, action_type_id, completed_at, completed_by, skipped, successful) VALUES 
-                (NEW.id, standard.enum_value_id('cod', 'action_type', 'HelpText'), now(), 'ssg-cod', true, false);
+    -- if have not escalated
+    IF NEW.escalated_at IS NULL THEN
+        -- if no helptext action
+        IF NOT cod.has_helptext_action(NEW.id) THEN
+            IF (SELECT help_text FROM cod.support_model WHERE id = NEW.support_model_id) IS TRUE THEN
+                -- create action to prompt for acting on helptext
+                INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'HelpText'));
+                -- cod.action trigger should do something
+            ELSE
+                INSERT INTO cod.action (item_id, action_type_id, completed_at, completed_by, skipped, successful) VALUES 
+                    (NEW.id, standard.enum_value_id('cod', 'action_type', 'HelpText'), now(), 'ssg-cod', true, false);
+            END IF;
         END IF;
-    END IF;
 
-    -- if not helptexting or requesting oncall group or have an escalation, escalate
-    IF NOT EXISTS (SELECT NULL FROM cod.action AS a JOIN cod.action_type AS t ON (a.action_type_id=t.id) 
-            WHERE a.item_id = NEW.id AND (t.name = 'HelpText' OR t.name = 'Escalate') AND completed_at IS NULL) AND
-       NOT EXISTS (SELECT NULL FROM cod.escalation WHERE item_id = NEW.id)
-    THEN
-        SELECT * INTO _row FROM cod.event WHERE item_id = NEW.id ORDER BY id DESC LIMIT 1;
-        _oncall := COALESCE(_row.contact, _row.oncall_primary, _row.oncall_alternate);
-        -- if no valid oncall group 
-        IF _oncall IS NULL THEN
-            -- create action to prompt to correct oncall group
-            INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'));
-        ELSE
-            -- create escalation (see escalation_workflow)
-            INSERT INTO cod.escalation (item_id, oncall_group) VALUES (NEW.id, _oncall);
+        -- if no active helptext (and not escalated)
+        IF NOT EXISTS (SELECT NULL FROM cod.action AS a JOIN cod.action_type AS t ON (a.action_type_id=t.id) 
+                WHERE a.item_id = NEW.id AND (t.name = 'HelpText' OR t.name = 'Escalate') AND completed_at IS NULL)
+        THEN
+            SELECT * INTO _row FROM cod.event WHERE item_id = NEW.id ORDER BY id DESC LIMIT 1;
+            _oncall := COALESCE(_row.contact, _row.oncall_primary, _row.oncall_alternate);
+            -- if no valid oncall group 
+            IF _oncall IS NULL THEN
+                -- create action to prompt to correct oncall group
+                INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'));
+            ELSE
+                -- create escalation (see escalation_workflow)
+                INSERT INTO cod.escalation (item_id, oncall_group) VALUES (NEW.id, _oncall);
+            END IF;
         END IF;
+
     END IF;
     RETURN NEW;
---EXCEPTION
---    WHEN OTHERS THEN RETURN NULL;
 END;
 $_$;
 
@@ -443,158 +603,6 @@ CREATE TRIGGER t_91_update_item
     AFTER INSERT OR UPDATE ON cod.event
     FOR EACH ROW
     EXECUTE PROCEDURE cod.update_item();
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.incident_time_check() RETURNS trigger
-    LANGUAGE plpgsql
-    VOLATILE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     cod.incident_time_check()
-    Description:  Set time fields based on related objects
-    Affects:      single cod.item record
-    Arguments:    none
-    Returns:      trigger
-*/
-DECLARE
-BEGIN
-    -- set event related times
-    IF NOT EXISTS(SELECT NULL FROM cod.event WHERE item_id = NEW.id) THEN
-        NEW.started_at := NULL;
-        NEW.ended_at   := NULL;
-    ELSE
-        NEW.started_at := (SELECT min(start_at) FROM cod.event WHERE item_id = NEW.id);
-        IF EXISTS(SELECT NULL FROM cod.event WHERE item_id = NEW.id AND end_at IS NULL) THEN
-            NEW.ended_at  := NULL;
-            NEW.closed_at := NULL;
-        ELSE
-            NEW.ended_at := (SELECT max(end_at) FROM cod.event WHERE item_id = NEW.id);
-        END IF;
-    END IF;
-
-    -- set escalation related times
-    IF NOT EXISTS(SELECT NULL FROM cod.escalation WHERE item_id = NEW.id) THEN
-        NEW.escalated_at := NULL;
-        NEW.resolved_at  := NULL;
-    ELSE
-        NEW.escalated_at := (SELECT min(escalated_at) FROM cod.escalation WHERE item_id = NEW.id);
-        IF EXISTS(SELECT id FROM cod.escalation WHERE item_id = NEW.id AND resolved_at IS NULL) THEN
-            NEW.resolved_at := NULL;
-            NEW.closed_at   := NULL;
-        ELSE
-            NEW.resolved_at := (SELECT max(resolved_at) FROM cod.escalation WHERE item_id = NEW.id);
-        END IF;
-    END IF;
-    RETURN NEW;
--- EXCEPTION
---     WHEN OTHERS THEN null;
-END;
-$_$;
-
-COMMENT ON FUNCTION cod.incident_time_check() IS 'DR: Set time fields based on related objects (2012-02-02)';
-
-CREATE TRIGGER t_15_update_times
-    BEFORE INSERT OR UPDATE ON cod.item
-    FOR EACH ROW
-    EXECUTE PROCEDURE cod.incident_time_check();
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.incident_state_check() RETURNS trigger
-    LANGUAGE plpgsql
-    VOLATILE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-DECLARE
-BEGIN
-    If (cod.has_active_action(NEW.id)) THEN
-        NEW.state_id = standard.enum_value_id('cod', 'state', 'Act');
-    ELSEIF (NEW.closed_at IS NOT NULL) THEN
-        NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved');
-    ELSEIF (NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL) THEN
-        NEW.state_id = standard.enum_value_id('cod', 'state', 'Cleared');
-    ELSEIF (NEW.escalated_at IS NOT NULL AND NEW.resolved_at IS NULL) THEN
-        IF (cod.has_active_escalation(NEW.id)) THEN
-            NEW.state_id = standard.enum_value_id('cod', 'state', 'Escalating');
-        ELSE
-            NEW.state_id = standard.enum_value_id('cod', 'state', 'T2-3');
-        END IF;
-    ELSE
-        -- else set to processing (no open escalations/actions and not cleared means something needs to happen)
-    END IF;
-    RETURN NEW;
---EXCEPTION
---    WHEN OTHERS THEN null;
-END;
-$_$;
-
-COMMENT ON FUNCTION cod.incident_state_check() IS '';
-
-CREATE TRIGGER t_20_incident_state_check
-    BEFORE INSERT OR UPDATE ON cod.item
-    FOR EACH ROW
-    WHEN (NEW.state_id <> 1 AND NEW.itil_type_id = 1)
-    EXECUTE PROCEDURE cod.incident_state_check();
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.incident_stage_check() RETURNS trigger
-    LANGUAGE plpgsql
-    VOLATILE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-DECLARE
-BEGIN
-    IF NEW.closed_at IS NOT NULL THEN -- Incident is closed
-        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
-    ELSEIF NEW.resolved_at IS NOT NULL THEN -- Escalations resolved
-        IF NEW.ended_at IS NOT NULL OR NEW.started_at IS NULL THEN -- Event cleared or no event
-            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
-        ELSE -- Open event
-            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
-        END IF;
-    ELSEIF NEW.escalated_at IS NOT NULL THEN -- open Escalations
-        IF NEW.ended_at IS NOT NULL THEN -- Event cleared 
-            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Resolution and Recovery');
-        ELSEIF (cod.has_open_unowned_escalation(NEW.id)) THEN -- unowned escalation
-            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Functional Escalation');
-        ELSE -- owned escalation
-            NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
-        END IF;
-    ELSEIF NEW.ended_at IS NOT NULL THEN -- No escalation, closed event
-        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
-    ELSEIF cod.has_active_helptext(NEW.id) THEN -- active helptext action
-        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
-    ELSEIF NEW.rt_ticket IS NULL THEN
-        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Logging');
-    ELSE
-        NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis');
-    END IF;
-    RETURN NEW;
-END;
-$_$;
-
-COMMENT ON FUNCTION cod.incident_stage_check() IS '';
-
-CREATE TRIGGER t_25_incident_stage_check
-    BEFORE INSERT OR UPDATE ON cod.item
-    FOR EACH ROW
-    WHEN (NEW.itil_type_id = 1)
-    EXECUTE PROCEDURE cod.incident_stage_check();
-
 
 /**********************************************************************************************/
 
