@@ -16,7 +16,8 @@ INSERT INTO cod.state (sort, name, description) VALUES
     (30, 'Escalating', 'Active contact to Level 2/3 support'),
     (60, 'T2-3', 'Escalated to Tier 2/3'),
     (80, 'Cleared', 'Impact cleared but not resolved'),
-    (90, 'Resolved', 'All work completed');
+    (90, 'Resolved', 'All work completed'),
+    (99, 'Closed', 'Closure Complete');
 
 /**********************************************************************************************/
 
@@ -83,7 +84,8 @@ CREATE TABLE cod.item (
     escalated_at    timestamptz,
     resolved_at     timestamptz,
     closed_at       timestamptz,
-    content         varchar
+    content         varchar,
+    workflow_lock   boolean     NOT NULL DEFAULT FALSE
 );
 
 COMMENT ON TABLE cod.item IS 'DR: COD Line items -- incidents, notifications, etc (2011-10-10)';

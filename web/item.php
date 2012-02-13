@@ -86,16 +86,16 @@
         <div class="tile_row">
             <div class="half tile_block">
                 <div id="ActionsTile" class="tile_action">
-                    <div id="ActionResolve" class="action_tile tile_block prompted_action" data-title="Resolve">
+                    <div id="ActionClose" class="action_tile tile_block prompted_action" data-title="Close">
                         <table cellspacing="0" class="item full">
                             <tr>
                                 <th class="vertical">Message</th>
                             </tr>
                             <tr>
-                                <td class="vertical"><textarea id="resolveMessage" name="resolveMessage" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical"><textarea id="closeMessage" name="closeMessage" class="full" placeholder="Message"></textarea></td>
                             </tr>
                             <tr>
-                                <td class="vertical"><input id="resolve" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical"><input id="close" type="submit" value="Submit" class="full"/></td>
                             </tr>
                         </table>
                     </div>
