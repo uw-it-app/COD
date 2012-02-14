@@ -31,6 +31,7 @@
                 });
                 Item.Do['Submit'] = s.val();
                 COD.REST.item.put({Id: Item.Id}, {Item:Item}, $.proxy(_this._updateData, _this), null);
+                tile.action_tile('normal').tile('close');
                 return false;
             });
         },
@@ -71,6 +72,7 @@
 
         jpopSync: function () {
             var Item = COD.data.item.Item;
+            $('.sync_clear').val('');
             $('title').text('COD: (' + Item.Id + ') ' + Item.Subject);
             $('.item_bind').jpop(COD.data.item, {});
             $('.datetime').each(function () {
@@ -89,24 +91,32 @@
                                    .replace(/\/display\/monhelp\/component-/, '');
                 $(this).text(_content);
             });
-            if (Item.Times.Started) {
-                if (Item.Times.Ended) {
-                    $('#ActionClear').tile('hide');
-                    $('#ActionReactivate').tile('show');
-                } else {
-                    $('#ActionClear').tile('show');
-                    $('#ActionReactivate').tile('hide');
-                }
-            } else {
+            if (Item.Times.Closed) {
                 $('#ActionClear').tile('hide');
                 $('#ActionReactivate').tile('hide');
-            }
-            if (Item.Times.Resolved) {
-                $('ActionNag').tile('hide');
-                $('ActionSetNag').tile('hide');
+                $('#ActionNag').tile('hide');
+                $('#ActionSetNag').tile('hide');
+                $('#ActionEscalate').tile('hide');
             } else {
-                $('ActionNag').tile('show');
-                $('ActionSetNag').tile('show');
+                if (Item.Times.Started) {
+                    if (Item.Times.Ended) {
+                        $('#ActionClear').tile('hide');
+                        $('#ActionReactivate').tile('show');
+                    } else {
+                        $('#ActionClear').tile('show');
+                        $('#ActionReactivate').tile('hide');
+                    }
+                } else {
+                    $('#ActionClear').tile('hide');
+                    $('#ActionReactivate').tile('hide');
+                }
+                if (Item.Times.Resolved) {
+                    $('#ActionNag').tile('hide');
+                    $('#ActionSetNag').tile('hide');
+                } else {
+                    $('#ActionNag').tile('show');
+                    $('#ActionSetNag').tile('show');
+                }
             }
             $('.prompted_action').tile('hide');
             $.each(Item.Actions.Action, function () {
@@ -114,12 +124,6 @@
                     $('#Action' + this.Type).actionTile('highlight');
                 };
             });
-            //if prompted for helptext $('#ActionHelpText').actionTile('highlight'); else hide
-            //if prompted for nag $('#ActionNag').actionTile('highlight'); else hide
-            //if prompted for phonecall $('#ActionPhone').actionTile('highlight'); else hide
-            //if prompted for resolve $('#ActionResolve').actionTile('highlight'); else hide
-            //if prompted for oncallgroup -- highlight create escalation
-            //if prompted for clear...
             COD.rtLinker();
             COD.hmLinker();
             COD.updateLastUpdated();

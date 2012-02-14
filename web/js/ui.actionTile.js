@@ -28,6 +28,10 @@
             $(this.element).addClass('highlight').tile('show').tile('lockOpen');
         },
 
+        normal: function () {
+            $(this.element).removeClass('highlight').tile('unlock');
+        },
+
         destroy: function () {
             $.Widget.prototype.destroy.apply(this, arguments); // default destroy
             $(this.element).empty();
