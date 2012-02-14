@@ -10,7 +10,7 @@
         <script src="/shared/local/badgerfishjs/1.0.0/badgerfish.js"></script>
         <script src="/shared/local/jquery.ui.tile/0.0.6-dev/jquery.ui.tile.js"></script>
         <!--<script src="/.cod/js/jquery.ui.tile.js"></script>-->
-        <script src="/daw/js/RESTDataSource.js"></script>
+        <script src="/.cod/js/RESTDataSource.js"></script>
         <script src="/daw/js/badgerArray.js"></script>
         <!--
         <script src="/shared/third-party/underscore/1.1.6/underscore-min.js" ></script>
