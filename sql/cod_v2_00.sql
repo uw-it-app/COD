@@ -201,11 +201,18 @@ DECLARE
     v_id        ALIAS FOR $1;
     v_xml       ALIAS FOR $2;
     _type       varchar;
+    _message    varchar;
+    _msgType    varchar     := 'comment';
+    _msgToSubs  boolean     := TRUE;
+    _payload    varchar;
+    _row        cod.item%ROWTYPE;
 BEGIN
-    IF NOT EXISTS(SELECT NULL FROM cod.item WHERE id = v_id) THEN
+    SELECT * INTO _row FROM cod.item WHERE id = v_id;
+    IF _row.id IS NULL THEN
         RETURN NULL;
     END IF;
-    _type := xpath.get_varchar('/Item/Do/Type', v_xml);
+    _type    := xpath.get_varchar('/Item/Do/Type', v_xml);
+    _message := xpath.get_varchar('/Item/Do/Message', v_xml);
     IF _type = 'RefNumber' THEN
         UPDATE cod.item SET reference_no = xpath.get_varchar('/Item/Do/Value', v_xml) WHERE id = v_id;
     ELSEIF _type = 'Close' THEN
@@ -213,12 +220,15 @@ BEGIN
         UPDATE cod.action SET completed_at = now(), successful = TRUE
             WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Close');
         UPDATE cod.item SET workflow_lock = FALSE, closed_at = now() WHERE id = v_id;
+        _msgType := 'correspond';
+        _msgToSubs := FALSE;
     ELSEIF _type = 'Clear' THEN
         UPDATE cod.event SET end_at = now() WHERE item_id = v_id;
     ELSEIF _type = 'Reactivate' THEN
         UPDATE cod.event SET end_at = NULL WHERE item_id = v_id;
     ELSEIF _type = 'PhoneCall' THEN
         RAISE NOTICE 'send info to squawk';
+        _message := NULL;
     ELSEIF _type = 'HelpText' THEN
         IF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Clear' THEN
             UPDATE cod.item SET workflow_lock = TRUE WHERE id = v_id;
@@ -230,12 +240,29 @@ BEGIN
             UPDATE cod.action SET completed_at = now(), successful = FALSE
                 WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText');
         END IF;
+        _msgToSubs := FALSE;
     ELSEIF _type = 'Nag' THEN
+        RAISE NOTICE 'Reset nag times';
     ELSEIF _type = 'SetNag' THEN
+        RAISE NOTICE 'Set Nag time';
     ELSEIF _type = 'Message' THEN
+        _msgType := xpath.get_varchar_check('/Item/Do/MsgType', v_xml, _msgType);
+        IF xpath.get_varchar('/Item/Do/ToSubs', v_xml) = 'no' THEN
+            _msgToSubs := FALSE;
+        END IF;
     ELSEIF _type = 'Escalate' THEN
+        RAISE NOTICE 'PERFORM Escalation';
     END IF;
-    RAISE NOTICE 'Inform RT w/ message??';
+    IF _message IS NOT NULL THEN
+        -- send to rt
+        _payload := E'UpdateType: ' || _msgType || E'\n'
+                 || E'CONTENT: ' || _message || E'\n'
+                 || E'ENDOFCONTENT\n';
+        PERFORM rt.update_ticket(_row.rt_ticket, _payload);
+        IF _msgToSubs IS TRUE THEN
+            PERFORM rt.update_ticket(rt_ticket, _payload) FROM cod.escalation WHERE item_id = _row.id;
+        END IF;
+    END IF;
     RETURN cod_v2.item_xml(v_id);
 END;
 $_$;
@@ -455,7 +482,6 @@ DECLARE
     _content    varchar;
     _row        record;
 BEGIN
-    RAISE NOTICE 'From HM: %', v_xml::varchar;
     _hm_id    := xpath.get_integer('/Issue/Id', v_xml);
     _ticket   := xpath.get_integer('/Issue/Ticket', v_xml);
     _activity := xpath.get_varchar('/Issue/Activity', v_xml);
@@ -501,11 +527,11 @@ BEGIN
           AND (hm_issue IS NULL OR hm_issue = _hm_id)
           AND (rt_ticket IS NOT NULL OR hm_issue IS NOT NULL);
     IF _row.id IS NOT NULL THEN
-        RAISE NOTICE 'H&M direct interaction with Item';
+        --RAISE NOTICE 'H&M direct interaction with Item';
         RETURN TRUE;
     END IF;
 
-    RAISE NOTICE 'Create item for this H&M notification';
+    --RAISE NOTICE 'Create item for this H&M notification';
     RETURN TRUE;
 --EXCEPTION
 --    WHEN OTHERS THEN RETURN FALSE;
@@ -517,4 +543,4 @@ COMMENT ON FUNCTION cod_v2.process_hm_update(xml) IS 'DR: Process HM Issues stat
 COMMIT;
 
 --select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
---select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev3.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
+--select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev6.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);

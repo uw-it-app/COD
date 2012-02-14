@@ -81,7 +81,7 @@
                             <td id="Esclation.OncallGroup" class="item_bind"></td>
                             <td id="Esclation.Queue" class="item_bind"></td>
                             <td id="Esclation.Owner" class="item_bind"></td>
-                            <td>SetOwner | Message</td>
+                            <td>SetOwner</td>
                         </tr>
                     </tbody>
                 </table>
@@ -97,7 +97,7 @@
                             </tr>
                             <tr>
                                 <td class="vertical">
-                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
                                     <input type="hidden" name="Type" value="Close"/>
                                 </td>
                             </tr>
@@ -120,7 +120,7 @@
                             </tr>
                             <tr>
                                 <td class="vertical" colspan="2">
-                                    <textarea id="msgMessage" name="clearMessage" class="full" placeholder="Message"></textarea>
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
                                     <input type="hidden" name="Type" value="PhoneCall"/>
                                     <input id="SquawkId" type="hidden" name="SquawkId" value=""/>
                                 </td>
@@ -137,7 +137,7 @@
                             </tr>
                             <tr>
                                 <td class="vertical">
-                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
                                     <input type="hidden" name="Type" value="Nag"/>
                                 </td>
                             </tr>
@@ -153,7 +153,7 @@
                             </tr>
                             <tr>
                                 <td class="vertical">
-                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
                                     <input type="hidden" name="Type" value="HelpText"/>
                                 </td>
                             </tr>
@@ -172,7 +172,7 @@
                             </tr>
                             <tr>
                                 <td class="vertical">
-                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
                                     <input type="hidden" name="Type" value="Clear"/>
                                 </td>
                             </tr>
@@ -188,7 +188,7 @@
                             </tr>
                             <tr>
                                 <td class="vertical">
-                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
                                     <input type="hidden" name="Type" value="Reactivate"/>
                                 </td>
                             </tr>
@@ -231,7 +231,7 @@
                             <tr>
                                 <th class="vertical">Type</th>
                                 <td>
-                                    <select name="MsgType"><option value="comment">comment</option><option value="reply">reply</option></select>
+                                    <select name="MsgType"><option value="comment">comment</option><option value="correspond">reply</option></select>
                                 </td>
                             </tr>
                             <tr>
@@ -242,7 +242,7 @@
                             </tr>
                             <tr>
                                 <td class="vertical" colspan="2">
-                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
                                     <input type="hidden" name="Type" value="Message"/>
                                 </td>
                             </tr>
@@ -256,8 +256,12 @@
                             <tr>
                                 <th class="vertical">Oncall</th>
                                 <td>
-                                    <select id="escalateTo" name="EscalateTo"><option value=""></option><option value="duty_manager">DutyManager</option><option value="_">Custom</option></select>
-                                    <input name="Custom" value="" placeholder="Enter custom oncall" class="full suggest_oncall"/>
+                                    <select id="escalateTo" name="EscalateTo" class="sync_clear">
+                                        <option value=""></option>
+                                        <option value="duty_manager">DutyManager</option>
+                                        <option value="_">Custom</option>
+                                    </select>
+                                    <input name="Custom" value="" placeholder="Enter custom oncall" class="full suggest_oncall sync_clear"/>
                                     <input type="hidden" name="Type" value="Escalate"/>
                                 </td>
                             </tr>
@@ -265,7 +269,9 @@
                                 <th class="vertical" colspan="2">Message</th>
                             </tr>-->
                             <tr>
-                                <td class="vertical" colspan="2"><textarea name="Message" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical" colspan="2">
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
+                                </td>
                             </tr>
                             <tr>
                                 <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
