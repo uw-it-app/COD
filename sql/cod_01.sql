@@ -136,6 +136,7 @@ COMMENT ON FUNCTION cod.incident_time_check() IS 'DR: Set time fields based on r
 CREATE TRIGGER t_15_update_times
     BEFORE INSERT OR UPDATE ON cod.item
     FOR EACH ROW
+    WHEN (NEW.workflow_lock IS FALSE)
     EXECUTE PROCEDURE cod.incident_time_check();
 
 /**********************************************************************************************/
@@ -157,7 +158,7 @@ BEGIN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Act');
     ELSEIF (NEW.closed_at IS NOT NULL) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed');
-    ELSEIF (NEW.resolved_at IS NOT NULL) THEN
+    ELSEIF (NEW.resolved_at IS NOT NULL) OR (NEW.escalated_at IS NULL AND NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved');
     ELSEIF (NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Cleared');
@@ -182,7 +183,7 @@ COMMENT ON FUNCTION cod.incident_state_check() IS '';
 CREATE TRIGGER t_20_incident_state_check
     BEFORE INSERT OR UPDATE ON cod.item
     FOR EACH ROW
-    WHEN (NEW.state_id <> 1 AND NEW.itil_type_id = 1)
+    WHEN (NEW.workflow_lock IS FALSE)
     EXECUTE PROCEDURE cod.incident_state_check();
 
 /**********************************************************************************************/
@@ -234,11 +235,18 @@ COMMENT ON FUNCTION cod.incident_stage_check() IS '';
 CREATE TRIGGER t_25_incident_stage_check
     BEFORE INSERT OR UPDATE ON cod.item
     FOR EACH ROW
-    WHEN (NEW.itil_type_id = 1)
+    WHEN (NEW.workflow_lock IS FALSE)
     EXECUTE PROCEDURE cod.incident_stage_check();
 
 /**********************************************************************************************/
-
+/*
+CLOSE ACTION
+BEGIN;
+update cod.item set workflow_lock = true where id=1;
+update cod.action set completed_at = now() where id=7;
+update cod.item set closed_at = now(), workflow_lock = false where id=1;
+commit;
+*/
 CREATE OR REPLACE FUNCTION cod.incident_workflow() RETURNS trigger
     LANGUAGE plpgsql
     VOLATILE
@@ -261,7 +269,7 @@ BEGIN
 
     IF NEW.ended_at IS DISTINCT FROM OLD.ended_at THEN
         IF NEW.ended_at IS NOT NULL THEN
-            RAISE NOTICE 'Send message to RT';
+            RAISE NOTICE 'Send message to RT??????';
             -- cancel all active escalations
             PERFORM hm_v1.close_issue(hm_issue, owner) FROM cod.escalation WHERE item_id = NEW.id;
         ELSE 
@@ -269,24 +277,26 @@ BEGIN
         END IF;
     END IF;
 
-
     IF NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed') THEN
         -- unset nag
         RETURN NEW;
     ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved') THEN
         -- if event is not cleared
-        IF NEW.ended_at IS NULL THEN
+        IF NEW.ended_at IS NULL AND NEW.started_at IS NOT NULL THEN
             RAISE NOTICE 'action to clear or re-escalate';
+        ELSEIF NOT EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Close') AND completed_at IS NULL) THEN
+            INSERT INTO cod.action (item_id, action_type_id) VALUES 
+                (NEW.id, standard.enum_value_id('cod', 'action_type', 'Close'));
         END IF;
         RETURN NEW;
     ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Cleared') THEN
         -- If no escalations are unresolved prompt operator to resolve ticket
         IF ((NEW.escalated_at IS NOT NULL AND NEW.resolved_at IS NOT NULL) OR
             (NEW.escalated_at IS NULL AND NEW.resolved_at IS NULL)) AND
-            NOT EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Resolve') AND completed_at IS NULL)
+            NOT EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Close') AND completed_at IS NULL)
         THEN
             INSERT INTO cod.action (item_id, action_type_id) VALUES 
-                (NEW.id, standard.enum_value_id('cod', 'action_type', 'Resolve'));
+                (NEW.id, standard.enum_value_id('cod', 'action_type', 'Close'));
         END IF;
         RETURN NEW;
     END IF;
@@ -305,9 +315,10 @@ BEGIN
             END IF;
         END IF;
 
-        -- if no active helptext (and not escalated)
-        IF NOT EXISTS (SELECT NULL FROM cod.action AS a JOIN cod.action_type AS t ON (a.action_type_id=t.id) 
-                WHERE a.item_id = NEW.id AND (t.name = 'HelpText' OR t.name = 'Escalate') AND completed_at IS NULL)
+        -- if no active (or successful) helptext and unclosed event (and not escalated)
+        IF NEW.ended_at is NULL AND
+            NOT EXISTS (SELECT NULL FROM cod.action AS a JOIN cod.action_type AS t ON (a.action_type_id=t.id) 
+                WHERE a.item_id = NEW.id AND (t.name = 'HelpText' OR t.name = 'Escalate') AND (completed_at IS NULL OR successful IS FALSE))
         THEN
             SELECT * INTO _row FROM cod.event WHERE item_id = NEW.id ORDER BY id DESC LIMIT 1;
             _oncall := COALESCE(_row.contact, _row.oncall_primary, _row.oncall_alternate);
@@ -331,7 +342,7 @@ COMMENT ON FUNCTION cod.incident_workflow() IS '';
 CREATE TRIGGER t_90_incident_workflow
     AFTER INSERT OR UPDATE ON cod.item
     FOR EACH ROW
-    WHEN (NEW.state_id <> 1 AND NEW.itil_type_id = 1)
+    WHEN (NEW.workflow_lock IS FALSE)
     EXECUTE PROCEDURE cod.incident_workflow();
 
 /**********************************************************************************************/

@@ -62,6 +62,7 @@ CREATE OR REPLACE FUNCTION cod_v2.action_xml(integer) RETURNS xml
         xmlelement(name "Id", action.id),
         xmlelement(name "Type", type.name),
         xmlelement(name "Successful", action.successful),
+        xmlelement(name "Data", action.content::xml),
         xmlelement(name "Completed",
             xmlelement(name "At", date_trunc('second', action.completed_at)::varchar),
             xmlelement(name "By", action.completed_by)
@@ -183,6 +184,63 @@ $_$;
 COMMENT ON FUNCTION cod_v2.item_xml(integer) IS 'DR: Retrive XML representation of an item (2011-10-17)';
 
 -- REST PUTItem
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod_v2.item_do_xml(integer, xml) RETURNS xml
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod_v2.item_do_xml(integer, xml)
+    Description:  Perform actions on an item
+    Affects:      An item and associated elements
+    Arguments:    xml: XML representation of the action to perform
+    Returns:      xml
+*/
+DECLARE
+    v_id        ALIAS FOR $1;
+    v_xml       ALIAS FOR $2;
+    _type       varchar;
+BEGIN
+    IF NOT EXISTS(SELECT NULL FROM cod.item WHERE id = v_id) THEN
+        RETURN NULL;
+    END IF;
+    _type := xpath.get_varchar('/Item/Do/Type', v_xml);
+    IF _type = 'RefNumber' THEN
+        UPDATE cod.item SET reference_no = xpath.get_varchar('/Item/Do/Value', v_xml) WHERE id = v_id;
+    ELSEIF _type = 'Close' THEN
+        UPDATE cod.item SET workflow_lock = TRUE WHERE id = v_id;
+        UPDATE cod.action SET completed_at = now(), successful = TRUE
+            WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Close');
+        UPDATE cod.item SET workflow_lock = FALSE, closed_at = now() WHERE id = v_id;
+    ELSEIF _type = 'Clear' THEN
+        UPDATE cod.event SET end_at = now() WHERE item_id = v_id;
+    ELSEIF _type = 'Reactivate' THEN
+        UPDATE cod.event SET end_at = NULL WHERE item_id = v_id;
+    ELSEIF _type = 'PhoneCall' THEN
+        RAISE NOTICE 'send info to squawk';
+    ELSEIF _type = 'HelpText' THEN
+        IF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Clear' THEN
+            UPDATE cod.item SET workflow_lock = TRUE WHERE id = v_id;
+            UPDATE cod.action SET completed_at = now(), successful = TRUE
+                WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText');
+            UPDATE cod.event set end_at = now() WHERE item_id = v_id;
+            UPDATE cod.item SET workflow_lock = FALSE WHERE id = v_id;
+        ELSE
+            UPDATE cod.action SET completed_at = now(), successful = FALSE
+                WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText');
+        END IF;
+    ELSEIF _type = 'Nag' THEN
+    ELSEIF _type = 'SetNag' THEN
+    ELSEIF _type = 'Message' THEN
+    ELSEIF _type = 'Escalate' THEN
+    END IF;
+    RAISE NOTICE 'Inform RT w/ message??';
+    RETURN cod_v2.item_xml(v_id);
+END;
+$_$;
+
+COMMENT ON FUNCTION cod_v2.item_do_xml(integer, xml) IS 'DR: Perform actions on an item (2012-02-13)';
 
 
 
@@ -343,15 +401,16 @@ BEGIN
 */
     -- insert new (incident) item 
     _item_id := nextval('cod.item_id_seq'::regclass);
-    INSERT INTO cod.item (id, subject, state_id, itil_type_id, support_model_id, severity, stage_id, started_at) VALUES (
+    INSERT INTO cod.item (id, subject, state_id, itil_type_id, support_model_id, severity, stage_id, started_at, workflow_lock) VALUES (
         _item_id,
         _subject,
-        standard.enum_value_id('cod', 'state', 'Building'),
+        standard.enum_value_id('cod', 'state', 'Processing'),
         standard.enum_value_id('cod', 'itil_type', 'Incident'),
         _smid,
         _severity,
         standard.enum_value_id('cod', 'stage', 'Identification'),
-        _starts
+        _starts,
+        TRUE
     );
     -- create alert
     _event_id := nextval('cod.event_id_seq'::regclass);
@@ -362,8 +421,8 @@ BEGIN
     _ticket := cod.create_incident_ticket_from_event(_event_id); 
     -- update item for workflow
     UPDATE cod.item SET 
-        rt_ticket = _ticket, stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis'), 
-        state_id  = standard.enum_value_id('cod', 'state', 'Processing')
+        rt_ticket     = _ticket, stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis'), 
+        workflow_lock = FALSE
         WHERE id  = _item_id;
     -- IW trigger should execute;
     RETURN xmlelement(name "Incident",
@@ -458,4 +517,4 @@ COMMENT ON FUNCTION cod_v2.process_hm_update(xml) IS 'DR: Process HM Issues stat
 COMMIT;
 
 --select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
---select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>A</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev15.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
+--select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev3.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);

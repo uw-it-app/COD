@@ -4,10 +4,6 @@
     <meta charset="utf-8"/>
     <title></title>
 <?php include('css.php'); ?>
-    <link rel="stylesheet" href="/shared/local/core/4.4.8/tools-core.css"/>
-    <link rel="stylesheet" href="/shared/third-party/jquery-ui/1.8.14/css/local/vowel/jquery-ui-1.8.14.custom.css"/>
-    <link rel="stylesheet" href="css/cod.css"/>
-    <link rel="stylesheet" href="css/mobile.css" media="only screen and (max-device-width: 480px)"/>
     <body>
         <div id="tools-container">
             <div id="tools-content">
@@ -16,39 +12,47 @@
     <div id="item_header">
         <div class="tile_row">
             <div class="tile_block full">
-                <input id="Item.Subject" class="item_bind full"/>
+                <div id="Item.Subject" class="item_bind full box" ></div>
                 <div class="label"><span class="help">Subject</span></div>
             </div>
         </div>
         <div class="tile_row">
             <div class="tile_block">
-                <input id="Item.State" class="item_bind short"/>
+                <div id="Item.State" class="item_bind short box"></div>
                 <div class="label"><span class="help">State</span></div>
             </div>
             <div class="tile_block">
-                <input id="Item.RTTicket" class="item_bind short"/>
+                <div class="short box">
+                    <a id="Item.RTTicket" class="item_bind rtlink" href='#' target='RTSuper'></a>
+                </div>
                 <div class="label"><span class="help">RT Ticket</span></div>
             </div>
             <div class="tile_block">
-                <input id="Item.HMIssue" class="item_bind short"/>
+                <div class="short box">
+                    <a id="Item.HMIssue" class="item_bind hmlink" href='#' target='HM'></a>
+                </div>
                 <div class="label"><span class="help">H&amp;M Issue</span></div>
             </div>
             <div class="tile_block">
-                <input id="Item.Stage" class="item_bind long"/>
+                <div id="Item.Stage" class="item_bind long box"></div>
                 <div class="label"><span class="help">Stage</span></div>
             </div>
             <div class="tile_block">
-                <input id="Item.SupportModel" class="item_bind short"/>
+                <div id="Item.SupportModel" class="item_bind xshort box"></div>
                 <div class="label"><span class="help">Model</span></div>
             </div>
             <div class="tile_block">
-                <input id="Item.Severity" class="item_bind short"/>
+                <div id="Item.Severity" class="item_bind xshort box"></div>
                 <div class="label"><span class="help">Severity</span></div>
             </div>
             <div class="tile_block">
-                <input id="Item.ITILType" class="item_bind short"/>
+                <div id="Item.ITILType" class="item_bind short box"></div>
                 <div class="label"><span class="help">ITIL Type</span></div>
             </div>
+            <div class="tile_block">
+                <div id="Item.ReferenceNumber" class="item_bind short box"></div>
+                <div class="label"><span class="help">Ref#</span></div>
+            </div>            
         </div>
     </div><!-- End item_header -->
     <div class="item_content">
@@ -71,7 +75,7 @@
                             <td id="Esclation.State" class="item_bind"></td>
                             <td><a id="Esclation.RTTicket" class="item_bind rtlink" href='#' target='RTSub'></a></td>
                             <td>
-                                <a id="Esclation.HMIssue" class="item_bind hmlink" href='#' target='HM'></a> 
+                                <a id="Esclation.HMIssue" class="item_bind hmlink" href='#' target='HM'></a>
                                 (<span id="Esclation.PageState" class="item_bind"></span>)
                             </td>
                             <td id="Esclation.OncallGroup" class="item_bind"></td>
@@ -92,10 +96,13 @@
                                 <th class="vertical">Message</th>
                             </tr>
                             <tr>
-                                <td class="vertical"><textarea id="closeMessage" name="closeMessage" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical">
+                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <input type="hidden" name="Type" value="Close"/>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="vertical"><input id="close" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -112,10 +119,14 @@
                                 <td id="Action.Data"></td>
                             </tr>
                             <tr>
-                                <td class="vertical" colspan="2"><textarea id="msgMessage" name="clearMessage" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical" colspan="2">
+                                    <textarea id="msgMessage" name="clearMessage" class="full" placeholder="Message"></textarea>
+                                    <input type="hidden" name="Type" value="PhoneCall"/>
+                                    <input id="SquawkId" type="hidden" name="SquawkId" value=""/>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="vertical" colspan="2"><input id="msg" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical" colspan="2"><input id="msg" type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -125,10 +136,13 @@
                                 <th class="vertical">Message</th>
                             </tr>
                             <tr>
-                                <td class="vertical"><textarea id="nagMessage" name="nagMessage" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical">
+                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <input type="hidden" name="Type" value="Nag"/>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="vertical"><input id="nag" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -138,10 +152,16 @@
                                 <td class="vertical">Work the helptext associated with the Event.</td>
                             </tr>
                             <tr>
-                                <td class="vertical"><textarea id="helptextMessage" name="helptextMessage" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical">
+                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <input type="hidden" name="Type" value="HelpText"/>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="vertical"><input id="helptextClear" type="submit" value="Clear" class="half"/><input id="helptextFail" type="Submit" value="Fail" class="half"/></td>
+                                <td class="vertical">
+                                    <input type="submit" value="Clear" class="actionSubmit half"/>
+                                    <input type="submit" value="Fail" class="actionSubmit half"/>
+                                </td>
                             </tr>
                         </table>
                     </div>
@@ -151,10 +171,13 @@
                                 <th class="vertical">Message</th>
                             </tr>
                             <tr>
-                                <td class="vertical"><textarea id="clearMessage" name="clearMessage" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical">
+                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <input type="hidden" name="Type" value="Clear"/>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="vertical"><input id="clear" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -164,10 +187,13 @@
                                 <th class="vertical">Message</th>
                             </tr>
                             <tr>
-                                <td class="vertical"><textarea id="reactivateMessage" name="reactivateMessage" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical">
+                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <input type="hidden" name="Type" value="Reactivate"/>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="vertical"><input id="ractivate" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>                        
                     </div>
@@ -176,11 +202,12 @@
                             <tr>
                                 <th class="vertical">Reference#</th>
                                 <td class="vertical">
-                                    <input id="refNoValue" class="short" />
+                                    <input id="Item.ReferenceNumber" name="Value" class="item_bind short" />
+                                    <input type="hidden" name="Type" value="RefNumber"/>
                                 </td>
                             </tr>
                             <tr>
-                                <td class="vertical" colspan="2"><input id="refNo" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -189,12 +216,13 @@
                             <tr>
                                 <th class="vertical">Nag in</th>
                                 <td class="vertical">
-                                    <input id="setnagInt" class="short" value="30"/>
-                                    <select id="setnagPeriod"><option value="minutes">minutes</option><option value="hours">hours</option></select>
+                                    <input name="Number" class="short" value="30"/>
+                                    <select name="Period"><option value="minutes">minutes</option><option value="hours">hours</option></select>
+                                    <input type="hidden" name="Type" value="SetNag"/>
                                 </td>
                             </tr>
                             <tr>
-                                <td class="vertical" colspan="2"><input id="setnag" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -203,23 +231,23 @@
                             <tr>
                                 <th class="vertical">Type</th>
                                 <td>
-                                    <select id="msgType"><option value="comment">comment</option><option value="reply">reply</option></select>
+                                    <select name="MsgType"><option value="comment">comment</option><option value="reply">reply</option></select>
                                 </td>
                             </tr>
                             <tr>
                                 <th class="vertical">Send to Subs?</th>
                                 <td>
-                                    <select id="msgSubs"><option value="yes">yes</option><option value="no">no</option></select>
+                                    <select Name="ToSubs"><option value="yes">yes</option><option value="no">no</option></select>
                                 </td>
                             </tr>
-                            <!--<tr>
-                                <th class="vertical" colspan="2">Message</th>
-                            </tr>-->
                             <tr>
-                                <td class="vertical" colspan="2"><textarea id="msgMessage" name="clearMessage" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical" colspan="2">
+                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                    <input type="hidden" name="Type" value="Message"/>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="vertical" colspan="2"><input id="msg" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -228,18 +256,19 @@
                             <tr>
                                 <th class="vertical">Oncall</th>
                                 <td>
-                                    <select id="createEscGroup"><option value=""></option><option value="_">Custom</option></select>
-                                    <input id="createEscGroupCustom" value="" placeholder="Enter custom oncall" class="full suggest_oncall"/>
+                                    <select id="escalateTo" name="EscalateTo"><option value=""></option><option value="duty_manager">DutyManager</option><option value="_">Custom</option></select>
+                                    <input name="Custom" value="" placeholder="Enter custom oncall" class="full suggest_oncall"/>
+                                    <input type="hidden" name="Type" value="Escalate"/>
                                 </td>
                             </tr>
                             <!--<tr>
                                 <th class="vertical" colspan="2">Message</th>
                             </tr>-->
                             <tr>
-                                <td class="vertical" colspan="2"><textarea id="createEscMsg" name="clearMessage" class="full" placeholder="Message"></textarea></td>
+                                <td class="vertical" colspan="2"><textarea name="Message" class="full" placeholder="Message"></textarea></td>
                             </tr>
                             <tr>
-                                <td class="vertical" colspan="2"><input id="cerateEsc" type="submit" value="Submit" class="full"/></td>
+                                <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -269,7 +298,7 @@
                             <td id="Item.Times.Resolved" class="vertical item_bind datetime"></td>
                         </tr>
                         <tr>
-                            <th class="vertical">Resolved</th>
+                            <th class="vertical">Closed</th>
                             <td id="Item.Times.Closed" class="vertical item_bind datetime"></td>
                         </tr>
                     </table>

@@ -12,12 +12,27 @@
         _init: function () {
             this._connectControllerStuff();
             this._pretty();
-            this.refreshData();
+            this.getData();
         },
 
         _connectControllerStuff: function () {
+            var _this = this;
             COD.data.item = {Item: {}};
             COD.REST.item = new RESTDataSource(COD.dataSources.item, COD.RESTErrorHandler);
+            $(document).on('click', 'input[type="submit"]', function () {
+                var s = $(this),
+                    tile = s.parents('.action_tile'),
+                    fields = $('#' + tile.attr('id') + ' input[type!="submit"], #'+tile.attr('id') + ' select, #'+tile.attr('id') + ' textarea'),
+                    Item = {Id:COD.data.item.Item.Id,Do:{}};
+
+                fields.each(function () {
+                    var i = $(this);
+                    Item.Do[i.attr('name')] = i.val();
+                });
+                Item.Do['Submit'] = s.val();
+                COD.REST.item.put({Id: Item.Id}, {Item:Item}, $.proxy(_this._updateData, _this), null);
+                return false;
+            });
         },
 
         _pretty: function () {
@@ -30,31 +45,28 @@
             COD.createLastUpdated();
         },
 
-        refreshData: function () {
-            var _this = this;
-            COD.REST.item.get(
-                {Id: this.options.Id},
-                function (data) {
-                    if (data.Item.Escalations.Escalation === undefined) {
-                        data.Item.Escalations = {Escalation: []};
-                    } else {
-                        data.Item.Escalations.Escalation = badgerArray(data.Item.Escalations.Escalation);
-                    }
-                    if (data.Item.Actions.Action === undefined) {
-                        data.Item.Actions = {Actions: []};
-                    } else {
-                        data.Item.Actions.Action = badgerArray(data.Item.Actions.Action);
-                    }
-                    if (data.Item.Events === undefined) {
-                        data.Item.Events = {Event: []};
-                    } else {
-                        data.Item.Events.Event = badgerArray(data.Item.Events.Event);
-                    }
-                    COD.data.item = data;
-                    _this.jpopSync();
-                },
-                null
-            );
+        _updateData: function(data) {
+            if (data.Item.Escalations.Escalation === undefined) {
+                data.Item.Escalations = {Escalation: []};
+            } else {
+                data.Item.Escalations.Escalation = badgerArray(data.Item.Escalations.Escalation);
+            }
+            if (data.Item.Actions.Action === undefined) {
+                data.Item.Actions = {Actions: []};
+            } else {
+                data.Item.Actions.Action = badgerArray(data.Item.Actions.Action);
+            }
+            if (data.Item.Events === undefined) {
+                data.Item.Events = {Event: []};
+            } else {
+                data.Item.Events.Event = badgerArray(data.Item.Events.Event);
+            }
+            COD.data.item = data;
+            this.jpopSync();
+        },
+
+        getData: function () {
+            COD.REST.item.get({Id: this.options.Id}, $.proxy(this._updateData, this), null);
         },
 
         jpopSync: function () {
@@ -72,7 +84,9 @@
             $('.helpText').each(function () {
                 var _content = $(this).text();
                 $(this).attr({"href": _content});
-                _content = _content.replace(/https?:\/\//, '').replace(/\.washington\.edu/, ': ').replace(/\/display\/monhelp\/component-/, '');
+                _content = _content.replace(/https?:\/\//, '')
+                                   .replace(/\.washington\.edu/, ': ')
+                                   .replace(/\/display\/monhelp\/component-/, '');
                 $(this).text(_content);
             });
             if (Item.Times.Started) {

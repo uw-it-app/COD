@@ -70,20 +70,32 @@ Table of Contents (order of these sections is significant)
     #item_header .label * {
         font-size: small;
     }
+    #item_header div.xlong,
     #item_header input.xlong,
     #item_header select.xlong {
         width: 40em;
     }
+    #item_header div.long,
     #item_header input.long,
     #item_header select.long {
         width: 15em;
     }
+    #item_header div.short,
     #item_header input.short,
     #item_header select.short {
         width: 5em;
     }
+    #item_header div.xshort,
+    #item_header input.xshort,
+    #item_header select.xshort {
+        width: 3em;
+    }
 
-    
+    .box {
+        border: 1px solid #CCC;
+        padding: 4px;
+        min-height: 1em;
+    }
 }
 
 @media print {
