@@ -263,21 +263,19 @@ DECLARE
     _row        record;
 BEGIN
     IF NEW.rt_ticket IS NULL THEN
-        RAISE NOTICE 'Try to create an ticket again or try to find';
+        --RAISE NOTICE 'Try to create an ticket again or try to find';
         -- RETURN NEW;
     END IF;
 
     IF NEW.ended_at IS DISTINCT FROM OLD.ended_at THEN
         IF NEW.ended_at IS NOT NULL THEN
-            RAISE NOTICE 'Send message to RT??????';
             -- cancel all active escalations
             PERFORM hm_v1.close_issue(hm_issue, owner) FROM cod.escalation WHERE item_id = NEW.id;
-        ELSE 
-            RAISE NOTICE 'Send message to RT -- alert reoccured';
         END IF;
     END IF;
 
     IF NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed') THEN
+        --RAISE NOTICE 'Tell acc/proxd to delete alert';
         -- unset nag
         RETURN NEW;
     ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved') THEN
@@ -318,7 +316,7 @@ BEGIN
         -- if no active (or successful) helptext and unclosed event (and not escalated)
         IF NEW.ended_at is NULL AND
             NOT EXISTS (SELECT NULL FROM cod.action AS a JOIN cod.action_type AS t ON (a.action_type_id=t.id) 
-                WHERE a.item_id = NEW.id AND (t.name = 'HelpText' OR t.name = 'Escalate') AND (completed_at IS NULL OR successful IS FALSE))
+                WHERE a.item_id = NEW.id AND (t.name = 'HelpText' OR t.name = 'Escalate') AND (completed_at IS NULL OR successful IS TRUE))
         THEN
             SELECT * INTO _row FROM cod.event WHERE item_id = NEW.id ORDER BY id DESC LIMIT 1;
             _oncall := COALESCE(_row.contact, _row.oncall_primary, _row.oncall_alternate);
@@ -502,7 +500,9 @@ BEGIN
         IF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') OR
             NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating')
         THEN
-            RAISE NOTICE 'Inform H&M of owner or cancel';
+            IF NEW.hm_issue IS NOT NULL THEN
+                PERFORM hm_v1.close_issue(NEW.hm_issue, NEW.owner);
+            END IF;
         END IF;
         PERFORM cod.remove_esc_actions(NEW.id);
         IF NEW.owner <> OLD.owner THEN
@@ -512,7 +512,9 @@ BEGIN
         IF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') OR
             NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating')
         THEN
-            RAISE NOTICE 'Inform H&M of owner or cancel';
+            IF NEW.hm_issue IS NOT NULL THEN
+                PERFORM hm_v1.close_issue(NEW.hm_issue, NEW.owner);
+            END IF;
         END IF;
         PERFORM cod.remove_esc_actions(NEW.id);
         IF NEW.owner <> OLD.owner THEN
