@@ -236,7 +236,7 @@ INSERT INTO cod.action_type (name, description) VALUES
     ('HelpText', 'Work the help text for the component'),
     ('PhoneCall', 'Call the listed person'),
     ('Escalate', 'Manually escalate to an oncall group'),
-    ('Resolve', 'Incident cleared and all escalations resolved');
+    ('Close', 'Incident cleared and all escalations resolved');
 
 /**********************************************************************************************/
 
