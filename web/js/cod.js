@@ -24,6 +24,9 @@ var COD = {},
     // RESTDatasource Error Handler
     COD.RESTErrorHandler = function (XMLHttpRequest, textStatus, errorThrown) {
         logger.debug(errorThrown);
+        if (XMLHttpRequest.status == 401) {
+            window.location = '/norns/?path=' + escape(window.location.pathname);
+        }
     };
 
     // REST DataSources
@@ -31,24 +34,6 @@ var COD = {},
 
     // Refresh ID namespace
     COD.rid = {};
-
-    COD.hash = undefined;
-
-    COD.getHash = function () {
-        var i, segments,
-            hash = COD.hash;
-        if (COD.hash === undefined) {
-            hash = {};
-            segments = $(location).attr('hash').replace(/^#/, '').split(/\//);
-            if (segments.length >= 2) {
-                for (i = 0; i < segments.length; i += 2) {
-                    hash[segments[i]] = segments[i + 1];
-                }
-            }
-            COD.hash = hash;
-        }
-        return hash;
-    };
 
     COD.createLastUpdated = function () {
         $('#tools-app-title-bar-right').append('<div id="last-updated">Last Updated: <span id="last-updated-time">____-__-__ __:__:__</span></div>');
