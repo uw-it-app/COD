@@ -327,7 +327,11 @@ BEGIN
                 INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'));
             ELSE
                 -- create escalation (see escalation_workflow)
-                INSERT INTO cod.escalation (item_id, oncall_group) VALUES (NEW.id, _oncall);
+                IF (SELECT active_notification FROM cod.support_model WHERE id = NEW.support_model_id) IS TRUE THEN
+                    INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (NEW.id, _oncall, standard.enum_value_id('cod', 'esc_state', 'Active'));
+                ELSE
+                    INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (NEW.id, _oncall, standard.enum_value_id('cod', 'esc_state', 'Passive'));
+                END IF;
             END IF;
         END IF;
 
@@ -410,15 +414,7 @@ BEGIN
         
         NEW.rt_ticket    := rt.create_ticket(_payload);
     END IF;
-    IF (NEW.page_state_id IS NULL) THEN
-        IF (SELECT active_notification FROM cod.support_model WHERE id = _item.support_model_id) IS TRUE THEN
-            NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
-            NEW.page_state_id := standard.enum_value_id('cod', 'page_state', 'Active');
-        ELSE
-            NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
-            NEW.page_state_id := standard.enum_value_id('cod', 'page_state', 'Passive');
-        END IF;
-    ELSEIF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Passive') THEN
+    IF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Passive') THEN
         NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
     ELSE
         NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
