@@ -50,7 +50,7 @@
                 <div class="label"><span class="help">ITIL Type</span></div>
             </div>
             <div class="tile_block">
-                <div id="Item.ReferenceNumber" class="item_bind short box"></div>
+                <div id="Item.ReferenceNumber" class="item_bind box"></div>
                 <div class="label"><span class="help">Ref#</span></div>
             </div>            
         </div>
@@ -81,7 +81,7 @@
                             <td id="Esclation.OncallGroup" class="item_bind"></td>
                             <td id="Esclation.Queue" class="item_bind"></td>
                             <td id="Esclation.Owner" class="item_bind"></td>
-                            <td>SetOwner</td>
+                            <td><a href="#" class="actSetOwner">SetOwner</a><input type="hidden" id="Escalation.Id" class="item_bind"/></td>
                         </tr>
                     </tbody>
                 </table>
@@ -111,22 +111,42 @@
                             <tr>
                                 <th class="vertical">To</th>
                                 <td>
-                                    <span id="Action.FullName"></span> (<span id="Action.Name"></span>)
+                                    <span id="Action.Data.CurrentSquawk.User.FullName" class="PhoneCall_action_bind"></span> (<span id="Action.Data.CurrentSquawk.User.UWNetID" class="PhoneCall_action_bind"></span>)
                                 </td>
                             </tr>
                             <tr>
                                 <th class="vertical">At</th>
-                                <td id="Action.Data"></td>
+                                <td id="Action.Data.CurrentSquawk.Data" class="PhoneCall_action_bind"></td>
                             </tr>
                             <tr>
                                 <td class="vertical" colspan="2">
                                     <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
                                     <input type="hidden" name="Type" value="PhoneCall"/>
-                                    <input id="SquawkId" type="hidden" name="SquawkId" value=""/>
+                                    <input id="Action.Data.CurrentSquawk.Id" type="hidden" name="SquawkId" value="" class="PhoneCall_action_bind sync_clear"/>
+                                    <input id="Action.Id" name="Id" class="PhoneCall_action_bind sync_clear" type="hidden" />
                                 </td>
                             </tr>
                             <tr>
-                                <td class="vertical" colspan="2"><input id="msg" type="submit" value="Submit" class="actionSubmit full"/></td>
+                                <td class="vertical" colspan="2">
+                                    <input type="submit" value="Take" class="actionSubmit third"/>
+                                    <input type="submit" value="Page" class="actionSubmit third"/>
+                                    <input type="submit" value="Fail" class="actionSubmit third"/>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div id="ActionSetOwner" class="action_tile tile_block prompted_action" data-title="Set Owner">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Owner</th>
+                                <td class="vertical">
+                                    <input name="Owner" class="sync_clear full uwnetid_select" />
+                                    <input type="hidden" name="Type" value="SetOwner"/>
+                                    <input type="hidden" name="EscId" id="Action.Data.EscalationId" class="sync_clear SetOwner_action_bind" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -202,7 +222,7 @@
                             <tr>
                                 <th class="vertical">Reference#</th>
                                 <td class="vertical">
-                                    <input id="Item.ReferenceNumber" name="Value" class="item_bind short" />
+                                    <input id="Item.ReferenceNumber" name="Value" class="item_bind full" />
                                     <input type="hidden" name="Type" value="RefNumber"/>
                                 </td>
                             </tr>
@@ -254,6 +274,12 @@
                     <div id="ActionEscalate" class="action_tile tile_block"data-title="Create Escalation">
                         <table cellspacing="0" class="item full">
                             <tr>
+                                <th class="vertical">Type</th>
+                                <td>
+                                    <select name="ContactType"><option value="active">active</option><option value="passive">passive</option></select>
+                                </td>
+                            </tr>
+                            <tr>
                                 <th class="vertical">Oncall</th>
                                 <td>
                                     <select id="escalateTo" name="EscalateTo" class="sync_clear">
@@ -261,13 +287,10 @@
                                         <option value="duty_manager">DutyManager</option>
                                         <option value="_">Custom</option>
                                     </select>
-                                    <input name="Custom" value="" placeholder="Enter custom oncall" class="full suggest_oncall sync_clear"/>
+                                    <input name="Custom" value="" placeholder="Enter custom oncall group" class="full suggest_oncall sync_clear"/>
                                     <input type="hidden" name="Type" value="Escalate"/>
                                 </td>
                             </tr>
-                            <!--<tr>
-                                <th class="vertical" colspan="2">Message</th>
-                            </tr>-->
                             <tr>
                                 <td class="vertical" colspan="2">
                                     <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
@@ -363,6 +386,7 @@
                     {title: 'Item ' + itemId, href: '/.cod/item/Id/' + itemId}
             ];
             $(document).ready( function() {
+                $('#tools-app-name a').after('<span class="version">v<?php echo $version ?></span>');
                 $('#item_container').item({Id: itemId});
                 // stylize all the buttons with jQueryUI
                 $("button, input[type=image], input[type=submit], input[type=reset], input[type=button]").button();

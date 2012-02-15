@@ -19,6 +19,12 @@
             var _this = this;
             COD.data.item = {Item: {}};
             COD.REST.item = new RESTDataSource(COD.dataSources.item, COD.RESTErrorHandler);
+            $(document).on('click', 'a.actSetOwner', function () {
+                var a = $(this),
+                    e_id = a.next().val();
+                $('#ActionSetOwner').actionTile('newData', {Action:{Type:"SetOwner",Data:{EscalationId:e_id}}}).actionTile('highlight');
+                return false;
+            });
             $(document).on('click', 'input[type="submit"]', function () {
                 var s = $(this),
                     tile = s.parents('.action_tile'),
@@ -31,7 +37,7 @@
                 });
                 Item.Do['Submit'] = s.val();
                 COD.REST.item.put({Id: Item.Id}, {Item:Item}, $.proxy(_this._updateData, _this), null);
-                tile.action_tile('normal').tile('close');
+                tile.actionTile('normal').tile('close');
                 return false;
             });
         },
@@ -71,7 +77,9 @@
         },
 
         jpopSync: function () {
-            var Item = COD.data.item.Item;
+            var Item = COD.data.item.Item,
+                oncalls = [],
+                ocOptions = '<option value=""></option>';
             $('.sync_clear').val('');
             $('title').text('COD: (' + Item.Id + ') ' + Item.Subject);
             $('.item_bind').jpop(COD.data.item, {});
@@ -83,6 +91,22 @@
                     $(this).parent().show();
                 }
             });
+            $.each(Item.Events.Event, function() {
+                if (this.Contact && ($.inArray(this.Contact) === -1)) {
+                    oncalls.push(this.Contact);
+                }
+                if (this.OncallPrimary && ($.inArray(this.OncallPrimary) === -1)) {
+                    oncalls.push(this.OncallPrimary);
+                }
+                if (this.OncallAlternate && ($.inArray(this.OncallAlternate) === -1)) {
+                    oncalls.push(this.OncallAlternate);
+                }
+            });
+            $.each(oncalls, function () {
+                ocOptions = ocOptions + '<option value="'+this+'">'+this+'</option>';
+            });
+            ocOptions = ocOptions + '<option value="duty_manager">DutyManager</option><option value="_">Custom</option>';
+            $('#escalateTo').html(ocOptions);
             $('.helpText').each(function () {
                 var _content = $(this).text();
                 $(this).attr({"href": _content});
@@ -120,8 +144,8 @@
             }
             $('.prompted_action').tile('hide');
             $.each(Item.Actions.Action, function () {
-                if (!this.Completed.At) {
-                    $('#Action' + this.Type).actionTile('highlight');
+                if (!this.Completed.At && (this.Successful === '')) {
+                    $('#Action' + this.Type).actionTile('newData', {Action:this}).actionTile('highlight');
                 };
             });
             COD.rtLinker();

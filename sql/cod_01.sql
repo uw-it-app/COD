@@ -270,13 +270,14 @@ BEGIN
     IF NEW.ended_at IS DISTINCT FROM OLD.ended_at THEN
         IF NEW.ended_at IS NOT NULL THEN
             -- cancel all active escalations
-            PERFORM hm_v1.close_issue(hm_issue, owner) FROM cod.escalation WHERE item_id = NEW.id;
+            PERFORM hm_v1.close_issue(hm_issue, owner, ' ') FROM cod.escalation WHERE item_id = NEW.id;
         END IF;
     END IF;
 
     IF NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed') THEN
         --RAISE NOTICE 'Tell acc/proxd to delete alert';
         -- unset nag
+        PERFORM rt.update_ticket(NEW.rt_ticket, E'Status: resolved\n');
         RETURN NEW;
     ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved') THEN
         -- if event is not cleared
@@ -409,12 +410,18 @@ BEGIN
         
         NEW.rt_ticket    := rt.create_ticket(_payload);
     END IF;
-    IF (SELECT active_notification FROM cod.support_model WHERE id = _item.support_model_id) IS TRUE THEN
-        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
-        NEW.page_state_id := standard.enum_value_id('cod', 'page_state', 'Active');
-    ELSE
+    IF (NEW.page_state_id IS NULL) THEN
+        IF (SELECT active_notification FROM cod.support_model WHERE id = _item.support_model_id) IS TRUE THEN
+            NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
+            NEW.page_state_id := standard.enum_value_id('cod', 'page_state', 'Active');
+        ELSE
+            NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
+            NEW.page_state_id := standard.enum_value_id('cod', 'page_state', 'Passive');
+        END IF;
+    ELSEIF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Passive') THEN
         NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
-        NEW.page_state_id := standard.enum_value_id('cod', 'page_state', 'Passive');
+    ELSE
+        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
     END IF;
     RETURN NEW;
 --EXCEPTION
@@ -501,7 +508,7 @@ BEGIN
             NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating')
         THEN
             IF NEW.hm_issue IS NOT NULL THEN
-                PERFORM hm_v1.close_issue(NEW.hm_issue, NEW.owner);
+                PERFORM hm_v1.close_issue(NEW.hm_issue, NEW.owner, ' ');
             END IF;
         END IF;
         PERFORM cod.remove_esc_actions(NEW.id);
@@ -513,7 +520,7 @@ BEGIN
             NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating')
         THEN
             IF NEW.hm_issue IS NOT NULL THEN
-                PERFORM hm_v1.close_issue(NEW.hm_issue, NEW.owner);
+                PERFORM hm_v1.close_issue(NEW.hm_issue, NEW.owner, ' ');
             END IF;
         END IF;
         PERFORM cod.remove_esc_actions(NEW.id);

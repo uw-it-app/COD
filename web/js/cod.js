@@ -7,7 +7,7 @@
 /*global moment*/
 /*global document*/
 var COD = {},
-    toolsAppName = {title: 'COD', href: './'};
+    toolsAppName = {title: 'COD', href: '/.cod/'};
 
 (function () {
     'use strict';

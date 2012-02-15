@@ -26,17 +26,19 @@ CREATE OR REPLACE FUNCTION cod_v2.event_xml(integer) RETURNS xml
         xmlelement(name "SupportModel", model.name),
         xmlelement(name "Severity", event.severity),
         xmlelement(name "Contact", event.contact),
+        xmlelement(name "OncallPrimary", event.oncall_primary),
+        xmlelement(name "OncallAlternate", event.oncall_alternate),
         xmlelement(name "HelpText", event.helptext),
         xmlelement(name "Message", xpath.get_varchar('/Event/Alert/Msg', event.content::xml)),
         xmlelement(name "LongMessage", xpath.get_varchar('/Event/Alert/LongMsg', event.content::xml)),
         xmlelement(name "Content", event.content),
         xmlelement(name "Modified",
-            xmlelement(name "At", date_trunc('second', event.modified_at)::varchar),
+            xmlelement(name "At", date_trunc('second', event.modified_at)::timestamp::varchar),
             xmlelement(name "By", event.modified_by)
         ),
         xmlelement(name "Times",
-            xmlelement(name "Start", date_trunc('second', event.start_at)::varchar),
-            xmlelement(name "End", date_trunc('second', event.end_at)::varchar)
+            xmlelement(name "Start", date_trunc('second', event.start_at)::timestamp::varchar),
+            xmlelement(name "End", date_trunc('second', event.end_at)::timestamp::varchar)
         )
     ) FROM cod.event AS event
       JOIN cod.support_model AS model ON (event.support_model_id = model.id)
@@ -64,11 +66,11 @@ CREATE OR REPLACE FUNCTION cod_v2.action_xml(integer) RETURNS xml
         xmlelement(name "Successful", action.successful),
         xmlelement(name "Data", action.content::xml),
         xmlelement(name "Completed",
-            xmlelement(name "At", date_trunc('second', action.completed_at)::varchar),
+            xmlelement(name "At", date_trunc('second', action.completed_at)::timestamp::varchar),
             xmlelement(name "By", action.completed_by)
         ),
         xmlelement(name "Modified",
-            xmlelement(name "At", date_trunc('second', action.modified_at)::varchar),
+            xmlelement(name "At", date_trunc('second', action.modified_at)::timestamp::varchar),
             xmlelement(name "By", action.modified_by)
         )
     ) FROM cod.action AS action
@@ -101,13 +103,13 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
         xmlelement(name "Queue", e.queue),
         xmlelement(name "Owner", e.owner),
         xmlelement(name "Times", 
-            xmlelement(name "Escalated", date_trunc('second', e.escalated_at)::varchar),
-            xmlelement(name "Owned", date_trunc('second', e.owned_at)::varchar),
-            xmlelement(name "Resolved", date_trunc('second', e.resolved_at)::varchar)
+            xmlelement(name "Escalated", date_trunc('second', e.escalated_at)::timestamp::varchar),
+            xmlelement(name "Owned", date_trunc('second', e.owned_at)::timestamp::varchar),
+            xmlelement(name "Resolved", date_trunc('second', e.resolved_at)::timestamp::varchar)
         ),
         xmlelement(name "Content", e.content),
         xmlelement(name "Modified",
-            xmlelement(name "At", date_trunc('second', e.modified_at)::varchar),
+            xmlelement(name "At", date_trunc('second', e.modified_at)::timestamp::varchar),
             xmlelement(name "By", e.modified_by)
         )
     ) FROM cod.escalation AS e
@@ -143,11 +145,11 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
         xmlelement(name "Stage", stage.name),
         xmlelement(name "ReferenceNumber", item.reference_no),
         xmlelement(name "Times",
-            xmlelement(name "Started", date_trunc('second', item.started_at)::varchar),
+            xmlelement(name "Started", date_trunc('second', item.started_at)::timestamp::varchar),
             xmlelement(name "Ended", date_trunc('second', item.ended_at)::varchar),
-            xmlelement(name "Escalated", date_trunc('second', item.escalated_at)::varchar),
-            xmlelement(name "Resolved", date_trunc('second', item.resolved_at)::varchar),
-            xmlelement(name "Closed", date_trunc('second', item.closed_at)::varchar)
+            xmlelement(name "Escalated", date_trunc('second', item.escalated_at)::timestamp::varchar),
+            xmlelement(name "Resolved", date_trunc('second', item.resolved_at)::timestamp::varchar),
+            xmlelement(name "Closed", date_trunc('second', item.closed_at)::timestamp::varchar)
         ),
         xmlelement(name "Events",
             (SELECT xmlagg(cod_v2.event_xml(e.id)) FROM
@@ -166,11 +168,11 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
         ),
         xmlelement(name "Content", item.content),
         xmlelement(name "Created",
-            xmlelement(name "At", date_trunc('second', item.created_at)::varchar),
+            xmlelement(name "At", date_trunc('second', item.created_at)::timestamp::varchar),
             xmlelement(name "By", item.created_by)
         ),
         xmlelement(name "Modified",
-            xmlelement(name "At", date_trunc('second', item.modified_at)::varchar),
+            xmlelement(name "At", date_trunc('second', item.modified_at)::timestamp::varchar),
             xmlelement(name "By", item.modified_by)
         )
     ) FROM cod.item AS item
@@ -200,17 +202,23 @@ CREATE OR REPLACE FUNCTION cod_v2.item_do_xml(integer, xml) RETURNS xml
 DECLARE
     v_id        ALIAS FOR $1;
     v_xml       ALIAS FOR $2;
+    _id         integer;
     _type       varchar;
     _message    varchar;
     _msgType    varchar     := 'comment';
     _msgToSubs  boolean     := TRUE;
+    _success    boolean;
     _payload    varchar;
+    _owner      varchar;
+    _page       varchar;
+    _oncall     varchar;
     _row        cod.item%ROWTYPE;
 BEGIN
     SELECT * INTO _row FROM cod.item WHERE id = v_id;
     IF _row.id IS NULL THEN
         RETURN NULL;
     END IF;
+    _id      := xpath.get_integer('/Item/Do/Id', v_xml);
     _type    := xpath.get_varchar('/Item/Do/Type', v_xml);
     _message := xpath.get_varchar('/Item/Do/Message', v_xml);
     IF _type = 'RefNumber' THEN
@@ -227,7 +235,19 @@ BEGIN
     ELSEIF _type = 'Reactivate' THEN
         UPDATE cod.event SET end_at = NULL WHERE item_id = v_id;
     ELSEIF _type = 'PhoneCall' THEN
-        RAISE NOTICE 'send info to squawk';
+        IF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Take' THEN
+            _success := TRUE;
+        ELSEIF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Fail' THEN
+            _success := FALSE;
+        END IF;
+        IF _success IS TRUE THEN
+            UPDATE cod.action SET successful = TRUE, completed_at = now() WHERE id = _id;
+        ELSE
+            UPDATE cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating')
+                WHERE id = (SELECT escalation_id FROM cod.action WHERE id = _id);
+            UPDATE cod.action SET successful = FALSE, completed_at = now() WHERE id = _id;
+        END IF;
+        PERFORM hm_v1.update_squawk(xpath.get_integer('/Item/Do/SquawkId', v_xml), _success, _message);
         _message := NULL;
     ELSEIF _type = 'HelpText' THEN
         IF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Clear' THEN
@@ -241,17 +261,31 @@ BEGIN
                 WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText');
         END IF;
         _msgToSubs := FALSE;
-    ELSEIF _type = 'Nag' THEN
-        RAISE NOTICE 'Reset nag times';
-    ELSEIF _type = 'SetNag' THEN
-        RAISE NOTICE 'Set Nag time';
     ELSEIF _type = 'Message' THEN
         _msgType := xpath.get_varchar_check('/Item/Do/MsgType', v_xml, _msgType);
         IF xpath.get_varchar('/Item/Do/ToSubs', v_xml) = 'no' THEN
             _msgToSubs := FALSE;
         END IF;
+    ELSEIF _type = 'SetOwner' THEN
+        _owner := xpath.get_varchar('/Item/Do/Owner', v_xml);
+        IF _owner IS NOT NULL THEN
+            UPDATE cod.escalation SET owner = _owner WHERE item_id = v_id AND id = xpath.get_integer('/Item/Do/EscId', v_xml);
+        END IF;
     ELSEIF _type = 'Escalate' THEN
-        RAISE NOTICE 'PERFORM Escalation';
+        IF xpath.get_varchar('/Item/Do/ContactType', v_xml) = 'passive' THEN
+            _page := 'Passive';
+        ELSE
+            _page := 'Active';
+        END IF;
+        _oncall := xpath.get_varchar('/Item/Do/EscalateTo', v_xml);
+        IF _oncall = '_' THEN
+            _oncall = xpath.get_varchar('Item/Do/Custom', v_xml);
+        END IF;
+        INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (v_id, _oncall, standard.enum_value_id('cod', 'page_state', _page));
+    ELSEIF _type = 'Nag' THEN
+        RAISE NOTICE 'Reset nag times';
+    ELSEIF _type = 'SetNag' THEN
+        RAISE NOTICE 'Set Nag time';
     END IF;
     IF _message IS NOT NULL THEN
         -- send to rt
@@ -285,7 +319,7 @@ CREATE OR REPLACE FUNCTION cod_v2.items_xml() RETURNS xml
     Returns:      XML list of items
 */
 SELECT xmlelement(name "Items",
-    (SELECT xmlagg(cod_v2.item_xml(id)) FROM (SELECT i.id FROM cod.item i JOIN cod.state s ON (i.state_id=s.id) WHERE s.sort < 90 ORDER BY s.sort ASC, i.rt_ticket DESC) AS foo),
+    (SELECT xmlagg(cod_v2.item_xml(id)) FROM (SELECT i.id FROM cod.item i JOIN cod.state s ON (i.state_id=s.id) WHERE s.sort < 90 OR i.closed_at > now() - '1 hour'::interval ORDER BY s.sort ASC, i.rt_ticket DESC) AS foo),
     xmlelement(name "ModifiedAt", (SELECT max(modified_at) FROM cod.item))
 );
 $_$;
@@ -384,8 +418,8 @@ BEGIN
     _comp := xpath.get_varchar('/Event/Alert/Component', v_xml);        -- subject(item); (event)
     _model := upper(xpath.get_varchar('/Event/SupportModel', v_xml));   -- (item); (event)
     _contact := xpath.get_varchar('/Event/Alert/Contact', v_xml);       -- (event)
-    _hostpri := xpath.get_varchar('/Event/Event/OnCall', v_xml);        -- (event)
-    _hostalt := xpath.get_varchar('/Event/Event/AltOnCall', v_xml);     -- (event)
+    _hostpri := xpath.get_varchar('/Event/OnCall', v_xml);        -- (event)
+    _hostalt := xpath.get_varchar('/Event/AltOnCall', v_xml);     -- (event)
     _msg := xpath.get_varchar('/Event/Alert/Msg', v_xml);               -- for ticket
     _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', v_xml);          -- for ticket
 
@@ -481,6 +515,7 @@ DECLARE
     _activity   varchar;
     _content    varchar;
     _row        record;
+    _action     cod.action%ROWTYPE;
 BEGIN
     _hm_id    := xpath.get_integer('/Issue/Id', v_xml);
     _ticket   := xpath.get_integer('/Issue/Ticket', v_xml);
@@ -509,15 +544,20 @@ BEGIN
             _content := xpath('/Issue/CurrentSquawk', v_xml)::text::varchar;
             UPDATE cod.action SET completed_at = now(), successful = FALSE
                 WHERE escalation_id = _row.id AND completed_at IS NULL AND content <> _content;
-            IF NOT EXISTS(SELECT NULL FROM cod.action WHERE escalation_id = _row.id AND completed_at IS NULL AND content <> _content) THEN
+            SELECT * INTO _action FROM cod.action WHERE escalation_id = _row.id AND content = _content;
+            IF _action.id IS NULL THEN
                 INSERT INTO cod.action (item_id, escalation_id, action_type_id, content) VALUES (
                     _row.item_id,
                     _row.id,
                     standard.enum_value_id('cod', 'action_type', 'PhoneCall'),
                     _content
                 );
+                Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') WHERE id = _row.id;
+            ELSEIF _action.completed_at IS NULL THEN
+                Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') WHERE id = _row.id;
+            ELSE
+                Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating') WHERE id = _row.id;
             END IF;
-            Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') WHERE id = _row.id;
         END IF;
         RETURN TRUE;
     END IF;
@@ -543,4 +583,4 @@ COMMENT ON FUNCTION cod_v2.process_hm_update(xml) IS 'DR: Process HM Issues stat
 COMMIT;
 
 --select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
---select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev6.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
+--select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>A</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev5.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);

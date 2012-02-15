@@ -31,8 +31,8 @@
             <td class="items_bind" id="Item.State"></td>
             <td class="items_bind" id="Item.ITILType"></td>
             <td class="items_bind" id="Item.Subject"></td>
-            <td><a id="Item.RTTicket" class="items_bind rtlink" href='#'></a></td>
-            <td class="hm_issue"><a id="Item.HMIssue" class="items_bind hmlink" href='#' target='RTSuper'></a></td>
+            <td><a id="Item.RTTicket" class="items_bind rtlink" href='#' target='RTSuper'></a></td>
+            <td class="hm_issue"><a id="Item.HMIssue" class="items_bind hmlink" href='#' target='HM'></a></td>
             <td class="items_bind ref_no" id="Item.ReferenceNumber"></td>
             <td class="items_bind" id="Item.SupportModel"></td>
             <td class="items_bind" id="Item.Severity"></td>
@@ -46,8 +46,8 @@
                 <tbody class="items_bind" id="Item.Escalations:Escalation">
                     <tr>
                         <td class="items_bind" id="Escalation.OncallGroup"></td>
-                        <td class="items_bind" id="Escalation.RTTicket"></td>
-                        <td class="items_bind" id="Escalation.HMIssue"></td>
+                        <td><a class="items_bind rtlink" id="Escalation.RTTicket" href="#" target="RTSub"></a></td>
+                        <td><a class="items_bind hmlink" id="Escalation.HMIssue" href="#" target="HM"></a></td>
                     </tr>
                 </tbody>
                 </table>
@@ -71,6 +71,7 @@
                 {title: 'COD', href: '/.cod/'}
             ];
             $(document).ready( function() {
+                $('#tools-app-name a').after('<span class="version">v<?php echo $version ?></span>');
                 $('#itemsTable').items();
                 // stylize all the buttons with jQueryUI
                 $("button, input[type=image], input[type=submit], input[type=reset], input[type=button]").button();

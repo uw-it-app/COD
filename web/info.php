@@ -1,5 +1,13 @@
 <?php
-$version = '2.0.0';
+$version = '2.0.0-beta1';
+
+/****************************************************************************/
+
+# redirect to https if http
+if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
+	header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
+	exit();
+}
 
 function pathinfoToHash () {
 	$pathinfo = $_SERVER['PATH_INFO'];
@@ -14,10 +22,4 @@ function pathinfoToHash () {
 		}
 	}
 	return $out;
-}
-
-# redirect to https if http
-if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
-	header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
-	exit();
 }

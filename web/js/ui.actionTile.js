@@ -24,6 +24,17 @@
             //link submits to command that grabs data and sends to API
         },
 
+        newData: function (data) {
+            this.options.data = data;
+            if (data !== undefined && data !== '') {
+                $('.' + data.Action.Type + '_action_bind').jpop(data, {});  
+            }
+        },
+
+        jpopSync: function () {
+            
+        },
+
         highlight: function () {
             $(this.element).addClass('highlight').tile('show').tile('lockOpen');
         },

@@ -13,7 +13,7 @@ Table of Contents (order of these sections is significant)
         width: 49.5%;
     }
     .third{
-        width: 33%;
+        width: 32%;
     }
     div.minor{
         float: left;
@@ -83,6 +83,11 @@ Table of Contents (order of these sections is significant)
         border: 1px solid #CCC;
         padding: 4px;
         min-height: 1em;
+    }
+    .version {
+        padding-left: .5em;
+        font-size: small;
+        color: #AAA;
     }
 }
 
