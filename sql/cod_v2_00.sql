@@ -153,7 +153,7 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
         ),
         xmlelement(name "Events",
             (SELECT xmlagg(cod_v2.event_xml(e.id)) FROM
-               (SELECT id FROM cod.event WHERE item_id = $1 ORDER BY id) AS e
+               (SELECT id FROM cod.event WHERE item_id = $1 ORDER BY id ASC) AS e
             )  
         ),
         xmlelement(name "Actions",
@@ -163,7 +163,7 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
         ),
         xmlelement(name "Escalations",
             (SELECT xmlagg(cod_v2.escalation_xml(x.id)) FROM
-               (SELECT id FROM cod.escalation WHERE item_id = $1 ORDER BY id) AS x
+               (SELECT id FROM cod.escalation WHERE item_id = $1 ORDER BY id DESC) AS x
             )
         ),
         xmlelement(name "Content", item.content),
