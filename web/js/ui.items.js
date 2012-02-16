@@ -63,6 +63,9 @@
         jpopSync: function () {
             var _hm = true, _refno = true;
             $('.items_bind').jpop(COD.data.items, {});
+            $('.state').each(function () {
+                $(this).parent().addClass('state_' +$(this).text());
+            });
             $('td.hm_issue').each(function(){ if ($(this).children().text()) { _hm = false;}});
             $('td.ref_no').each(function(){ if ($(this).html()) { _refno = false;}});
             if (_hm === true) {

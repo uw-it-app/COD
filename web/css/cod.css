@@ -10,10 +10,22 @@ Table of Contents (order of these sections is significant)
         width: 100%;
     }
     .half{
-        width: 49.5%;
+        width: 48.5%;
     }
     .third{
         width: 32%;
+    }
+    .state_Act {
+        background-color: #FCC;
+    }
+    .state_Escalating {
+        background-color: #CFC;
+    }
+    .state_T2-3 {
+        background-color: #FFC;
+    }
+    .state_Closed {
+        background-color: #EEE;
     }
     div.minor{
         float: left;

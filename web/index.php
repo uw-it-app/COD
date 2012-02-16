@@ -28,7 +28,7 @@
     <tbody class="items_bind" id="Items:Item">
         <tr class="clickable item_click">
             <td class="items_bind item_id" id="Item.Id" style="display:none"></td>
-            <td class="items_bind" id="Item.State"></td>
+            <td class="items_bind state" id="Item.State"></td>
             <td class="items_bind" id="Item.ITILType"></td>
             <td class="items_bind" id="Item.Subject"></td>
             <td><a id="Item.RTTicket" class="items_bind rtlink" href='#' target='RTSuper'></a></td>
