@@ -33,7 +33,7 @@ BEGIN
     END IF;
     -- foreach incident
     FOR _i in 1.._count LOOP
-        _incident := v_xml[_i];
+        _incident := _incidents[_i];
         SELECT * INTO _item FROM cod.item WHERE rt_ticket = xpath.get_integer('/Incident/Id', _incident);
         IF _item.id IS NULL THEN
             -- DEFER: create incident if it doesn't exist
@@ -45,14 +45,14 @@ BEGIN
         IF _count2 IS NOT NULL THEN
             -- foreach escalation
             FOR _j in 1.._count2 LOOP
-                _esc := incident[_j];
-                SELECT * INTO _escalation WHERE rt_ticket = xpath.get_integer('/Escalation/Id', _esc);
+                _esc := _escs[_j];
+                SELECT * INTO _escalation FROM cod.escalation WHERE rt_ticket = xpath.get_integer('/Escalation/Id', _esc);
                 IF _escalation.id IS NULL THEN
                     -- DEFER: create if doesn't exist
                     CONTINUE;
                 END IF;
                 -- set status (new/open/stalled => resolved_at = null)(else&resolved_at is null => resolved_at = now())
-                IF ARRAY['new', 'open', 'stalled'] @> xpath.get_varchar('/Escalation/Status', _esc) THEN
+                IF ARRAY['new', 'open', 'stalled']::varchar[] @> ARRAY[xpath.get_varchar('/Escalation/Status', _esc)] THEN
                     _escalation.resolved_at := NULL;
                 ELSEIF _escalation.resolved_at IS NULL THEN
                     _escalation.resolved_at := now();
