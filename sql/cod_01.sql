@@ -71,7 +71,7 @@ BEGIN
                 'Starts: ' || _row.start_at::varchar || E'\n' ||
                 'Cc: ' || _cc  || E'\n' ||
                 'Content: ' || _message ||
-                E'ENDOFCONTENT\n';
+                E'ENDOFCONTENT\nCF-TicketType: Incident\n';
 
     RETURN rt.create_ticket(_payload);
 EXCEPTION
@@ -328,9 +328,9 @@ BEGIN
             ELSE
                 -- create escalation (see escalation_workflow)
                 IF (SELECT active_notification FROM cod.support_model WHERE id = NEW.support_model_id) IS TRUE THEN
-                    INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (NEW.id, _oncall, standard.enum_value_id('cod', 'esc_state', 'Active'));
+                    INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (NEW.id, _oncall, standard.enum_value_id('cod', 'page_state', 'Active'));
                 ELSE
-                    INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (NEW.id, _oncall, standard.enum_value_id('cod', 'esc_state', 'Passive'));
+                    INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (NEW.id, _oncall, standard.enum_value_id('cod', 'page_state', 'Passive'));
                 END IF;
             END IF;
         END IF;
@@ -410,7 +410,7 @@ BEGIN
                     -- 'Starts: ' || _row.start_at::varchar || E'\n' ||
                     'Super: ' || _item.rt_ticket || E'\n' ||
                     'Content: ' || _message || E'\n' ||
-                    E'ENDOFCONTENT\n';
+                    E'ENDOFCONTENT\nCF-TicketType: Incident\n';
         
         NEW.rt_ticket    := rt.create_ticket(_payload);
     END IF;
