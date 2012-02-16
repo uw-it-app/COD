@@ -146,7 +146,7 @@ CREATE OR REPLACE FUNCTION cod_v2.item_xml(integer) RETURNS xml
         xmlelement(name "ReferenceNumber", item.reference_no),
         xmlelement(name "Times",
             xmlelement(name "Started", date_trunc('second', item.started_at)::timestamp::varchar),
-            xmlelement(name "Ended", date_trunc('second', item.ended_at)::varchar),
+            xmlelement(name "Ended", date_trunc('second', item.ended_at)::timestamp::varchar),
             xmlelement(name "Escalated", date_trunc('second', item.escalated_at)::timestamp::varchar),
             xmlelement(name "Resolved", date_trunc('second', item.resolved_at)::timestamp::varchar),
             xmlelement(name "Closed", date_trunc('second', item.closed_at)::timestamp::varchar)
@@ -207,6 +207,7 @@ DECLARE
     _message    varchar;
     _msgType    varchar     := 'comment';
     _msgToSubs  boolean     := TRUE;
+    _msgStatus  varchar;
     _success    boolean;
     _payload    varchar;
     _owner      varchar;
@@ -228,8 +229,9 @@ BEGIN
         UPDATE cod.action SET completed_at = now(), successful = TRUE
             WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Close');
         UPDATE cod.item SET workflow_lock = FALSE, closed_at = now() WHERE id = v_id;
-        _msgType := 'correspond';
+        _msgType   := 'correspond';
         _msgToSubs := FALSE;
+        _msgStatus := 'resovled';
     ELSEIF _type = 'Clear' THEN
         UPDATE cod.event SET end_at = now() WHERE item_id = v_id;
     ELSEIF _type = 'Reactivate' THEN
@@ -292,6 +294,9 @@ BEGIN
         _payload := E'UpdateType: ' || _msgType || E'\n'
                  || E'CONTENT: ' || _message || E'\n'
                  || E'ENDOFCONTENT\n';
+        IF _msgStatus is NOT NULL THEN
+            _payload := _payload || 'Status: ' || _msgStatus || E'\n';
+        END IF;
         PERFORM rt.update_ticket(_row.rt_ticket, _payload);
         IF _msgToSubs IS TRUE THEN
             PERFORM rt.update_ticket(rt_ticket, _payload) FROM cod.escalation WHERE item_id = _row.id;
@@ -581,6 +586,25 @@ $_$;
 COMMENT ON FUNCTION cod_v2.process_hm_update(xml) IS 'DR: Process HM Issues state for COD (2012-02-07)';
 
 COMMIT;
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.inject(varchar, varchar) RETURNS xml
+    LANGUAGE sql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.inject(varchar, varchar)
+    Description:  Inject a faux alert
+    Affects:      
+    Arguments:    
+    Returns:      xml
+*/
+SELECT cod_v2.spawn_item_from_alert(('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>' || $2 || '</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>' || $1 || '</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>')::xml);
+$_$;
+
+COMMENT ON FUNCTION cod.inject(varchar, varchar) IS 'DR: Inject a faux alert (2012-02-15)';
+
 
 --select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
 --select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>A</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev5.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
