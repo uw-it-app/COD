@@ -14,7 +14,7 @@ INSERT INTO cod.state (sort, name, description) VALUES
     (10, 'Act', 'COPS has an action to perform'),
     (20, 'Processing', 'COD is updating data in the background'),
     (30, 'Escalating', 'Active contact to Level 2/3 support'),
-    (60, 'T2-3', 'Escalated to Tier 2/3'),
+    (60, 'Tier2', 'Escalated to Tier 2'),
     (80, 'Cleared', 'Impact cleared but not resolved'),
     (90, 'Resolved', 'All work completed'),
     (99, 'Closed', 'Closure Complete');
