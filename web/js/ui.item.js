@@ -38,6 +38,7 @@
                 Item.Do['Submit'] = s.val();
                 COD.REST.item.put({Id: Item.Id}, {Item:Item}, $.proxy(_this._updateData, _this), null);
                 tile.actionTile('normal').tile('close');
+                $('.sync_clear').val('');
                 return false;
             });
         },
@@ -80,7 +81,6 @@
             var Item = COD.data.item.Item,
                 oncalls = [],
                 ocOptions = '<option value=""></option>';
-            $('.sync_clear').val('');
             $('title').text('COD: (' + Item.Id + ') ' + Item.Subject);
             $('.item_bind').jpop(COD.data.item, {});
             $('.datetime').each(function () {
