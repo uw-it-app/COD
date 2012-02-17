@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title>COD: Computer Operations Dashboard</title>
 <?php include('css.php'); ?>
     <body>

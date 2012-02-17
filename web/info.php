@@ -8,6 +8,7 @@ if (!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
 	header('Location: https://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'], true, 301);
 	exit();
 }
+header('X-UA-Compatible: IE=Edge,chrome=1');
 
 function pathinfoToHash () {
 	$pathinfo = $_SERVER['PATH_INFO'];
