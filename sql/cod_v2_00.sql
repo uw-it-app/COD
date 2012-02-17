@@ -281,9 +281,15 @@ BEGIN
         END IF;
         _oncall := xpath.get_varchar('/Item/Do/EscalateTo', v_xml);
         IF _oncall = '_' THEN
-            _oncall = xpath.get_varchar('Item/Do/Custom', v_xml);
+            _oncall = xpath.get_varchar('/Item/Do/Custom', v_xml);
+        END IF;
+        IF NOT hm_v1.valid_oncall(_oncall) THEN
+            RAISE EXCEPTION 'InvalidInput: Not a valid oncall group -- %', _oncall;
         END IF;
         INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (v_id, _oncall, standard.enum_value_id('cod', 'page_state', _page));
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Failed to create and escalation to the oncall group %', _oncall;
+        END IF;
     ELSEIF _type = 'Nag' THEN
         RAISE NOTICE 'Reset nag times';
     ELSEIF _type = 'SetNag' THEN
