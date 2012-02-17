@@ -166,7 +166,7 @@ BEGIN
         IF (cod.has_active_escalation(NEW.id)) THEN
             NEW.state_id = standard.enum_value_id('cod', 'state', 'Escalating');
         ELSE
-            NEW.state_id = standard.enum_value_id('cod', 'state', 'T2-3');
+            NEW.state_id = standard.enum_value_id('cod', 'state', 'Tier2');
         END IF;
     ELSE
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Processing');
