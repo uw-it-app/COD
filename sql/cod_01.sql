@@ -321,17 +321,18 @@ BEGIN
         THEN
             SELECT * INTO _row FROM cod.event WHERE item_id = NEW.id ORDER BY id DESC LIMIT 1;
             _oncall := COALESCE(_row.contact, _row.oncall_primary, _row.oncall_alternate);
-            -- if no valid oncall group 
-            IF _oncall IS NULL THEN
-                -- create action to prompt to correct oncall group
-                INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'));
-            ELSE
+            IF _oncall IS NOT NULL THEN
                 -- create escalation (see escalation_workflow)
                 IF (SELECT active_notification FROM cod.support_model WHERE id = NEW.support_model_id) IS TRUE THEN
                     INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (NEW.id, _oncall, standard.enum_value_id('cod', 'page_state', 'Active'));
                 ELSE
                     INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (NEW.id, _oncall, standard.enum_value_id('cod', 'page_state', 'Passive'));
                 END IF;
+            END IF;
+            -- if no valid oncall group or failed to insert escalation
+            IF _oncall IS NULL OR FOUND IS FALSE THEN
+                -- create action to prompt to correct oncall group
+                INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'));
             END IF;
         END IF;
 
