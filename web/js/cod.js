@@ -22,10 +22,21 @@ var COD = {},
     COD.data = {};
 
     // RESTDatasource Error Handler
-    COD.RESTErrorHandler = function (XMLHttpRequest, textStatus, errorThrown) {
-        logger.debug(errorThrown);
-        if (XMLHttpRequest.status == 401) {
-            window.location = '/norns/?path=' + escape(window.location.pathname);
+    COD.RESTErrorHandler = function (XHR, textStatus, errorThrown) {
+        var data,
+            msg = '';
+        logger.debug(errorThrown + ': ' + XHR.responseText);
+        if (XHR.status == 401) {
+            window.setTimeout(function () {
+                window.location = '/norns/?path=' + escape(window.location.pathname);
+            }, 2000);
+            window.toolsAlert('Login Required - Redirecting...');
+        } else {
+            data = JSON.parse(XHR.responseText);
+            $.each(data.Errors, function (key, value) {
+                msg = msg + key + ': ' + value[0] + "\n";
+            });
+            window.toolsAlert(msg);
         }
     };
 
