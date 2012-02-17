@@ -375,6 +375,9 @@ BEGIN
     -- get queue from H&M
     IF NEW.queue IS NULL THEN
         NEW.queue := hm_v1.get_oncall_queue(NEW.oncall_group);
+        IF NEW.queue IS NULL THEN
+            RETURN NULL;
+        END IF;
     END IF;
     IF NEW.rt_ticket IS NULL THEN
         -- create ticket
