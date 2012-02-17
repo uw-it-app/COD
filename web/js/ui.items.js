@@ -20,11 +20,6 @@
             COD.createLastUpdated();
             COD.REST.items = new RESTDataSource(COD.dataSources.items, COD.RESTErrorHandler);
             $(document).on('click', '.item_click', function (e) {
-                if ($(e.originalEvent.srcElement).hasClass('rtlink') ||
-                    $(e.originalEvent.srcElement).hasClass('hmlink')
-                ) {
-                    return false;
-                };
                 window.open('/.cod/item/Id/' + $(this).children('.item_id').text());
                 return false;
             });

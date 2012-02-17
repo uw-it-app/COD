@@ -59,10 +59,11 @@ var COD = {},
     };
 
     COD.linker = function () {
-        $(document).on('click', 'a.rtlink, a.hmlink', function () {
+        $(document).on('click', 'a.rtlink, a.hmlink', function (e) {
+            e.cancelBubble = true;
             window.open($(this).attr('href'));
-            false;
-        })
+            return false;
+        });
     }
 }());
 
