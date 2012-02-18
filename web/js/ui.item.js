@@ -5,6 +5,7 @@
 /*global badgerArray */
 /*global COD */
 /*global window */
+/*global document*/
 (function () {
     'use strict';
 
@@ -22,21 +23,21 @@
             $(document).on('click', 'a.actSetOwner', function () {
                 var a = $(this),
                     e_id = a.next().val();
-                $('#ActionSetOwner').actionTile('newData', {Action:{Type:"SetOwner",Data:{EscalationId:e_id}}}).actionTile('highlight');
+                $('#ActionSetOwner').actionTile('newData', {Action: {Type: "SetOwner", Data: {EscalationId: e_id}}}).actionTile('highlight');
                 return false;
             });
             $(document).on('click', 'input[type="submit"]', function () {
                 var s = $(this),
                     tile = s.parents('.action_tile'),
-                    fields = $('#' + tile.attr('id') + ' input[type!="submit"], #'+tile.attr('id') + ' select, #'+tile.attr('id') + ' textarea'),
-                    Item = {Id:COD.data.item.Item.Id,Do:{}};
+                    fields = $('#' + tile.attr('id') + ' input[type!="submit"], #' + tile.attr('id') + ' select, #' + tile.attr('id') + ' textarea'),
+                    Item = {Id: COD.data.item.Item.Id, Do: {}};
 
                 fields.each(function () {
                     var i = $(this);
                     Item.Do[i.attr('name')] = i.val();
                 });
-                Item.Do['Submit'] = s.val();
-                COD.REST.item.put({Id: Item.Id}, {Item:Item}, $.proxy(_this._updateData, _this), null);
+                Item.Do.Submit = s.val();
+                COD.REST.item.put({Id: Item.Id}, {Item: Item}, $.proxy(_this._updateData, _this), null);
                 tile.actionTile('normal').tile('close');
                 $('.sync_clear').val('');
                 return false;
@@ -53,7 +54,7 @@
             COD.createLastUpdated();
         },
 
-        _updateData: function(data) {
+        _updateData: function (data) {
             if (data.Item.Escalations.Escalation === undefined) {
                 data.Item.Escalations = {Escalation: []};
             } else {
@@ -91,7 +92,7 @@
                     $(this).parent().show();
                 }
             });
-            $.each(Item.Events.Event, function() {
+            $.each(Item.Events.Event, function () {
                 if (this.Contact && ($.inArray(this.Contact) === -1)) {
                     oncalls.push(this.Contact);
                 }
@@ -103,7 +104,7 @@
                 }
             });
             $.each(oncalls, function () {
-                ocOptions = ocOptions + '<option value="'+this+'">'+this+'</option>';
+                ocOptions = ocOptions + '<option value="' + this + '">' + this + '</option>';
             });
             ocOptions = ocOptions + '<option value="duty_manager">DutyManager</option><option value="_">Custom</option>';
             $('#escalateTo').html(ocOptions);
@@ -111,8 +112,8 @@
                 var _content = $(this).text();
                 $(this).attr({"href": _content});
                 _content = _content.replace(/https?:\/\//, '')
-                                   .replace(/\.washington\.edu/, ': ')
-                                   .replace(/\/display\/monhelp\/component-/, '');
+                    .replace(/\.washington\.edu/, ': ')
+                    .replace(/\/display\/monhelp\/component-/, '');
                 $(this).text(_content);
             });
             if (Item.Times.Closed) {
@@ -145,10 +146,10 @@
             $('.prompted_action').tile('hide');
             $.each(Item.Actions.Action, function () {
                 if (!this.Completed.At && (this.Successful === '')) {
-                    $('#Action' + this.Type).actionTile('newData', {Action:this}).actionTile('highlight');
-                };
+                    $('#Action' + this.Type).actionTile('newData', {Action: this}).actionTile('highlight');
+                }
             });
-            $('.suggest').suggestSSG({RESTErrorHandler:COD.RESTErrorHandler});
+            $('.suggest').suggestSSG({RESTErrorHandler: COD.RESTErrorHandler});
             COD.rtLinker();
             COD.hmLinker();
             COD.updateLastUpdated();

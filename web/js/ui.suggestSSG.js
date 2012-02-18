@@ -1,5 +1,7 @@
 /*jslint nomen: true, regexp: true */
 /*global $ */
+/*global logger*/
+/*global badgerArray*/
 (function () {
     'use strict';
 
@@ -10,7 +12,11 @@
                         logger.debug(errorThrown);
                     },
                     selectFirst: true,
-                    select: function(event,ui) { this.value=ui.item.value; $(this).trigger('change'); return false; },
+                    select: function (event, ui) {
+                        this.value = ui.item.value;
+                        $(this).trigger('change');
+                        return false;
+                    },
                     source: function (request, response) {
                         var _this = this;
                         $.ajax({

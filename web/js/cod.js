@@ -6,6 +6,8 @@
 /*global location */
 /*global moment*/
 /*global document*/
+/*global window*/
+/*global escape*/
 var COD = {},
     toolsAppName = {title: 'COD', href: '/.cod/'};
 
@@ -26,7 +28,7 @@ var COD = {},
         var data,
             msg = '';
         logger.debug(errorThrown + ': ' + XHR.responseText);
-        if (XHR.status == 401) {
+        if (XHR.status === 401) {
             window.setTimeout(function () {
                 window.location = '/norns/?path=' + escape(window.location.pathname);
             }, 2000);
@@ -52,20 +54,20 @@ var COD = {},
 
     COD.updateLastUpdated = function () {
         $('#last-updated-time').html(moment().format('YYYY-MM-DD HH:mm:ss'))
-                .animate({backgroundColor:'#EDE'},500).delay(500).animate({backgroundColor:'#FFF'}, 500);
+            .animate({backgroundColor: '#EDE'}, 500).delay(500).animate({backgroundColor: '#FFF'}, 500);
     };
 
     COD.rtLinker = function () {
         $('a.rtlink').each(function () {
             var value = $(this).text();
-            $(this).attr({href:'https://rt.cac.washington.edu/Ticket/Display.html?id='+value});
+            $(this).attr({href: 'https://rt.cac.washington.edu/Ticket/Display.html?id=' + value});
         });
     };
 
     COD.hmLinker = function () {
         $('a.hmlink').each(function () {
             var value = $(this).text();
-            $(this).attr({href:'/hm/view/issue/'+value});
+            $(this).attr({href: '/hm/view/issue/' + value});
         });
     };
 
@@ -75,7 +77,7 @@ var COD = {},
             window.open($(this).attr('href'));
             return false;
         });
-    }
+    };
 }());
 
 

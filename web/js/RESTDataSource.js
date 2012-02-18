@@ -1,73 +1,73 @@
+/*jslint nomen: true, regexp: true */
+/*global console*/
+/*global $*/
+/*glboal JSON*/
 /*!
  * Generic REST DataSource code for Create, Read, Update, Delete, Search
  *
  * Need to include jquery and json libraries.
  */
- 
+(function () {
 
-(function() {
     this.RESTDataSource = function (resourceUrl, XHRErrorHandler) {
 
-        this.resourceUrl=resourceUrl;
+        this.resourceUrl = resourceUrl;
 
-        this.XHRError=XHRErrorHandler?XHRErrorHandler:
-            function(XMLHttpRequest, textStatus, errorThrown) {
-                if(console!==undefined)
-                    console.error("XHRError: status: "+textStatus+"; error: "+errorThrown);
+        this.XHRError = XHRErrorHandler || function (XMLHttpRequest, textStatus, errorThrown) {
+            if (console !== undefined) {
+                console.error("XHRError: status: " + textStatus + "; error: " + errorThrown);
             }
+        };
 
-
-            // POST
-        this.post   = function(data, callback, options) {
+        // POST
+        this.post = function (data, callback, options) {
             this._RESTCall("POST", undefined, {}, data, callback, options);
-        }
+        };
 
-            // GET
-        this.get    = function( params, callback, options ) {
+        // GET
+        this.get = function (params, callback, options) {
             this._RESTCall("GET", undefined, params, undefined, callback, options);
-        }
+        };
 
-            // PUT
-        this.put    = function( params, data, callback, options) {
+        // PUT
+        this.put = function (params, data, callback, options) {
             this._RESTCall("PUT", undefined, params, data, callback, options);
         };
 
-            // DELETE
-        this.delete = function( params, callback, options ) {
+        // DELETE
+        this.del = function (params, callback, options) {
             this._RESTCall("DELETE", undefined, params, undefined, callback, options);
         };
 
         this._RESTCall = function (type, dataType, params, data, callback, options) {
-            dataType = dataType ? dataType : "json";
+            dataType = dataType || "json";
 
-                // standard options
-            var pOptions = {
-                type:           type,
-                dataType:       dataType,
-                contentType:    "application/json",
-                error:          this.XHRError,
-                success:        callback
-            };
+            // standard options
+            var parameterString = '',
+                pOptions = {
+                    type:           type,
+                    dataType:       dataType,
+                    contentType:    "application/json",
+                    error:          this.XHRError,
+                    success:        callback
+                };
 
-                // parameterize the URL
-            var parameterString='';
-            for (var i in params) {
-                parameterString+="/"+i+"/"+params[i];
-            }
-            var url=this.resourceUrl+parameterString;
-            jQuery.extend(pOptions, {url: url});
+            $.each(params, function (key, value) {
+                parameterString += "/" + key + "/" + value;
+            });
 
-            if( data !== undefined ) {
-                var jsonData = JSON.stringify(data);
-                jQuery.extend(pOptions, {data: jsonData});
+            $.extend(pOptions, {url: this.resourceUrl + parameterString});
+
+            if (data !== undefined) {
+                $.extend(pOptions, {data: JSON.stringify(data)});
             }
 
-                // over-write default options with provided options
-                // this includes the URL
-            jQuery.extend(pOptions, options);
-                // DO IT
-            jQuery.ajax(pOptions);
-        }
+            // over-write default options with provided options
+            // this includes the URL
+            $.extend(pOptions, options);
+            // DO IT
+            $.ajax(pOptions);
+        };
 
-    }
-} ) ();
+    };
+}());

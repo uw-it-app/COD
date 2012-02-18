@@ -27,12 +27,8 @@
         newData: function (data) {
             this.options.data = data;
             if (data !== undefined && data !== '') {
-                $('.' + data.Action.Type + '_action_bind').jpop(data, {});  
+                $('.' + data.Action.Type + '_action_bind').jpop(data, {});
             }
-        },
-
-        jpopSync: function () {
-            
         },
 
         highlight: function () {
