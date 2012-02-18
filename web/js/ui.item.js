@@ -148,6 +148,7 @@
                     $('#Action' + this.Type).actionTile('newData', {Action:this}).actionTile('highlight');
                 };
             });
+            $('.suggest').suggestSSG({RESTErrorHandler:COD.RESTErrorHandler});
             COD.rtLinker();
             COD.hmLinker();
             COD.updateLastUpdated();

@@ -141,7 +141,7 @@
                             <tr>
                                 <th class="vertical">Owner</th>
                                 <td class="vertical">
-                                    <input name="Owner" class="sync_clear full uwnetid_select" />
+                                    <input name="Owner" class="sync_clear full suggest" data-url="/daw/json/HM/1/NetidSuggest"/>
                                     <input type="hidden" name="Type" value="SetOwner"/>
                                     <input type="hidden" name="EscId" id="Action.Data.EscalationId" class="sync_clear SetOwner_action_bind" />
                                 </td>
@@ -288,7 +288,7 @@
                                         <option value="duty_manager">DutyManager</option>
                                         <option value="_">Custom</option>
                                     </select>
-                                    <input name="Custom" value="" placeholder="Enter custom oncall group" class="full suggest_oncall sync_clear"/>
+                                    <input name="Custom" value="" placeholder="Enter custom oncall group" class="full suggest sync_clear" data-url="/daw/json/HM/1/OncallSuggest"/>
                                     <input type="hidden" name="Type" value="Escalate"/>
                                 </td>
                             </tr>
@@ -378,6 +378,7 @@
 <?php include('js.php'); ?>
         <script src="/.cod/js/ui.item.js"></script>
         <script src="/.cod/js/ui.actionTile.js"></script>
+        <script src="/.cod/js/ui.suggestSSG.js"></script>
         <script>
             var itemId, toolsBreadcrumbs, urlHash = JSON.parse('<?php echo json_encode(pathinfoToHash()) ?>');
             itemId = urlHash.Id;
