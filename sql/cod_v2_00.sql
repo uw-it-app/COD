@@ -8,6 +8,44 @@ COMMENT ON SCHEMA cod_v2 IS 'DR: COD REST API v2 (2011-11-16)';
 
 /**********************************************************************************************/
 
+CREATE OR REPLACE FUNCTION cod_v2.comment_pre RETURNS varchar
+    LANGUAGE sql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod_v2.comment_pre
+    Description:  Content to insert before comments
+    Affects:      nothing
+    Arguments:    none
+    Returns:      varchar
+*/
+    SELECT E'COD\n'
+        || E'-----------------------------------------\n'
+$_$;
+
+COMMENT ON FUNCTION cod_v2.comment_pre IS 'DR: Content to insert before comments (2012-02-17)';
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod_v2.comment_post RETURNS varchar
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod_v2.comment_post
+    Description:  Content to insert after comments
+    Affects:      nothing
+    Arguments:    none
+    Returns:      varchar
+*/
+    SELECT E'\n-----------------------------------------\n'
+        || E'By ' || standard.get_uwnetid() || ' via COD\n';
+$_$;
+
+COMMENT ON FUNCTION cod_v2.comment_post IS 'DR: Content to insert after comments (2012-02-17)';
+
+/**********************************************************************************************/
+
 CREATE OR REPLACE FUNCTION cod_v2.event_xml(integer) RETURNS xml
     LANGUAGE sql
     STABLE
@@ -303,7 +341,7 @@ BEGIN
     IF _message IS NOT NULL THEN
         -- send to rt
         _payload := E'UpdateType: ' || _msgType || E'\n'
-                 || E'CONTENT: ' || _message || E'\n'
+                 || E'CONTENT: ' || _message || cod_v2.comment_post()
                  || E'ENDOFCONTENT\n';
         IF _msgStatus is NOT NULL THEN
             _payload := _payload || 'Status: ' || _msgStatus || E'\n';
