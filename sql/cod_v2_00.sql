@@ -224,6 +224,8 @@ BEGIN
     _message := xpath.get_varchar('/Item/Do/Message', v_xml);
     IF _type = 'RefNumber' THEN
         UPDATE cod.item SET reference_no = xpath.get_varchar('/Item/Do/Value', v_xml) WHERE id = v_id;
+        _message   := 'Reference Number set: ' || xpath.get_varchar('/Item/Do/Value', v_xml);
+        _msgToSubs := FALSE;
     ELSEIF _type = 'Close' THEN
         UPDATE cod.item SET workflow_lock = TRUE WHERE id = v_id;
         UPDATE cod.action SET completed_at = now(), successful = TRUE
