@@ -1,7 +1,6 @@
 /*jslint nomen: true, regexp: true */
 /*global $ */
 /*global logger */
-/*global RESTDataSource */
 /*global COD */
 /*global window */
 /*global document*/
@@ -18,7 +17,7 @@
         _connectControllerStuff: function () {
             var _this = this;
             COD.data.item = {Item: {}};
-            COD.REST.item = new RESTDataSource(COD.dataSources.item, COD.RESTErrorHandler);
+            COD.REST.item = $.RESTDataSource(COD.dataSources.item, COD.RESTErrorHandler);
             $(document).on('click', 'a.actSetOwner', function () {
                 var a = $(this),
                     e_id = a.next().val();

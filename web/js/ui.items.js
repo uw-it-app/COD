@@ -1,7 +1,6 @@
 /*jslint nomen: true, regexp: true */
 /*global $ */
 /*global logger */
-/*global RESTDataSource */
 /*global COD */
 /*global window */
 /*global document */
