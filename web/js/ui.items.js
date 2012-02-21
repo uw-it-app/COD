@@ -2,7 +2,6 @@
 /*global $ */
 /*global logger */
 /*global RESTDataSource */
-/*global badgerArray */
 /*global COD */
 /*global window */
 /*global document */
@@ -18,7 +17,7 @@
         _connectControllerStuff: function () {
             COD.data.items = {Items: {}};
             COD.createLastUpdated();
-            COD.REST.items = new RESTDataSource(COD.dataSources.items, COD.RESTErrorHandler);
+            COD.REST.items = $.RESTDataSource(COD.dataSources.items, COD.RESTErrorHandler);
             $(document).on('click', '.item_click', function (e) {
                 window.open('/.cod/item/Id/' + $(this).children('.item_id').text());
                 return false;
@@ -37,16 +36,20 @@
                         COD.updateLastUpdated();
                         return;
                     }
-                    data.Items.Item = badgerArray(data.Items.Item);
+                    $.badgerfishArray(data, 'Items.Item');
+/*                    data.Items.Item = badgerArray(data.Items.Item);*/
                     count = data.Items.Item.length;
                     if (count > 1 && data.Items.Item[0].State === 'Act') {
                         $('title').text('ACT - COD: Computer Operations Dashboard');
                     } else {
                         $('title').text('COD: Computer Operations Dashboard');
                     }
-                    for (i = 0; i < count; i += 1) {
+                    $.each(data.Items.Item, function (key, value) {
+                        $.badgerfishArray(value, 'Escalations.Escalation');
+                    })
+/*                    for (i = 0; i < count; i += 1) {
                         data.Items.Item[i].Escalations.Escalation = badgerArray(data.Items.Item[i].Escalations.Escalation);
-                    }
+                    }*/
                     COD.data.items = data;
                     _this.jpopSync();
                 },

@@ -1,7 +1,6 @@
 /*jslint nomen: true, regexp: true */
 /*global $ */
 /*global logger */
-/*global badgerArray */
 /*global location */
 /*global moment*/
 /*global document*/

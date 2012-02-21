@@ -1,7 +1,6 @@
 /*jslint nomen: true, regexp: true */
 /*global $ */
 /*global logger*/
-/*global badgerArray*/
 (function () {
     'use strict';
 
@@ -27,7 +26,8 @@
                             },
                             error: _this.RESTErrorHandler,
                             success: function (data) {
-                                data.Options.Option = badgerArray(data.Options.Option);
+                                $.badgerfishArray(data, 'Options.Option');
+/*                                data.Options.Option = badgerArray(data.Options.Option);*/
                                 if (data.Options.Option.length === 0) {
                                     response([]);
                                     return;
