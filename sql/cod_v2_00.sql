@@ -8,28 +8,28 @@ COMMENT ON SCHEMA cod_v2 IS 'DR: COD REST API v2 (2011-11-16)';
 
 /**********************************************************************************************/
 
-CREATE OR REPLACE FUNCTION cod_v2.comment_pre RETURNS varchar
+CREATE OR REPLACE FUNCTION cod_v2.comment_pre() RETURNS varchar
     LANGUAGE sql
-    VOLATILE
+    IMMUTABLE
     SECURITY INVOKER
     AS $_$
-/*  Function:     cod_v2.comment_pre
+/*  Function:     cod_v2.comment_pre()
     Description:  Content to insert before comments
     Affects:      nothing
     Arguments:    none
     Returns:      varchar
 */
     SELECT E'COD\n'
-        || E'-----------------------------------------\n'
+        || E'-----------------------------------------\n';
 $_$;
 
-COMMENT ON FUNCTION cod_v2.comment_pre IS 'DR: Content to insert before comments (2012-02-17)';
+COMMENT ON FUNCTION cod_v2.comment_pre() IS 'DR: Content to insert before comments (2012-02-17)';
 
 /**********************************************************************************************/
 
-CREATE OR REPLACE FUNCTION cod_v2.comment_post RETURNS varchar
-    LANGUAGE plpgsql
-    VOLATILE
+CREATE OR REPLACE FUNCTION cod_v2.comment_post() RETURNS varchar
+    LANGUAGE sql
+    IMMUTABLE
     SECURITY INVOKER
     AS $_$
 /*  Function:     cod_v2.comment_post
@@ -39,10 +39,10 @@ CREATE OR REPLACE FUNCTION cod_v2.comment_post RETURNS varchar
     Returns:      varchar
 */
     SELECT E'\n-----------------------------------------\n'
-        || E'By ' || standard.get_uwnetid() || ' via COD\n';
+        || E'By ' || standard.get_uwnetid() || E' via COD\n';
 $_$;
 
-COMMENT ON FUNCTION cod_v2.comment_post IS 'DR: Content to insert after comments (2012-02-17)';
+COMMENT ON FUNCTION cod_v2.comment_post() IS 'DR: Content to insert after comments (2012-02-17)';
 
 /**********************************************************************************************/
 
@@ -262,7 +262,7 @@ BEGIN
     _message := xpath.get_varchar('/Item/Do/Message', v_xml);
     IF _type = 'RefNumber' THEN
         UPDATE cod.item SET reference_no = xpath.get_varchar('/Item/Do/Value', v_xml) WHERE id = v_id;
-        _message   := 'Reference Number set: ' || xpath.get_varchar('/Item/Do/Value', v_xml);
+        _message   := 'Reference Number: ' || xpath.get_varchar('/Item/Do/Value', v_xml);
         _msgToSubs := FALSE;
     ELSEIF _type = 'Close' THEN
         UPDATE cod.item SET workflow_lock = TRUE WHERE id = v_id;
