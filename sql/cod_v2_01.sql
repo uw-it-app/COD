@@ -21,6 +21,7 @@ DECLARE
     _incident   xml;
     _escs       xml[];
     _esc        xml;
+    _status     varchar;
     _i          integer;
     _j          integer;
     _item       cod.item%ROWTYPE;
@@ -52,15 +53,22 @@ BEGIN
                     CONTINUE;
                 END IF;
                 -- set status (new/open/stalled => resolved_at = null)(else&resolved_at is null => resolved_at = now())
-                IF ARRAY['new', 'open', 'stalled']::varchar[] @> ARRAY[xpath.get_varchar('/Escalation/Status', _esc)] THEN
+                _status := xpath.get_varchar('/Escalation/Status', _esc);
+                IF ARRAY['new', 'open', 'stalled']::varchar[] @> ARRAY[_status] THEN
                     _escalation.resolved_at := NULL;
                 ELSEIF _escalation.resolved_at IS NULL THEN
-                    _escalation.resolved_at := now();
+                    _escalation.resolved_at  := now();
+                    IF _status = 'rejected' THEN
+                        _escalation.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Rejected');
+                    ELSE
+                        _escalation.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Resolved');
+                    END IF;
                 END IF;
                 UPDATE cod.escalation SET 
                     resolved_at = _escalation.resolved_at,
                     queue = xpath.get_varchar('/Escalation/Queue', _esc),
-                    owner = xpath.get_varchar('/Escalation/Owner', _esc)
+                    owner = xpath.get_varchar('/Escalation/Owner', _esc),
+                    esc_state_id = _escalation.esc_state_id
                     WHERE id = _escalation.id;
             END LOOP;
         END IF;

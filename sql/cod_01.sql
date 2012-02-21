@@ -454,7 +454,9 @@ DECLARE
 BEGIN
     
     IF NEW.resolved_at IS NOT NULL THEN
-        NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Resolved');
+        IF NOT EXISTS(SELECT NULL FROM cod.esc_state WHERE id = NEW.esc_state_id AND name IN ('Resolved', 'Rejected')) THEN
+            NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Resolved');
+        END IF;
         RETURN NEW;
     ELSE
         NEW.resolved_at := NULL;
@@ -503,7 +505,9 @@ CREATE OR REPLACE FUNCTION cod.escalation_workflow() RETURNS trigger
 DECLARE
     _payload        xml;
 BEGIN
-    IF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Resolved')) THEN
+    IF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Resolved')) OR
+        (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Rejected'))
+    THEN
         IF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') OR
             NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating')
         THEN

@@ -185,7 +185,8 @@ INSERT INTO cod.esc_state (sort, name, description) VALUES
     (33, 'Failed', 'Failed notification to Tier 2/3 support'),
     (40, 'Passive', 'Passive contact to Tier 2/3 support'),
     (60, 'Owned', 'Tier 2/3 acknowedged issue'),
-    (90, 'Resolved', 'All work completed');
+    (90, 'Resolved', 'All work completed'),
+    (91, 'Rejected', 'Escalation misrouted');
 
 /**********************************************************************************************/
 
