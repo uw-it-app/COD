@@ -27,7 +27,6 @@
                             error: _this.RESTErrorHandler,
                             success: function (data) {
                                 $.badgerfishArray(data, 'Options.Option');
-/*                                data.Options.Option = badgerArray(data.Options.Option);*/
                                 if (data.Options.Option.length === 0) {
                                     response([]);
                                     return;

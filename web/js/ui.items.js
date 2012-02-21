@@ -37,7 +37,6 @@
                         return;
                     }
                     $.badgerfishArray(data, 'Items.Item');
-/*                    data.Items.Item = badgerArray(data.Items.Item);*/
                     count = data.Items.Item.length;
                     if (count > 1 && data.Items.Item[0].State === 'Act') {
                         $('title').text('ACT - COD: Computer Operations Dashboard');
@@ -46,10 +45,7 @@
                     }
                     $.each(data.Items.Item, function (key, value) {
                         $.badgerfishArray(value, 'Escalations.Escalation');
-                    })
-/*                    for (i = 0; i < count; i += 1) {
-                        data.Items.Item[i].Escalations.Escalation = badgerArray(data.Items.Item[i].Escalations.Escalation);
-                    }*/
+                    });
                     COD.data.items = data;
                     _this.jpopSync();
                 },

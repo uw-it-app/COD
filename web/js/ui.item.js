@@ -55,23 +55,8 @@
 
         _updateData: function (data) {
             $.badgerfishArray(data, 'Item.Escalations.Escalation');
-/*            if (data.Item.Escalations.Escalation === undefined) {
-                data.Item.Escalations = {Escalation: []};
-            } else {
-                data.Item.Escalations.Escalation = badgerArray(data.Item.Escalations.Escalation);
-            }*/
             $.badgerfishArray(data, 'Item.Actions.Action');
-/*            if (data.Item.Actions.Action === undefined) {
-                data.Item.Actions = {Actions: []};
-            } else {
-                data.Item.Actions.Action = badgerArray(data.Item.Actions.Action);
-            }*/
             $.badgerfishArray(data, 'Item.Events.Event');
-/*            if (data.Item.Events === undefined) {
-                data.Item.Events = {Event: []};
-            } else {
-                data.Item.Events.Event = badgerArray(data.Item.Events.Event);
-            }*/
             COD.data.item = data;
             this.jpopSync();
         },
