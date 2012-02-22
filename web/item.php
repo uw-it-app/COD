@@ -82,7 +82,10 @@
                             <td id="Esclation.OncallGroup" class="item_bind"></td>
                             <td id="Esclation.Queue" class="item_bind"></td>
                             <td id="Esclation.Owner" class="item_bind"></td>
-                            <td><a href="#" class="actSetOwner">SetOwner</a><input type="hidden" id="Escalation.Id" class="item_bind"/></td>
+                            <td>
+                                <a href="#" class="actSetOwner">SetOwner</a>
+                                <input type="hidden" id="Escalation.Id" class="item_bind"/>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
