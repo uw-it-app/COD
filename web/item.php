@@ -151,7 +151,7 @@
                             </tr>
                         </table>
                     </div>
-                    <div id="ActionNag" class="action_tile tile_block prompted_action" data-title="Nag">
+                    <div id="ActionNag" class="action_tile tile_block prompted_action" data-title="Request Update">
                         <table cellspacing="0" class="item full">
                             <tr>
                                 <th class="vertical">Message</th>
@@ -232,13 +232,17 @@
                             </tr>
                         </table>
                     </div>
-                    <div id="ActionSetNag" class="action_tile tile_block" data-title="Set Nag Time">
+                    <div id="ActionSetNag" class="action_tile tile_block" data-title="Set Request For Update Time">
                         <table cellspacing="0" class="item full">
                             <tr>
-                                <th class="vertical">Nag in</th>
+                                <th class="vertical">Request update in</th>
                                 <td class="vertical">
                                     <input name="Number" class="short" value="30"/>
-                                    <select name="Period"><option value="minutes">minutes</option><option value="hours">hours</option></select>
+                                    <select name="Period">
+                                        <option value="minutes">minutes</option>
+                                        <option value="hours">hours</option>
+                                        <option value="days">days</option>
+                                    </select>
                                     <input type="hidden" name="Type" value="SetNag"/>
                                 </td>
                             </tr>
