@@ -129,6 +129,7 @@
                     $('#ActionSetNag').tile('show');
                 }
             }
+            $('#ActionSetNag').tile('hide');
             $('.prompted_action').tile('hide');
             $.each(Item.Actions.Action, function () {
                 if (!this.Completed.At && (this.Successful === '')) {
