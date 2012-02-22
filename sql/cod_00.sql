@@ -25,8 +25,8 @@ SELECT standard.create_enum_table('cod', 'itil_type', 'ITIL classification of th
 
 INSERT INTO cod.itil_type (sort, name, description) VALUES
     (10, 'Incident', ''),
-    (30, 'Service Request', ''),
-    (99, 'N/A', '');
+    (30, 'Request', ''),
+    (99, '(Notification)', '');
 
 /**********************************************************************************************/
 

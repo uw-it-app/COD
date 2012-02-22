@@ -290,6 +290,10 @@ BEGIN
         ELSE
             UPDATE cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating')
                 WHERE id = (SELECT escalation_id FROM cod.action WHERE id = _id);
+            IF NOT FOUND THEN
+                UPDATE cod.item SET state_id = standard.enum_value_id('cod', 'state', 'Escalating')
+                    WHERE id = (SELECT item_id FROM cod.action WHERE id = _id);
+            END IF;
             UPDATE cod.action SET successful = FALSE, completed_at = now() WHERE id = _id;
         END IF;
         PERFORM hm_v1.update_squawk(xpath.get_integer('/Item/Do/SquawkId', v_xml), _success, _message);
@@ -329,7 +333,8 @@ BEGIN
         IF NOT hm_v1.valid_oncall(_oncall) THEN
             RAISE EXCEPTION 'InvalidInput: Not a valid oncall group -- %', _oncall;
         END IF;
-        INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) VALUES (v_id, _oncall, standard.enum_value_id('cod', 'page_state', _page));
+        INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) 
+            VALUES (v_id, _oncall, standard.enum_value_id('cod', 'page_state', _page));
         IF NOT FOUND THEN
             RAISE EXCEPTION 'Failed to create and escalation to the oncall group %', _oncall;
         END IF;
@@ -373,7 +378,10 @@ CREATE OR REPLACE FUNCTION cod_v2.items_xml() RETURNS xml
     Returns:      XML list of items
 */
 SELECT xmlelement(name "Items",
-    (SELECT xmlagg(cod_v2.item_xml(id)) FROM (SELECT i.id FROM cod.item i JOIN cod.state s ON (i.state_id=s.id) WHERE s.sort < 90 OR i.closed_at > now() - '1 hour'::interval ORDER BY s.sort ASC, i.rt_ticket DESC) AS foo),
+    (SELECT xmlagg(cod_v2.item_xml(id)) FROM (
+        SELECT i.id FROM cod.item i JOIN cod.state s ON (i.state_id=s.id) 
+            WHERE s.sort < 90 OR i.closed_at > now() - '1 hour'::interval ORDER BY s.sort ASC, i.rt_ticket DESC
+    ) AS foo),
     xmlelement(name "ModifiedAt", (SELECT max(modified_at) FROM cod.item))
 );
 $_$;
@@ -494,7 +502,8 @@ BEGIN
     END IF;
 
     -- check to see if exact duplicate
-    SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate WHERE host = _host AND component = _comp ORDER BY item_id ASC LIMIT 1;
+    SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate 
+        WHERE host = _host AND component = _comp ORDER BY item_id ASC LIMIT 1;
     IF _row.item_id IS NOT NULL THEN
         RETURN xmlelement(name "Incident",
                 xmlelement(name "Id", _row.item_id),
@@ -569,6 +578,7 @@ DECLARE
     _activity   varchar;
     _content    varchar;
     _row        record;
+    _item_id    integer;
     _action     cod.action%ROWTYPE;
 BEGIN
     _hm_id    := xpath.get_integer('/Issue/Id', v_xml);
@@ -620,13 +630,61 @@ BEGIN
         WHERE (rt_ticket IS NULL OR rt_ticket = _ticket) 
           AND (hm_issue IS NULL OR hm_issue = _hm_id)
           AND (rt_ticket IS NOT NULL OR hm_issue IS NOT NULL);
-    IF _row.id IS NOT NULL THEN
-        --RAISE NOTICE 'H&M direct interaction with Item';
+
+    IF _row.id IS NULL THEN
+        IF ARRAY[_activity] <@ ARRAY['closed', 'cancelled', 'failed'] THEN
+            RETURN FALSE;
+        ELSE
+            -- get id
+            _item_id := nextval('cod.item_id_seq'::regclass);
+            -- create
+            INSERT INTO cod.item (id, itil_type_id, state_id, hm_issue, subject, workflow_lock) VALUES (
+                _item_id,
+                standard.enum_value_id('cod', 'itil_type', '(Notification)'),
+                standard.enum_value_id('cod', 'state', 'Escalating'),
+                _hm_id,
+                xpath.get_varchar('/Issue/Subject', v_xml),
+                TRUE
+            );
+            IF _activity = 'act' THEN
+                INSERT INTO cod.action (item_id, action_type_id, content) VALUES (
+                    _item_id,
+                    standard.enum_value_id('cod', 'action_type', 'PhoneCall'),
+                    _content
+                );
+                UPDATE cod.item SET state_id = standard.enum_value_id('cod', 'state', 'Act') WHERE id = _row.id;
+            END IF;
+        END IF;
+        RETURN TRUE;
+    ELSE
+        IF ARRAY[_activity] <@ ARRAY['closed', 'cancelled', 'failed'] THEN
+            -- remove all phoncalls for this item;
+            UPDATE cod.action SET completed_at = now() AND successful = false 
+                WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall') AND completed_at IS NULL;
+            UPDATE cod.item SET state_id = standard.enum_value_id('cod', 'state', 'Closed'), closed_at = now() WHERE id = _row.id;
+        ELSEIF _activity = 'escalating' THEN
+            UPDATE cod.action SET completed_at = now() AND successful = false 
+                WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall') AND completed_at IS NULL;
+            UPDATE cod.item SET state_id = standard.enum_value_id('cod', 'state', 'Escalating') WHERE id = _row.id;
+        ELSEIF _activity = 'act' THEN
+            -- remove any ponecalls where content doesn't equal _content
+            UPDATE cod.action SET completed_at = now() AND successful = false 
+                WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall') AND completed_at IS NULL AND content <> _content;
+            -- if action doesn't exist then insert
+            IF NOT EXISTS (SELECT NULL FROM cod.action WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall'))
+            THEN
+                INSERT INTO cod.action (item_id, action_type_id, content) VALUES (
+                    _item_id,
+                    standard.enum_value_id('cod', 'action_type', 'PhoneCall'),
+                    _content
+                );
+            END IF;
+            UPDATE cod.item SET state_id = standard.enum_value_id('cod', 'state', 'Act') WHERE id = _row.id;
+        END IF;
         RETURN TRUE;
     END IF;
 
-    --RAISE NOTICE 'Create item for this H&M notification';
-    RETURN TRUE;
+    RETURN FALSE;
 --EXCEPTION
 --    WHEN OTHERS THEN RETURN FALSE;
 END;
