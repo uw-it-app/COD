@@ -584,6 +584,7 @@ BEGIN
     _hm_id    := xpath.get_integer('/Issue/Id', v_xml);
     _ticket   := xpath.get_integer('/Issue/Ticket', v_xml);
     _activity := xpath.get_varchar('/Issue/Activity', v_xml);
+    _content  := xpath('/Issue/CurrentSquawk', v_xml)::text::varchar;
     SELECT * INTO _row FROM cod.escalation WHERE rt_ticket = _ticket AND (hm_issue IS NULL OR hm_issue = _hm_id);
     IF _row.id IS NOT NULL THEN
         IF _activity = 'closed' THEN
@@ -605,7 +606,6 @@ BEGIN
             PERFORM cod.remove_esc_actions(_row.id);
             Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating') WHERE id = _row.id;
         ELSEIF _activity = 'act' THEN
-            _content := xpath('/Issue/CurrentSquawk', v_xml)::text::varchar;
             UPDATE cod.action SET completed_at = now(), successful = FALSE
                 WHERE escalation_id = _row.id AND completed_at IS NULL AND content <> _content;
             SELECT * INTO _action FROM cod.action WHERE escalation_id = _row.id AND content = _content;
@@ -632,7 +632,7 @@ BEGIN
           AND (rt_ticket IS NOT NULL OR hm_issue IS NOT NULL);
 
     IF _row.id IS NULL THEN
-        IF ARRAY[_activity] <@ ARRAY['closed', 'cancelled', 'failed'] THEN
+        IF ARRAY[_activity] <@ ARRAY['closed', 'cancelled', 'failed']::varchar[] THEN
             RETURN FALSE;
         ELSE
             -- get id
@@ -652,29 +652,29 @@ BEGIN
                     standard.enum_value_id('cod', 'action_type', 'PhoneCall'),
                     _content
                 );
-                UPDATE cod.item SET state_id = standard.enum_value_id('cod', 'state', 'Act') WHERE id = _row.id;
+                UPDATE cod.item SET state_id = standard.enum_value_id('cod', 'state', 'Act') WHERE id = _item_id;
             END IF;
         END IF;
         RETURN TRUE;
     ELSE
-        IF ARRAY[_activity] <@ ARRAY['closed', 'cancelled', 'failed'] THEN
+        IF ARRAY[_activity] <@ ARRAY['closed', 'cancelled', 'failed']::varchar[] THEN
             -- remove all phoncalls for this item;
-            UPDATE cod.action SET completed_at = now() AND successful = false 
+            UPDATE cod.action SET completed_at = now(), successful = false 
                 WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall') AND completed_at IS NULL;
             UPDATE cod.item SET state_id = standard.enum_value_id('cod', 'state', 'Closed'), closed_at = now() WHERE id = _row.id;
         ELSEIF _activity = 'escalating' THEN
-            UPDATE cod.action SET completed_at = now() AND successful = false 
+            UPDATE cod.action SET completed_at = now(), successful = false 
                 WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall') AND completed_at IS NULL;
             UPDATE cod.item SET state_id = standard.enum_value_id('cod', 'state', 'Escalating') WHERE id = _row.id;
         ELSEIF _activity = 'act' THEN
             -- remove any ponecalls where content doesn't equal _content
-            UPDATE cod.action SET completed_at = now() AND successful = false 
-                WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall') AND completed_at IS NULL AND content <> _content;
+            UPDATE cod.action SET completed_at = now(),successful = false 
+                WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall') AND completed_at IS NULL AND content <> _content AND completed_at IS NULL;
             -- if action doesn't exist then insert
-            IF NOT EXISTS (SELECT NULL FROM cod.action WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall'))
+            IF NOT EXISTS (SELECT NULL FROM cod.action WHERE item_id = _row.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'PhoneCall') AND content = _content AND completed_at IS NULL)
             THEN
                 INSERT INTO cod.action (item_id, action_type_id, content) VALUES (
-                    _item_id,
+                    _row.id,
                     standard.enum_value_id('cod', 'action_type', 'PhoneCall'),
                     _content
                 );

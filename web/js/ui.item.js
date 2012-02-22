@@ -131,6 +131,10 @@
             }
             $('#ActionSetNag').tile('hide');
             $('.prompted_action').tile('hide');
+            if (COD.data.item.Item.ITILType === '(Notification)') {
+                $('.action_tile').tile('hide');
+                $('.tile_event').tile('hide');
+            }
             $.each(Item.Actions.Action, function () {
                 if (!this.Completed.At && (this.Successful === '')) {
                     $('#Action' + this.Type).actionTile('newData', {Action: this}).actionTile('highlight');

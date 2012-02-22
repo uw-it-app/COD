@@ -4,7 +4,7 @@
         <script src="/shared/third-party/jquery-ui/jquery.ui.autocomplete.selectFirst/jquery.ui.autocomplete.selectFirst.js"></script>
         <script src="/shared/third-party/jquery/plugins/cookie/2.0.0/jquery.cookie.js"></script>
         <script src="/shared/third-party/moment/1.3/moment.min.js"></script>
-        <script src="/shared/third-party/jquery.badgerfishArray/1.0.0/jquery.badgerfishArray.min.js"></script>
+        <script src="/shared/local/jquery.badgerfishArray/1.0.0/jquery.badgerfishArray.js"></script>
         <script src="/shared/local/core/4.4.8/tools-core.min.js"></script>
         <script src="/shared/local/jquery.jpop/1.0.3/jquery.jpop.js"></script>
         <script src="/shared/local/badgerfishjs/1.0.0/badgerfish.js"></script>

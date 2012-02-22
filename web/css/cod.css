@@ -86,7 +86,7 @@ Table of Contents (order of these sections is significant)
         width: 15em;
     }
     .short {
-        width: 5em;
+        min-width: 5em;
     }
     .xshort {
         width: 3em;
