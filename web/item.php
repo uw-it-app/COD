@@ -282,6 +282,11 @@
                     <div id="ActionEscalate" class="action_tile tile_block"data-title="Create Escalation">
                         <table cellspacing="0" class="item full">
                             <tr>
+                                <td colspan="2">
+                                    <span id="Action.Data.Note" class="Escalate_action_bind"></span>
+                                </td>
+                            </tr>
+                            <tr>
                                 <th class="vertical">Type</th>
                                 <td>
                                     <select name="ContactType"><option value="active">active</option><option value="passive">passive</option></select>

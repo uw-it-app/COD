@@ -158,8 +158,14 @@ BEGIN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Act');
     ELSEIF (NEW.closed_at IS NOT NULL) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed');
-    ELSEIF (NEW.resolved_at IS NOT NULL) OR (NEW.escalated_at IS NULL AND NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL) THEN
+    ELSEIF (NEW.resolved_at IS NOT NULL AND NEW.ended_at IS NOT NULL) THEN -- resolved escalations and closed events
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved');
+    ELSEIF (NEW.resolved_at IS NOT NULL AND NEW.started_at IS NULL) THEN -- resolved esc no event
+        NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved');
+    ELSEIF (NEW.escalated_at IS NULL AND NEW.ended_at IS NOT NULL) THEN -- no esc and cleared event
+        NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved');
+    ELSEIF (NEW.resolved_at IS NOT NULL AND NEW.ended_at IS NULL) THEN -- resolved escalation and open event
+        NEW.state_id = standard.enum_value_id('cod', 'state', 'Processing'); -- need an action to re-escalate
     ELSEIF (NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Cleared');
     ELSEIF (NEW.escalated_at IS NOT NULL AND NEW.resolved_at IS NULL) THEN
@@ -170,7 +176,6 @@ BEGIN
         END IF;
     ELSE
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Processing');
-        -- else set to processing (no open escalations/actions and not cleared means something needs to happen)
     END IF;
     RETURN NEW;
 --EXCEPTION
@@ -280,10 +285,8 @@ BEGIN
         PERFORM rt.update_ticket(NEW.rt_ticket, E'Status: resolved\n');
         RETURN NEW;
     ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved') THEN
-        -- if event is not cleared
-        IF NEW.ended_at IS NULL AND NEW.started_at IS NOT NULL THEN
-            RAISE NOTICE 'action to clear or re-escalate';
-        ELSEIF NOT EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Close') AND completed_at IS NULL) THEN
+        IF NOT EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Close') AND completed_at IS NULL)
+        THEN
             INSERT INTO cod.action (item_id, action_type_id) VALUES 
                 (NEW.id, standard.enum_value_id('cod', 'action_type', 'Close'));
         END IF;
@@ -298,6 +301,10 @@ BEGIN
                 (NEW.id, standard.enum_value_id('cod', 'action_type', 'Close'));
         END IF;
         RETURN NEW;
+    ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Processing') THEN
+        IF NEW.ended_at IS NULL AND NEW.started_at IS NOT NULL AND NEW.resolved_at IS NOT NULL THEN
+            INSERT INTO cod.action (item_id, action_type_id, content) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'), '<Note>All Escalations resolved but the alert is not cleared, clear the alert or Escalate</Note>');
+        END IF;
     END IF;
 
     -- if have not escalated
@@ -307,7 +314,6 @@ BEGIN
             IF (SELECT help_text FROM cod.support_model WHERE id = NEW.support_model_id) IS TRUE THEN
                 -- create action to prompt for acting on helptext
                 INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'HelpText'));
-                -- cod.action trigger should do something
             ELSE
                 INSERT INTO cod.action (item_id, action_type_id, completed_at, completed_by, skipped, successful) VALUES 
                     (NEW.id, standard.enum_value_id('cod', 'action_type', 'HelpText'), now(), 'ssg-cod', true, false);
@@ -332,7 +338,7 @@ BEGIN
             -- if no valid oncall group or failed to insert escalation
             IF _oncall IS NULL OR FOUND IS FALSE THEN
                 -- create action to prompt to correct oncall group
-                INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'));
+                INSERT INTO cod.action (item_id, action_type_id, content) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'), '<Note>No valid oncall group in the event, manual escalation required.</Note>');
             END IF;
         END IF;
 
@@ -535,7 +541,7 @@ BEGIN
         PERFORM cod.remove_esc_actions(NEW.id);
     ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Failed')) THEN
         PERFORM cod.remove_esc_actions(NEW.id);
-        RAISE NOTICE 'Create duty manager escalation if it does not exist';
+        INSERT INTO cod.action (item_id, escalation_id, action_type_id, content) VALUES (NEW.item_id, NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'), '<Note>Escalation Failed to ' || NEW.oncall_group || ' -- Contact Duty Manager</Note>');
     ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Active')) THEN
         IF NEW.hm_issue IS NULL THEN
             _payload := xmlelement(name "Issue", 
