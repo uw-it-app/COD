@@ -83,13 +83,13 @@ Table of Contents (order of these sections is significant)
         font-size: small;
     }
     .long {
-        width: 15em;
+        min-width: 15em;
     }
     .short {
         min-width: 5em;
     }
     .xshort {
-        width: 3em;
+        min-width: 3em;
     }
     .box {
         border: 1px solid #CCC;
