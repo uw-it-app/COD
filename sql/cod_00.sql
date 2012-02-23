@@ -51,16 +51,18 @@ SELECT standard.create_enum_table('cod', 'support_model', 'Support Model -- dete
 ALTER TABLE cod.support_model ADD COLUMN reject boolean NOT NULL DEFAULT FALSE;
 ALTER TABLE cod.support_model ADD COLUMN help_text boolean NOT NULL DEFAULT FALSE;
 ALTER TABLE cod.support_model ADD COLUMN active_notification boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE cod.support_model ADD COLUMN nag boolean NOT NULL DEFAULT false;
 ALTER TABLE cod_history.support_model ADD COLUMN reject boolean NOT NULL DEFAULT FALSE;
 ALTER TABLE cod_history.support_model ADD COLUMN help_text boolean NOT NULL DEFAULT FALSE;
 ALTER TABLE cod_history.support_model ADD COLUMN active_notification boolean NOT NULL DEFAULT FALSE;
+ALTER TABLE cod_history.support_model ADD COLUMN nag boolean NOT NULL DEFAULT false;
 
-INSERT INTO cod.support_model (sort, name, description, reject, help_text, active_notification) VALUES
-    (99, '', 'No Model', false, false, false),
-    (10, 'A', 'Immediate escalation with active notification', false, false, true),
-    (20, 'B', 'L1 works help text then escalation with active notification', false, true, true),
-    (30, 'C', 'L1 works help text then escalation with passive notification', false, true, false),
-    (40, 'D', 'No support', true, false, false);
+INSERT INTO cod.support_model (sort, name, description, reject, help_text, active_notification, nag) VALUES
+    (99, '', 'No Model', false, false, false, false),
+    (10, 'A', 'Immediate escalation with active notification', false, false, true, true),
+    (20, 'B', 'L1 works help text then escalation with active notification', false, true, true, true),
+    (30, 'C', 'L1 works help text then escalation with passive notification', false, true, false, false),
+    (40, 'D', 'No support', true, false, false, false);
 
 /**********************************************************************************************/
 
@@ -85,7 +87,9 @@ CREATE TABLE cod.item (
     resolved_at     timestamptz,
     closed_at       timestamptz,
     content         varchar,
-    workflow_lock   boolean     NOT NULL DEFAULT FALSE
+    workflow_lock   boolean     NOT NULL DEFAULT FALSE,
+    nag_interval    varchar     NOT NULL DEFAULT '30 minutes'::interval::varchar,
+    nag_next        timestamptz
 );
 
 COMMENT ON TABLE cod.item IS 'DR: COD Line items -- incidents, notifications, etc (2011-10-10)';
@@ -237,7 +241,8 @@ INSERT INTO cod.action_type (name, description) VALUES
     ('HelpText', 'Work the help text for the component'),
     ('PhoneCall', 'Call the listed person'),
     ('Escalate', 'Manually escalate to an oncall group'),
-    ('Close', 'Incident cleared and all escalations resolved');
+    ('Close', 'Incident cleared and all escalations resolved'),
+    ('Nag', 'Request update on progress from escalations');
 
 /**********************************************************************************************/
 

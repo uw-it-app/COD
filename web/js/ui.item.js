@@ -105,7 +105,6 @@
             if (Item.Times.Closed) {
                 $('#ActionClear').tile('hide');
                 $('#ActionReactivate').tile('hide');
-                $('#ActionNag').tile('hide');
                 $('#ActionSetNag').tile('hide');
                 $('#ActionEscalate').tile('hide');
             } else {
@@ -121,15 +120,13 @@
                     $('#ActionClear').tile('hide');
                     $('#ActionReactivate').tile('hide');
                 }
-                if (Item.Times.Resolved) {
-                    $('#ActionNag').tile('hide');
-                    $('#ActionSetNag').tile('hide');
-                } else {
-                    $('#ActionNag').tile('show');
-                    $('#ActionSetNag').tile('show');
-                }
+                $('#ActionSetNag').tile('hide');
+                $.each(Item.Escalations.Escalation, function (key, value) {
+                    if (value.State === 'Owned') {
+                        $('#ActionSetNag').tile('show');
+                    }
+                });
             }
-            $('#ActionSetNag').tile('hide');
             $('.prompted_action').tile('hide');
             if (COD.data.item.Item.ITILType === '(Notification)') {
                 $('.action_tile').tile('hide');

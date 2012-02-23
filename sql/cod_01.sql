@@ -279,6 +279,20 @@ BEGIN
         END IF;
     END IF;
 
+    IF NEW.nag_next IS NULL THEN
+        UPDATE cod.action SET completed_at = now(), successful = FALSE 
+            WHERE item_id = NEW.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Nag') AND completed_at IS NULL;
+        IF FOUND IS TRUE THEN
+            RETURN NEW;
+        END IF;
+    ELSEIF NEW.nag_next <= now() AND 
+        NOT EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND completed_at IS NULL 
+            AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Nag')) 
+    THEN
+        INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'Nag'));
+        RETURN NEW;
+    END IF;
+
     IF NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed') THEN
         --RAISE NOTICE 'Tell acc/proxd to delete alert';
         -- unset nag

@@ -79,5 +79,31 @@ $_$;
 
 COMMENT ON FUNCTION cod_v2.rt_import(xml) IS 'DR: Process RT import data (2012-02-16)';
 
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod_v2.nag_check() RETURNS xml
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod_v2.nag_check()
+    Description:  Update items where nag may be needed
+    Affects:      cod.item where nag may be needed
+    Arguments:    none
+    Returns:      xml
+*/
+DECLARE
+    _count      integer;
+BEGIN
+    UPDATE cod.item AS item SET modified_at = now() WHERE nag_next < now() AND NOT EXISTS(SELECT NULL FROM cod.action WHERE action_type_id = standard.enum_value_id('cod', 'action_type', 'Nag') AND completed_at IS NULL AND item_id = item.id);
+    GET DIAGNOSTICS _count = ROW_COUNT;
+    RETURN ('<Updated>' || _count::varchar || '</Updated>')::xml;
+EXCEPTION
+    WHEN OTHERS THEN null;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod_v2.nag_check() IS 'DR: Update items where nag may be needed (2012-02-23)';
+
 
 COMMIT;

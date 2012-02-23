@@ -161,12 +161,15 @@
                             </tr>
                             <tr>
                                 <td class="vertical">
-                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
+                                    <textarea name="Message" class="full" placeholder="Message">Computer Operations requests an update on the status of this incident.</textarea>
                                     <input type="hidden" name="Type" value="Nag"/>
                                 </td>
                             </tr>
                             <tr>
-                                <td class="vertical"><input type="submit" value="Submit" class="actionSubmit full"/></td>
+                                <td class="vertical">
+                                    <input type="submit" value="Send" class="actionSubmit half"/>
+                                    <input type="submit" value="Cancel" class="actionSubmit half"/>
+                                </td>
                             </tr>
                         </table>
                     </div>
@@ -265,7 +268,11 @@
                             <tr>
                                 <th class="vertical">Send to Subs?</th>
                                 <td>
-                                    <select Name="ToSubs"><option value="yes">yes</option><option value="no">no</option></select>
+                                    <select Name="ToSubs">
+                                        <option value="all">all</option>
+                                        <option value="open" selected="selected">open</option>
+                                        <option value="none">none</option>
+                                    </select>
                                 </td>
                             </tr>
                             <tr>
@@ -338,6 +345,10 @@
                         <tr>
                             <th class="vertical">Escalation Resolved</th>
                             <td id="Item.Times.Resolved" class="vertical item_bind datetime"></td>
+                        </tr>
+                        <tr>
+                            <th class="vertical">Request Update At</th>
+                            <td id="Item.Times.Nag" class="vertical item_bind datetime"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Closed</th>
