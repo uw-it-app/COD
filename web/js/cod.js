@@ -47,12 +47,13 @@ var COD = {},
     COD.rid = {};
 
     COD.createLastUpdated = function () {
-        $('#tools-app-title-bar-right').append('<div id="last-updated">Last Updated: <span id="last-updated-time">____-__-__ __:__:__</span></div>');
+        $('#tools-app-title-bar-right').append('<div id="last-updated" style="display:none">Last Refresh: <span id="last-updated-time">____-__-__ __:__:__</span></div>');
     };
 
     COD.updateLastUpdated = function () {
         $('#last-updated-time').html(moment().format('YYYY-MM-DD HH:mm:ss'))
             .animate({backgroundColor: '#EDE'}, 500).delay(500).animate({backgroundColor: '#FFF'}, 500);
+        $('#last-updated').show();
     };
 
     COD.rtLinker = function () {
