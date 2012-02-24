@@ -9,6 +9,7 @@
         <div id="tools-container">
             <div id="tools-content">
 <!-- Local HTML -->
+<div id="codActions" class="full"><a href="/cod/view/new" target="CODNEW">Create Incident</a></div>
 <div id="itemsWrap" style="display:none">
 <table id="itemsTable" class="full" >
     <thead>

@@ -111,6 +111,13 @@ Table of Contents (order of these sections is significant)
     #contact-tools {
         display: none;
     }
+    #codActions {
+        text-align: right;
+        padding-bottom: .75em;
+    }
+    #tools-content {
+        padding-top: .75em;
+    }
 }
 
 @media print {
