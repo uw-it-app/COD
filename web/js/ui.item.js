@@ -74,7 +74,7 @@
                 ocOptions = '<option value=""></option>';
             $('title').text('COD: (' + Item.Id + ') ' + Item.Subject);
             $('.item_bind').jpop(COD.data.item, {});
-            $('.datetime').each(function () {
+            $('.hide_blank_row').each(function () {
                 var _content = $(this).text();
                 if (_content === "") {
                     $(this).parent().hide();

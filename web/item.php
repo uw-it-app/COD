@@ -328,51 +328,55 @@
                     <table cellspacing="0" class="item full">
                         <tr>
                             <th class="vertical">Created</th>
-                            <td id="Item.Created.At" class="vertical item_bind datetime"></td>
+                            <td id="Item.Created.At" class="vertical item_bind datetime hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Event Started</th>
-                            <td id="Item.Times.Started" class="vertical item_bind datetime"></td>
+                            <td id="Item.Times.Started" class="vertical item_bind datetime hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Event Ended</th>
-                            <td id="Item.Times.Ended" class="vertical item_bind datetime"></td>
+                            <td id="Item.Times.Ended" class="vertical item_bind datetime hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Escalation Started</th>
-                            <td id="Item.Times.Escalated" class="vertical item_bind datetime"></td>
+                            <td id="Item.Times.Escalated" class="vertical item_bind datetime hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Escalation Resolved</th>
-                            <td id="Item.Times.Resolved" class="vertical item_bind datetime"></td>
+                            <td id="Item.Times.Resolved" class="vertical item_bind datetime hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Request Update At</th>
-                            <td id="Item.Times.Nag" class="vertical item_bind datetime"></td>
+                            <td id="Item.Times.Nag" class="vertical item_bind datetime hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Closed</th>
-                            <td id="Item.Times.Closed" class="vertical item_bind datetime"></td>
+                            <td id="Item.Times.Closed" class="vertical item_bind datetime hide_blank_row"></td>
                         </tr>
                     </table>
                 </div>
                 <div id="Item.Events:Event" class="item_bind  tile_event">
                     <table cellspacing="0" class="item full">
                         <tr>
+                            <th class="vertical">Subject</th>
+                            <td id="Event.Subject" class="vertical item_bind hide_blank_row"></td>
+                        </tr>
+                        <tr>
                             <th class="vertical">Host</th>
-                            <td id="Event.Host" class="vertical item_bind"></td>
+                            <td id="Event.Host" class="vertical item_bind hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Component</th>
-                            <td id="Event.Component" class="vertical item_bind"></td>
+                            <td id="Event.Component" class="vertical item_bind hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Started</th>
-                            <td id="Event.Times.Start" class="vertical item_bind datetime"></td>
+                            <td id="Event.Times.Start" class="vertical item_bind datetime hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">Ended</th>
-                            <td id="Event.Times.End" class="vertical item_bind datetime"></td>
+                            <td id="Event.Times.End" class="vertical item_bind datetime hide_blank_row"></td>
                         </tr>
                         <tr>
                             <th class="vertical">HelpText</th>
@@ -384,7 +388,7 @@
                         </tr>
                         <tr>
                             <th class="vertical">Detail</th>
-                            <td id="Event.LongMessage" class="vertical item_bind"></textarea></td>
+                            <td id="Event.LongMessage" class="vertical item_bind hide_blank_row"></td>
                         </tr>
                     </table>
                 </div>

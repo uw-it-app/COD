@@ -67,9 +67,10 @@ CREATE OR REPLACE FUNCTION cod_v2.event_xml(integer) RETURNS xml
         xmlelement(name "OncallPrimary", event.oncall_primary),
         xmlelement(name "OncallAlternate", event.oncall_alternate),
         xmlelement(name "HelpText", event.helptext),
+        xmlelement(name "Subject", xpath.get_varchar('/Event/Subject', event.content::xml)),
         xmlelement(name "Message", xpath.get_varchar('/Event/Alert/Msg', event.content::xml)),
         xmlelement(name "LongMessage", xpath.get_varchar('/Event/Alert/LongMsg', event.content::xml)),
-        xmlelement(name "Content", event.content),
+        xmlelement(name "Content", event.content::xml),
         xmlelement(name "Modified",
             xmlelement(name "At", date_trunc('second', event.modified_at)::timestamp::varchar),
             xmlelement(name "By", event.modified_by)
@@ -565,7 +566,8 @@ BEGIN
     _event_id := nextval('cod.event_id_seq'::regclass);
     INSERT INTO cod.event (id, item_id, host, component, support_model_id, severity, contact, 
                            oncall_primary, oncall_alternate, source_id, start_at, content)
-        VALUES (_event_id, _item_id, _host, _comp, _smid, _severity, _contact, _hostpri, _hostalt, _source_id, _starts, v_xml::text::varchar);
+        VALUES (_event_id, _item_id, _host, _comp, _smid, _severity, _contact, 
+                _hostpri, _hostalt, _source_id, _starts, replace(v_xml::text::varchar, E'<?xml version="1.0"?>\n', ''));
     -- get ticket # for item
     _ticket := cod.create_incident_ticket_from_event(_event_id); 
     -- update item for workflow
