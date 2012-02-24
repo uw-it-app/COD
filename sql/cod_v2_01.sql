@@ -37,17 +37,21 @@ BEGIN
         _incident := _incidents[_i];
         SELECT * INTO _item FROM cod.item WHERE rt_ticket = xpath.get_integer('/Incident/Id', _incident);
         IF _item.id IS NULL THEN
-            INSERT INTO cod.item (rt_ticket, subject, state_id, itil_type_id, support_model_id, severity, workflow_lock) VALUES (
-                xpath.get_integer('/Incident/Id', _incident),
-                xpath.get_varchar('/Incident/Subject', _incident),
-                standard.enum_value_id('cod', 'state', 'Tier2'),
-                standard.enum_value_id('cod', 'itil_type', 'Incident'),
-                standard.enum_value_id('cod', 'support_model', ''),
-                xpath.get_integer('/Incident/Severity', _incident),
-                TRUE
-            );
-            SELECT * INTO _item FROM cod.item WHERE rt_ticket = xpath.get_integer('/Incident/Id', _incident);
-            IF NOT FOUND THEN
+            IF xpath.get_timestamptz('/Incident/Created', _incident) < now() - '1 minute'::interval THEN
+                INSERT INTO cod.item (rt_ticket, subject, state_id, itil_type_id, support_model_id, severity, workflow_lock) VALUES (
+                    xpath.get_integer('/Incident/Id', _incident),
+                    xpath.get_varchar('/Incident/Subject', _incident),
+                    standard.enum_value_id('cod', 'state', 'Tier2'),
+                    standard.enum_value_id('cod', 'itil_type', 'Incident'),
+                    standard.enum_value_id('cod', 'support_model', ''),
+                    xpath.get_integer('/Incident/Severity', _incident),
+                    TRUE
+                );
+                SELECT * INTO _item FROM cod.item WHERE rt_ticket = xpath.get_integer('/Incident/Id', _incident);
+                IF NOT FOUND THEN
+                    CONTINUE;
+                END IF;
+            ELSE
                 CONTINUE;
             END IF;
         END IF;
@@ -60,18 +64,22 @@ BEGIN
                 _esc := _escs[_j];
                 SELECT * INTO _escalation FROM cod.escalation WHERE rt_ticket = xpath.get_integer('/Escalation/Id', _esc);
                 IF _escalation.id IS NULL THEN
-                    INSERT INTO cod.escalation (item_id, rt_ticket, esc_state_id, page_state_id, oncall_group, queue, owner, escalated_at) VALUES (
-                        _item.id,
-                        xpath.get_integer('/Escalation/Id', _esc),
-                        standard.enum_value_id('cod', 'esc_state', 'Passive'),
-                        standard.enum_value_id('cod', 'page_state', 'Passive'),
-                        'n/a',
-                        xpath.get_varchar('/Escalation/Queue', _esc),
-                        xpath.get_varchar('/Escalation/Owner', _esc),
-                        xpath.get_timestamptz('/Escalation/Created', _esc)
-                    );
-                    SELECT * INTO _escalation FROM cod.escalation WHERE rt_ticket = xpath.get_integer('/Escalation/Id', _esc);
-                    IF NOT FOUND THEN
+                    IF xpath.get_timestamptz('/Escalation/Created', _incident) < now() - '1 minute'::interval THEN
+                        INSERT INTO cod.escalation (item_id, rt_ticket, esc_state_id, page_state_id, oncall_group, queue, owner, escalated_at) VALUES (
+                            _item.id,
+                            xpath.get_integer('/Escalation/Id', _esc),
+                            standard.enum_value_id('cod', 'esc_state', 'Passive'),
+                            standard.enum_value_id('cod', 'page_state', 'Passive'),
+                            'n/a',
+                            xpath.get_varchar('/Escalation/Queue', _esc),
+                            xpath.get_varchar('/Escalation/Owner', _esc),
+                            xpath.get_timestamptz('/Escalation/Created', _esc)
+                        );
+                        SELECT * INTO _escalation FROM cod.escalation WHERE rt_ticket = xpath.get_integer('/Escalation/Id', _esc);
+                        IF NOT FOUND THEN
+                            CONTINUE;
+                        END IF;
+                    ELSE
                         CONTINUE;
                     END IF;
                 END IF;
