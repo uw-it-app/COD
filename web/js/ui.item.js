@@ -35,9 +35,13 @@
                     Item.Do[i.attr('name')] = i.val();
                 });
                 Item.Do.Submit = s.val();
-                COD.REST.item.put({Id: Item.Id}, {Item: Item}, $.proxy(_this._updateData, _this), null);
                 tile.actionTile('normal').tile('close');
-                $('.sync_clear').val('');
+                $('.sync_clear').val('').text('');
+                if ($('#ActionEscalate').hasClass('highlight')) {
+                    $('#ActionEscalate').actionTile('normal').tile('close');
+                }
+                COD.REST.item.put({Id: Item.Id}, {Item: Item}, $.proxy(_this._updateData, _this), null);
+
                 return false;
             });
             COD.createLastUpdated();

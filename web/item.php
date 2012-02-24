@@ -290,7 +290,7 @@
                         <table cellspacing="0" class="item full">
                             <tr>
                                 <td colspan="2">
-                                    <span id="Action.Data.Note" class="Escalate_action_bind"></span>
+                                    <span id="Action.Data.Note" class="Escalate_action_bind sync_clear"></span>
                                 </td>
                             </tr>
                             <tr>
