@@ -271,6 +271,37 @@ ALTER TABLE cod_history.action ADD CONSTRAINT action_type_exists FOREIGN KEY (ac
 
 /**********************************************************************************************/
 
+CREATE OR REPLACE FUNCTION cod.action_check() RETURNS trigger
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.action_check()
+    Description:  Ensures data is set properly
+    Affects:      Active cod.action row
+    Arguments:    none
+    Returns:      trigger
+*/
+DECLARE
+BEGIN
+    IF NEW.completed_at IS NULL THEN
+        NEW.completed_by := NULL;
+    ELSE
+        NEW.completed_by := standard.get_uwnetid();
+    END IF;
+    RETURN NEW;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.action_check() IS 'DR: Ensures data is set properly (2012-02-24)';
+
+CREATE TRIGGER t_20_action_check
+    BEFORE INSERT OR UPDATE ON cod.action
+    FOR EACH ROW
+    EXECUTE PROCEDURE cod.action_check();
+
+/**********************************************************************************************/
+
 CREATE TABLE cod.dbcache (
     modified_at     timestamptz NOT NULL DEFAULT now(),
     modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
