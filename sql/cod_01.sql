@@ -268,8 +268,11 @@ DECLARE
     _row        record;
 BEGIN
     IF NEW.rt_ticket IS NULL THEN
-        --RAISE NOTICE 'Try to create an ticket again or try to find';
-        -- RETURN NEW;
+        NEW.rt_ticket := cod.create_incident_ticket_from_event((SELECT id FROM cod.event WHERE item_id = NEW.id ORDER BY id LIMIT 1));
+        IF NEW.rt_ticket IS NOT NULL THEN
+            UPDATE cod.item SET rt_ticket = NEW.rt_ticket WHERE id = NEW.id;
+            RETURN NEW;
+        END IF;
     END IF;
 
     IF NEW.ended_at IS DISTINCT FROM OLD.ended_at THEN
