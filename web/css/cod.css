@@ -101,6 +101,9 @@ Table of Contents (order of these sections is significant)
         font-size: small;
         color: #AAA;
     }
+    #contact-tools {
+        display: none;
+    }
 }
 
 @media print {
