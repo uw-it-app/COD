@@ -17,6 +17,8 @@ CREATE OR REPLACE FUNCTION rt_v2.escalation_xml(integer) RETURNS xml
         xmlelement(name "Id", ticket.id),
         xmlelement(name "Type", type.content),
         xmlelement(name "Subject", ticket.subject),
+        xmlelement(name "Severity", ticket.severity),
+        xmlelement(name "Created", (ticket.created::varchar||'-0')::timestamptz::timestamp::varchar),
         xmlelement(name "Queue", queue.name),
         xmlelement(name "Status", ticket.status),
         xmlelement(name "Owner", lower(users.name))
@@ -46,12 +48,14 @@ CREATE OR REPLACE FUNCTION rt_v2.incident_xml(integer) RETURNS xml
         xmlelement(name "Id", ticket.id),
         xmlelement(name "Type", type.content),
         xmlelement(name "Subject", ticket.subject),
+        xmlelement(name "Severity", ticket.severity),
+        xmlelement(name "Created", (ticket.created::varchar||'-0')::timestamptz::timestamp::varchar),
         xmlelement(name "Queue", queue.name),
         xmlelement(name "Status", ticket.status),
         xmlelement(name "Escalations",
             (SELECT xmlagg(rt_v2.escalation_xml(link.localbase))
              FROM public.links AS link
-            WHERE link.localtarget = $1 AND link.type= 'Super')
+            WHERE link.localtarget = $1 AND (link.type = 'Super' OR link.type = 'Hierarchy'))
         )
     ) FROM public.tickets_active AS ticket
       JOIN public.objectcustomfieldvalues AS type ON (type.customfield = 270 AND type.objecttype = 'RT::Ticket' AND type.content = 'Incident' AND type.objectid = ticket.id)
@@ -107,7 +111,7 @@ BEGIN
                                 l.localtarget = a.id AND
                                 queue=_queueid
                             )
-                            WHERE l.localbase = t.id AND l.type= 'Super'
+                            WHERE l.localbase = t.id AND (l.type= 'Super' OR l.type = 'Hierarchy')
                     ) order by t.id desc
         ) as foo)
     );
