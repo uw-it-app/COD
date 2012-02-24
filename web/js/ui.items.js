@@ -14,6 +14,7 @@
         },
 
         _connectControllerStuff: function () {
+            var _this = this;
             COD.data.items = {Items: {}};
             COD.createLastUpdated();
             COD.REST.items = $.RESTDataSource(COD.dataSources.items, COD.RESTErrorHandler);
@@ -22,6 +23,10 @@
                 return false;
             });
             COD.linker();
+            $('#last-updated').on('click', function () {
+                $.proxy(_this.refreshData(), _this);
+                return false;
+            });
         },
 
         refreshData: function () {

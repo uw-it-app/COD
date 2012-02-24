@@ -47,7 +47,7 @@ var COD = {},
     COD.rid = {};
 
     COD.createLastUpdated = function () {
-        $('#tools-app-title-bar-right').append('<div id="last-updated" style="display:none">Last Refresh: <span id="last-updated-time">____-__-__ __:__:__</span></div>');
+        $('#tools-app-title-bar-right').append('<div id="last-updated" style="display:none" class="clickme">Last Refresh: <span id="last-updated-time">____-__-__ __:__:__</span></div>');
     };
 
     COD.updateLastUpdated = function () {

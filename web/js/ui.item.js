@@ -40,6 +40,11 @@
                 $('.sync_clear').val('');
                 return false;
             });
+            COD.createLastUpdated();
+            $('#last-updated').on('click', function () {
+                $.proxy(_this.getData(), _this);
+                return false;
+            });
         },
 
         _pretty: function () {
@@ -49,7 +54,6 @@
             $('.tile_event').tile({title: "Events", cookie: false});
             $('.tile_escalate').tile({title: "Escalations", cookie: false});
             $('.action_tile').actionTile();
-            COD.createLastUpdated();
         },
 
         _updateData: function (data) {

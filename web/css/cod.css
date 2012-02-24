@@ -30,6 +30,9 @@ Table of Contents (order of these sections is significant)
     div.minor{
         float: left;
     }
+    .clickme{
+        cursor: pointer;
+    }
     .clickable{
         cursor: pointer;
     }
@@ -56,8 +59,12 @@ Table of Contents (order of these sections is significant)
         min-height: 7em;
     }
     
-    #last-updated {
+    #tools-app-title-bar-right {
         text-align: right;
+    }
+
+    #last-updated {
+        display: inline-block;
         padding-top: 1em;
         padding-right: 1em;
     }
