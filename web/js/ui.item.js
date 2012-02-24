@@ -125,11 +125,9 @@
                     $('#ActionReactivate').tile('hide');
                 }
                 $('#ActionSetNag').tile('hide');
-                $.each(Item.Escalations.Escalation, function (key, value) {
-                    if (value.State === 'Owned') {
-                        $('#ActionSetNag').tile('show');
-                    }
-                });
+                if (COD.data.item.Item.Times.Nag) {
+                    $('#ActionSetNag').tile('show');
+                }
             }
             $('.prompted_action').tile('hide');
             if (COD.data.item.Item.ITILType === '(Notification)') {
