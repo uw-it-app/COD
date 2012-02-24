@@ -134,7 +134,7 @@ CREATE TABLE cod.event (
     oncall_primary      varchar,
     oncall_alternate    varchar,
     helptext            varchar,
-    source_id           integer     NOT NULL DEFAULT 1 REFERENCES cod.support_model(id) ON DELETE RESTRICT,
+    source_id           integer     NOT NULL DEFAULT 1 REFERENCES cod.source(id) ON DELETE RESTRICT,
     start_at            timestamptz NOT NULL DEFAULT now(),
     end_at              timestamptz,
     content             varchar
