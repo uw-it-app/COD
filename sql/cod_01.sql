@@ -489,7 +489,8 @@ BEGIN
         END IF;
     ELSEIF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Failed') THEN
         NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Failed');
-    ELSEIF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Cancelled') OR
+    ELSEIF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Closed') OR
+        NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Cancelled') OR
         NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Passive')
     THEN
         NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Passive');
