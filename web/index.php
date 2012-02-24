@@ -22,7 +22,7 @@
             <th class="hm_issue">H&amp;M Issue</th>
             <th class="ref_no">Ref No</th>
             <th class="">Model</th>
-            <th class="">Severity</th>
+            <th class="">Sev</th>
             <th class="">Escalations</th>
             <th class="">Modified</th>
         </tr>
