@@ -297,8 +297,7 @@ BEGIN
     END IF;
 
     IF NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed') THEN
-        --RAISE NOTICE 'Tell acc/proxd to delete alert';
-        -- unset nag
+        PERFORM cod.dash_delete_event(id) FROM cod.event WHERE item_id = NEW.id;
         PERFORM rt.update_ticket(NEW.rt_ticket, E'Status: resolved\n');
         RETURN NEW;
     ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved') THEN
