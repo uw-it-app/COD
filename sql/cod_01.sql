@@ -65,7 +65,7 @@ BEGIN
         E'Phone: 206-685-1270\n';
 
     _payload := 'Subject: ' || _subject || E'\n' ||
-                E'Queue: SSG::Test\n' ||
+                E'Queue: ' || appconfig.get('INCIDENT_QUEUE') || E'\n' ||
                 'Severity: ' || _row.severity::varchar ||  E'\n' ||
                 'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
                 'Starts: ' || _row.start_at::varchar || E'\n' ||
