@@ -306,6 +306,7 @@ CREATE TABLE cod.dbcache (
     modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
     id              serial      PRIMARY KEY,
     name            varchar     NOT NULL UNIQUE,
+    timekey         timestamptz NOT NULL,
     content         varchar     NOT NULL
 );
 
@@ -332,6 +333,63 @@ CREATE TRIGGER t_50_modified
     BEFORE INSERT OR UPDATE ON cod.dbcache
     FOR EACH ROW
     EXECUTE PROCEDURE standard.modified();
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.dbcache_get(varchar, timestamptz) RETURNS varchar
+    LANGUAGE sql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.dbcache_get(varchar, timestamptz)
+    Description:  Get dbcache record with the provided name and at or after the provided time
+    Affects:      nothing
+    Arguments:    varchar: name of record
+                  timestamptz: time <= timekey of record
+    Returns:      varchar
+*/
+    SELECT content FROM cod.dbcache WHERE name = v_name and timekey >= v_timekey;
+$_$;
+
+COMMENT ON FUNCTION cod.dbcache_get(varchar, timestamptz) IS 'DR: Get dbcache record with the provided name and at or after the provided time (DATE)';
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.dbcache_update(varchar, varchar, timestamptz) RETURNS boolean
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.dbcache_update(varchar, varchar, timestamptz)
+    Description:  Update or insert a dbcache record
+    Affects:      Updates or Inserts a dbcache record
+    Arguments:    varchar: name of the record
+                  varchar: content of the record
+                  timestamptz: timekey of the record
+    Returns:      boolean
+*/
+DECLARE
+    v_name      ALIAS FOR $1;
+    v_content   ALIAS FOR $2;
+    v_timekey   ALIAS FOR $3;
+    _timekey    timestamptz;
+BEGIN
+    IF v_timekey IS NULL THEN
+        _timekey := now();
+    ELSE
+        _timekey := v_timekey;
+    END IF;
+
+    UPDATE cod.dbcache SET content = v_content, timekey = _timekey WHERE name = v_name;
+    IF NOT FOUND THEN
+        INSERT INTO cod.dbcache (name, content, timekey) VALUES (v_name, v_content, _timekey);
+    END IF;
+    RETURN TRUE;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.dbcache_update(varchar, varchar, timestamptz) IS 'DR: Update or insert a dbcache record (2012-02-26)';
+
 
 /**********************************************************************************************/
 

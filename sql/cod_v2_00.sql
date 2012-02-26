@@ -393,7 +393,7 @@ COMMENT ON FUNCTION cod_v2.item_do_xml(integer, xml) IS 'DR: Perform actions on 
 /**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION cod_v2.items_xml() RETURNS xml
-    LANGUAGE sql
+    LANGUAGE plpgsql
     VOLATILE
     SECURITY INVOKER
     AS $_$
@@ -403,13 +403,22 @@ CREATE OR REPLACE FUNCTION cod_v2.items_xml() RETURNS xml
     Arguments:    none
     Returns:      XML list of items
 */
-SELECT xmlelement(name "Items",
-    (SELECT xmlagg(cod_v2.item_xml(id)) FROM (
-        SELECT i.id FROM cod.item i JOIN cod.state s ON (i.state_id=s.id) 
-            WHERE s.sort < 90 OR i.closed_at > now() - '1 hour'::interval ORDER BY s.sort ASC, i.rt_ticket DESC
-    ) AS foo),
-    xmlelement(name "ModifiedAt", (SELECT max(modified_at) FROM cod.item))
-);
+DECLARE
+BEGIN
+    _lastmod := (SELECT max(modified_at) FROM cod.item);
+    _cache   := (cod.dbcache_get('ITEMS', _lastmod))::xml;
+    IF _cache IS NULL
+        _cache := xmlelement(name "Items",
+            (SELECT xmlagg(cod_v2.item_xml(id)) FROM (
+                SELECT i.id FROM cod.item i JOIN cod.state s ON (i.state_id=s.id) 
+                    WHERE s.sort < 90 OR i.closed_at > now() - '1 hour'::interval ORDER BY s.sort ASC, i.rt_ticket DESC
+            ) AS foo),
+            xmlelement(name "ModifiedAt", _lastmod)
+        );
+        PERFORM cod.dbcache_update('ITEMS', _cache::varchar, _lastmod);
+    END IF;
+    RETURN _cache;
+END;
 $_$;
 
 COMMENT ON FUNCTION cod_v2.items_xml() IS 'DR: List of cod items (2011-11-30)';
