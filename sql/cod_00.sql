@@ -184,7 +184,6 @@ SELECT standard.create_enum_table('cod', 'esc_state', 'COD escalation state');
 
 INSERT INTO cod.esc_state (sort, name, description) VALUES
     (0,  'Building', 'Underconstruction'),
---    (10, 'Act', 'COPS has an action to perform'),
     (30, 'Active', 'Active contact to Tier 2/3 support'),
     (33, 'Failed', 'Failed notification to Tier 2/3 support'),
     (40, 'Passive', 'Passive contact to Tier 2/3 support'),
@@ -261,7 +260,7 @@ CREATE TABLE cod.action (
     content         varchar   
 );
 
-COMMENT ON TABLE cod.action IS 'DR: (2011-10-12)';
+COMMENT ON TABLE cod.action IS 'DR: Prompted actions to perform (2011-10-12)';
 
 GRANT SELECT, INSERT, UPDATE ON TABLE cod.action TO PUBLIC;
 
@@ -278,7 +277,7 @@ CREATE OR REPLACE FUNCTION cod.action_check() RETURNS trigger
     AS $_$
 /*  Function:     cod.action_check()
     Description:  Ensures data is set properly
-    Affects:      Active cod.action row
+    Affects:      NEW cod.action row
     Arguments:    none
     Returns:      trigger
 */
