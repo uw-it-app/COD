@@ -32,8 +32,8 @@ CREATE OR REPLACE FUNCTION appconfig.get(varchar) RETURNS varchar
     AS $_$
 /*  Function:     appconfig.get(varchar)
     Description:  Retrieve application setting
-    Affects:      
-    Arguments:    
+    Affects:      nothing
+    Arguments:    varchar: setting key to find value for
     Returns:      varchar
 */
 SELECT data FROM appconfig.setting WHERE key = $1;
