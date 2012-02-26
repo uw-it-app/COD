@@ -41,7 +41,7 @@ BEGIN
     _cc := COALESCE(xpath.get_varchar('/Event/Cc', _content), '');
 
     _tags := regexp_split_to_array(_addtags, E'[, ]+', 'g');
-    _tags := array2.ucat(_tags, 'COD-DEV'::varchar);
+    _tags := array2.ucat(_tags, appconfig.get('COD_TAG'));
 
     _message := '';
     IF _row.host IS NOT NULL THEN
@@ -70,6 +70,7 @@ BEGIN
                 'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
                 'Starts: ' || _row.start_at::varchar || E'\n' ||
                 'Cc: ' || _cc  || E'\n' ||
+                'ReferredToBy: ' || 'https://' || appconfig.get('SSGAPP_ALIAS') || '/cod/item/Id/' || _row.item_id::varchar || E'\n' ||
                 'Content: ' || _message ||
                 E'ENDOFCONTENT\nCF-TicketType: Incident\n';
 

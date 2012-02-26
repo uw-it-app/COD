@@ -37,7 +37,7 @@ CREATE OR REPLACE FUNCTION rt.offline_submit(payload varchar) RETURNS varchar
 import httplib, urllib
 params = urllib.urlencode({"string":payload,"nodecoration":1,"resultsonly":1,"UpdateTickets":"Upload"})
 headers = {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"}
-conn = httplib.HTTPSConnection("rti.cac.washington.edu")
+conn = httplib.HTTPSConnection(plpy.execute("SELECT appconfig.get('RTI_HOST')")[0]["get"]);
 conn.request("POST", "/Tools/Offline.html", params, headers)
 response = conn.getresponse()
 body = response.read()
