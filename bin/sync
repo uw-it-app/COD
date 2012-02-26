@@ -3,36 +3,44 @@
 set_include_path(get_include_path() . PATH_SEPARATOR . '/data/phplib/zend');
 require_once 'Zend/Http/Client.php';
 
-try {
-	$rt = new Zend_Http_Client('http://localhost/daw/xml/COD-RT/v2/Incidents/Queue/SSG::Test');
-	$rt->setMethod('GET');
-	$r1 = $rt->request();
-	if ($r1->getStatus() !== 200) {
-	    echo 'ERROR ('.$r1->getStatus().'): '.$r1->getBody()."\n";
-	    exit(1);
-	}
+$name = exec('uname -n');
 
-	$cod = new Zend_Http_Client('http://localhost/daw/xml/COD/v2/RT');
-	$cod->setMethod('POST');
-	$cod->setRawData($r1->getBody());
-	$r2 = $cod->request();
-	if ($r2->getStatus() !== 200) {
-	    echo 'ERROR ('.$r2->getStatus().'): '.$r2->getBody()."\n";
-	    exit(1);
-	}
-	echo $r2->getBody()."\n";
+if (preg_match('/^ssgapp\d\d\./', $name)) {
+    define('INCIDENT_QUEUE', 'COPS');
+} else {
+    define('INCIDENT_QUEUE', 'SSG::TEST');
+}
+
+try {
+    $rt = new Zend_Http_Client('http://localhost/daw/xml/COD-RT/v2/Incidents/Queue/'.INCIDENT_QUEUE);
+    $rt->setMethod('GET');
+    $r1 = $rt->request();
+    if ($r1->getStatus() !== 200) {
+        echo 'ERROR ('.$r1->getStatus().'): '.$r1->getBody()."\n";
+        exit(1);
+    }
+
+    $cod = new Zend_Http_Client('http://localhost/daw/xml/COD/v2/RT');
+    $cod->setMethod('POST');
+    $cod->setRawData($r1->getBody());
+    $r2 = $cod->request();
+    if ($r2->getStatus() !== 200) {
+        echo 'ERROR ('.$r2->getStatus().'): '.$r2->getBody()."\n";
+        exit(1);
+    }
+    echo $r2->getBody()."\n";
 } catch (Exception $e) {
-	echo 'ERROR ('.get_class($e). '): ' . $e->getMessage() ."\n";
+    echo 'ERROR ('.get_class($e). '): ' . $e->getMessage() ."\n";
 }
 try {
-	$nag = new Zend_Http_Client('http://localhost/daw/xml/COD/v2/Nag');
-	$nag->setMethod('POST');
-	$r3 = $nag->request();
-	if ($r3->getStatus() !== 200) {
-	    echo 'ERROR ('.$r3->getStatus().'): '.$r3->getBody()."\n";
-	    exit(1);
-	}
-	echo $r3->getBody()."\n";
+    $nag = new Zend_Http_Client('http://localhost/daw/xml/COD/v2/Nag');
+    $nag->setMethod('POST');
+    $r3 = $nag->request();
+    if ($r3->getStatus() !== 200) {
+        echo 'ERROR ('.$r3->getStatus().'): '.$r3->getBody()."\n";
+        exit(1);
+    }
+    echo $r3->getBody()."\n";
 } catch (Exception $e) {
-	echo 'ERROR ('.get_class($e). '): ' . $e->getMessage() ."\n";
+    echo 'ERROR ('.get_class($e). '): ' . $e->getMessage() ."\n";
 }
