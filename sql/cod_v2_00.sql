@@ -443,7 +443,7 @@ CREATE OR REPLACE FUNCTION cod_v2.can_spawn(varchar) RETURNS boolean
 DECLARE
     v_netid     ALIAS FOR $1;
 BEGIN
-    IF ARRAY[v_netid] <@ '{alexc,areed,blakjack,cil5,ddiehl,guerrero,ljahed,lyns,mhouli,rliesik,shrud,tblood,tynand,wizofoz,joby,kkurth,ldugan,kenm}'::varchar[] 
+    IF ARRAY[v_netid] <@ '{alexc,areed,blakjack,cil5,ddiehl,guerrero,ljahed,lyns,mhouli,rliesik,schrud,tblood,tynand,wizofoz,joby,kkurth,ldugan,kenm}'::varchar[] 
     THEN
         RETURN TRUE;
     END IF;
