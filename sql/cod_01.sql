@@ -41,7 +41,7 @@ BEGIN
     _cc := COALESCE(xpath.get_varchar('/Event/Cc', _content), '');
 
     _tags := regexp_split_to_array(_addtags, E'[, ]+', 'g');
-    _tags := array2.ucat(_tags, appconfig.get('COD_TAG'));
+    _tags := array2.ucat(_tags, appconfig.get('COD_TAG', ''));
 
     _message := '';
     IF _row.host IS NOT NULL THEN
@@ -65,12 +65,12 @@ BEGIN
         E'Phone: 206-685-1270\n';
 
     _payload := 'Subject: ' || _subject || E'\n' ||
-                E'Queue: ' || appconfig.get('INCIDENT_QUEUE') || E'\n' ||
+                E'Queue: ' || appconfig.get('INCIDENT_QUEUE', '') || E'\n' ||
                 'Severity: ' || _row.severity::varchar ||  E'\n' ||
                 'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
                 'Starts: ' || _row.start_at::varchar || E'\n' ||
                 'Cc: ' || _cc  || E'\n' ||
-                'ReferredToBy: ' || 'https://' || appconfig.get('SSGAPP_ALIAS') || '/cod/item/Id/' || _row.item_id::varchar || E'\n' ||
+                'ReferredToBy: https://' || appconfig.get('SSGAPP_ALIAS', '') || '/cod/item/Id/' || _row.item_id::varchar || E'\n' ||
                 'Content: ' || _message ||
                 E'ENDOFCONTENT\nCF-TicketType: Incident\n';
 

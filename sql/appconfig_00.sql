@@ -41,4 +41,33 @@ $_$;
 
 COMMENT ON FUNCTION appconfig.get(varchar) IS 'DR: Retrieve application setting (2012-02-25)';
 
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION appconfig.get(varchar, varchar) RETURNS varchar
+    LANGUAGE plpgsql
+    STABLE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     appconfig.get(varchar)
+    Description:  Retrieve application setting, or default
+    Affects:      nothing
+    Arguments:    varchar: setting key to find value for
+                  varchar: default value to return if no matching value
+    Returns:      varchar
+*/
+DECLARE
+    v_key       ALIAS FOR $1;
+    v_default   ALIAS FOR $2;
+    _data       varchar;
+BEGIN
+    _data := (SELECT data FROM appconfig.setting WHERE key = v_key);
+    IF FOUND THEN
+        RETURN _data;
+    END IF;
+    RETURN v_default;
+END;
+$_$;
+
+COMMENT ON FUNCTION appconfig.get(varchar, varchar) IS 'DR: Retrieve application setting, or default (2012-02-25)';
+
 COMMIT;
