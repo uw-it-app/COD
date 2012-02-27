@@ -121,4 +121,4 @@ $_$;
 COMMENT ON FUNCTION rt_v2.incidents_xml(varchar) IS 'DR: Retrieve XML Representation of the Incidents
  (2012-02-15)';
 
- COMMIT;
+COMMIT;
