@@ -61,7 +61,7 @@ DECLARE
     _data       varchar;
 BEGIN
     _data := (SELECT data FROM appconfig.setting WHERE key = v_key);
-    IF FOUND THEN
+    IF _data IS NOT NULL THEN
         RETURN _data;
     END IF;
     RETURN v_default;
