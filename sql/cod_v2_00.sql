@@ -404,10 +404,12 @@ CREATE OR REPLACE FUNCTION cod_v2.items_xml() RETURNS xml
     Returns:      XML list of items
 */
 DECLARE
+    _lastmod    timestamptz;
+    _cache      xml;
 BEGIN
     _lastmod := (SELECT max(modified_at) FROM cod.item);
     _cache   := (cod.dbcache_get('ITEMS', _lastmod))::xml;
-    IF _cache IS NULL
+    IF _cache IS NULL THEN
         _cache := xmlelement(name "Items",
             (SELECT xmlagg(cod_v2.item_xml(id)) FROM (
                 SELECT i.id FROM cod.item i JOIN cod.state s ON (i.state_id=s.id) 
@@ -421,7 +423,7 @@ BEGIN
 END;
 $_$;
 
-COMMENT ON FUNCTION cod_v2.items_xml() IS 'DR: List of cod items (2011-11-30)';
+COMMENT ON FUNCTION cod_v2.items_xml() IS 'DR: List of cod items. Uses cod.dbacache (2012-02-26)';
 
 -- REST get cached list (active, all)
 
