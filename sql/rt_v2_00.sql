@@ -97,7 +97,8 @@ BEGIN
                 WHERE queue = _queueid AND
                     (
                         t.status IN ('new', 'open', 'stalled') OR 
-                        (t.lastupdated::varchar||'+0')::timestamptz > now() - '1 hour'::interval
+                        (t.status IN ('resolved', 'rejected') AND
+                            (t.lastupdated::varchar||'+0')::timestamptz > now() - '1 hour'::interval)
                     ) AND
                     NOT EXISTS(
                         SELECT NULL FROM links AS l 
