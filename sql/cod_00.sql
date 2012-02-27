@@ -189,7 +189,8 @@ INSERT INTO cod.esc_state (sort, name, description) VALUES
     (40, 'Passive', 'Passive contact to Tier 2/3 support'),
     (60, 'Owned', 'Tier 2/3 acknowedged issue'),
     (90, 'Resolved', 'All work completed'),
-    (91, 'Rejected', 'Escalation misrouted');
+    (91, 'Rejected', 'Escalation misrouted'),
+    (92, 'Merged', 'Escalation merged into another ticket');
 
 /**********************************************************************************************/
 

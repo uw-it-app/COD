@@ -15,6 +15,9 @@ CREATE OR REPLACE FUNCTION rt_v2.escalation_xml(integer) RETURNS xml
 */
     SELECT xmlelement(name "Escalation",
         xmlelement(name "Id", ticket.id),
+        xmlelement(name "AliasIds",
+            (SELECT xmlagg(xmlelement(name "AliasId", id)) FROM tickets_active WHERE effectiveid = ticket.id AND id <> ticket.id)
+        ),
         xmlelement(name "Type", type.content),
         xmlelement(name "Subject", ticket.subject),
         xmlelement(name "Severity", ticket.severity),

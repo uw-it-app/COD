@@ -103,6 +103,9 @@ BEGIN
                     owner = xpath.get_varchar('/Escalation/Owner', _esc),
                     esc_state_id = _escalation.esc_state_id
                     WHERE id = _escalation.id;
+                --foreach aliasid, if it exists then set status to merged
+                --UPDATE cod.escalation SET esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Merged') 
+                --    WHERE ARRAY[rt_ticket]::integer[] <@ xpath.get_varchar_array('/Escalation/AliasIds/AliasId', _esc)::integer[];
             END LOOP;
         END IF;
         IF _item.workflow_lock IS TRUE THEN
