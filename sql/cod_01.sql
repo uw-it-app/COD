@@ -127,8 +127,6 @@ BEGIN
         END IF;
     END IF;
     RETURN NEW;
--- EXCEPTION
---     WHEN OTHERS THEN null;
 END;
 $_$;
 
@@ -147,15 +145,15 @@ CREATE OR REPLACE FUNCTION cod.incident_state_check() RETURNS trigger
     VOLATILE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod.incident_state_check()
+    Description:  Ensure Item state is set properly
+    Affects:      NEW record
+    Arguments:    none
+    Returns:      trigger
 */
 DECLARE
 BEGIN
-    If (cod.has_active_action(NEW.id)) THEN
+    If EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND completed_at IS NULL) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Act');
     ELSEIF (NEW.closed_at IS NOT NULL) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed');
@@ -170,7 +168,7 @@ BEGIN
     ELSEIF (NEW.started_at IS NOT NULL AND NEW.ended_at IS NOT NULL) THEN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Cleared');
     ELSEIF (NEW.escalated_at IS NOT NULL AND NEW.resolved_at IS NULL) THEN
-        IF (cod.has_active_escalation(NEW.id)) THEN
+        IF EXISTS(SELECT NULL FROM cod.escalation WHERE item_id = NEW.id AND esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Active')) THEN
             NEW.state_id = standard.enum_value_id('cod', 'state', 'Escalating');
         ELSE
             NEW.state_id = standard.enum_value_id('cod', 'state', 'Tier2');
@@ -179,12 +177,10 @@ BEGIN
         NEW.state_id = standard.enum_value_id('cod', 'state', 'Processing');
     END IF;
     RETURN NEW;
---EXCEPTION
---    WHEN OTHERS THEN null;
 END;
 $_$;
 
-COMMENT ON FUNCTION cod.incident_state_check() IS '';
+COMMENT ON FUNCTION cod.incident_state_check() IS 'DR: Ensure Item state is set properly (2012-02-26)';
 
 CREATE TRIGGER t_20_incident_state_check
     BEFORE INSERT OR UPDATE ON cod.item
@@ -199,11 +195,11 @@ CREATE OR REPLACE FUNCTION cod.incident_stage_check() RETURNS trigger
     VOLATILE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod.incident_stage_check()
+    Description:  Ensure Item ITIL Stage is set properly
+    Affects:      New record
+    Arguments:    none
+    Returns:      trigger
 */
 DECLARE
 BEGIN
@@ -218,14 +214,15 @@ BEGIN
     ELSEIF NEW.escalated_at IS NOT NULL THEN -- open Escalations
         IF NEW.ended_at IS NOT NULL THEN -- Event cleared 
             NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Resolution and Recovery');
-        ELSEIF (cod.has_open_unowned_escalation(NEW.id)) THEN -- unowned escalation
+        ELSEIF EXISTS(SELECT NULL FROM cod.escalation WHERE item_id = NEW.id AND resolved_at IS NULL AND owned_at IS NULL) THEN -- unowned escalation
             NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Functional Escalation');
         ELSE -- owned escalation
             NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
         END IF;
     ELSEIF NEW.ended_at IS NOT NULL THEN -- No escalation, closed event
         NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Closure');
-    ELSEIF cod.has_active_helptext(NEW.id) THEN -- active helptext action
+    ELSEIF EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'state', 'HelpText')) 
+    THEN -- active helptext action
         NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Investigation and Diagnosis');
     ELSEIF NEW.rt_ticket IS NULL THEN
         NEW.stage_id = standard.enum_value_id('cod', 'stage', 'Logging');
@@ -236,7 +233,7 @@ BEGIN
 END;
 $_$;
 
-COMMENT ON FUNCTION cod.incident_stage_check() IS '';
+COMMENT ON FUNCTION cod.incident_stage_check() IS 'DR: Ensure Item ITIL Stage is set properly (2012-02-26)';
 
 CREATE TRIGGER t_25_incident_stage_check
     BEFORE INSERT OR UPDATE ON cod.item
@@ -245,24 +242,17 @@ CREATE TRIGGER t_25_incident_stage_check
     EXECUTE PROCEDURE cod.incident_stage_check();
 
 /**********************************************************************************************/
-/*
-CLOSE ACTION
-BEGIN;
-update cod.item set workflow_lock = true where id=1;
-update cod.action set completed_at = now() where id=7;
-update cod.item set closed_at = now(), workflow_lock = false where id=1;
-commit;
-*/
+
 CREATE OR REPLACE FUNCTION cod.incident_workflow() RETURNS trigger
     LANGUAGE plpgsql
     VOLATILE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod.incident_workflow()
+    Description:  Workflow for incidents (and more for now)
+    Affects:      Active Item record and associated elements
+    Arguments:    none
+    Returns:      trigger
 */
 DECLARE
     _oncall     varchar;
@@ -327,7 +317,8 @@ BEGIN
     -- if have not escalated
     IF NEW.escalated_at IS NULL THEN
         -- if no helptext action
-        IF NOT cod.has_helptext_action(NEW.id) THEN
+        IF NOT EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText'))
+        THEN
             IF (SELECT help_text FROM cod.support_model WHERE id = NEW.support_model_id) IS TRUE THEN
                 -- create action to prompt for acting on helptext
                 INSERT INTO cod.action (item_id, action_type_id) VALUES (NEW.id, standard.enum_value_id('cod', 'action_type', 'HelpText'));
@@ -364,7 +355,7 @@ BEGIN
 END;
 $_$;
 
-COMMENT ON FUNCTION cod.incident_workflow() IS '';
+COMMENT ON FUNCTION cod.incident_workflow() IS 'DR: Workflow for incidents (and more for now) (2012-02-26)';
 
 CREATE TRIGGER t_90_incident_workflow
     AFTER INSERT OR UPDATE ON cod.item
@@ -379,11 +370,11 @@ CREATE OR REPLACE FUNCTION cod.escalation_build() RETURNS trigger
     VOLATILE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
+/*  Function:     cod.escalation_build()
     Description:  trigger to run on Building escalations
-    Affects:      
-    Arguments:    
-    Returns:      
+    Affects:      NEW escalation record
+    Arguments:    none
+    Returns:      trigger
 */
 DECLARE
     _sep        varchar := E'------------------------------------------\n';
@@ -434,7 +425,6 @@ BEGIN
                     'Queue: ' || NEW.queue || E'\n' ||
                     'Severity: ' || _item.severity::varchar ||  E'\n' ||
                     'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
-                    -- 'Starts: ' || _row.start_at::varchar || E'\n' ||
                     'Super: ' || _item.rt_ticket || E'\n' ||
                     'Content: ' || _message || E'\n' ||
                     E'ENDOFCONTENT\nCF-TicketType: Incident\n';
@@ -447,12 +437,10 @@ BEGIN
         NEW.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Active');
     END IF;
     RETURN NEW;
---EXCEPTION
---    WHEN OTHERS THEN RETURN NULL;
 END;
 $_$;
 
-COMMENT ON FUNCTION cod.escalation_build() IS '';
+COMMENT ON FUNCTION cod.escalation_build() IS 'DR: trigger to run on Building escalations (2012-02-26)';
 
 CREATE TRIGGER t_20_escalation_build
     BEFORE INSERT OR UPDATE ON cod.escalation
@@ -520,11 +508,11 @@ CREATE OR REPLACE FUNCTION cod.escalation_workflow() RETURNS trigger
     VOLATILE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  trigger to run on !Building escalations
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod.escalation_workflow()
+    Description:  Workflow trigger to run on !Building escalations
+    Affects:      NEW escalation record
+    Arguments:    none
+    Returns:      trigger
 */
 DECLARE
     _payload        xml;
@@ -576,12 +564,10 @@ BEGIN
         END IF;
     END IF;
     RETURN NEW;
---EXCEPTION
---    WHEN OTHERS THEN RETURN NULL;
 END;
 $_$;
 
-COMMENT ON FUNCTION cod.escalation_workflow() IS '';
+COMMENT ON FUNCTION cod.escalation_workflow() IS 'DR: Workflow trigger to run on !Building escalations (2012-02-26)';
 
 CREATE TRIGGER t_90_escalation_workflow
     AFTER INSERT OR UPDATE ON cod.escalation
@@ -620,22 +606,20 @@ CREATE OR REPLACE FUNCTION cod.update_item() RETURNS trigger
     VOLATILE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod.update_item()
+    Description:  Update the item associated with this record
+    Affects:      Item associated with this record
+    Arguments:    none
+    Returns:      trigger
 */
 DECLARE
 BEGIN
     UPDATE cod.item SET modified_at = now() WHERE id = NEW.item_id;
-    RETURN NULL;
---EXCEPTION
---    WHEN OTHERS THEN null;
+    RETURN NEW;
 END;
 $_$;
 
-COMMENT ON FUNCTION cod.update_item() IS '';
+COMMENT ON FUNCTION cod.update_item() IS 'DR: Update the item associated with this record (2012-02-26)';
 
 CREATE TRIGGER t_91_update_item
     AFTER INSERT OR UPDATE ON cod.action
@@ -651,180 +635,5 @@ CREATE TRIGGER t_91_update_item
     AFTER INSERT OR UPDATE ON cod.event
     FOR EACH ROW
     EXECUTE PROCEDURE cod.update_item();
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.has_open_escalation(integer) RETURNS boolean
-    LANGUAGE sql
-    STABLE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-    SELECT EXISTS(
-        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND resolved_at IS NULL 
-    );
-$_$;
-
-COMMENT ON FUNCTION cod.has_open_escalation(integer) IS '';
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.has_open_unowned_escalation(integer) RETURNS boolean
-    LANGUAGE sql
-    STABLE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-    SELECT EXISTS(
-        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND resolved_at IS NULL AND owned_at IS NULL
-    );
-$_$;
-
-COMMENT ON FUNCTION cod.has_open_unowned_escalation(integer) IS '';
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.has_active_escalation(integer) RETURNS boolean
-    LANGUAGE sql
-    VOLATILE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-    SELECT EXISTS(
-        SELECT NULL FROM cod.escalation WHERE item_id = $1 AND 
-            esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Active')
-    );
-$_$;
-
-COMMENT ON FUNCTION cod.has_active_escalation(integer) IS '';
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.has_active_helptext(integer) RETURNS boolean
-    LANGUAGE sql
-    VOLATILE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-    SELECT EXISTS(
-        SELECT NULL FROM cod.action WHERE item_id = $1 AND completed_at IS NULL AND
-            action_type_id = standard.enum_value_id('cod', 'state', 'HelpText')
-    );
-$_$;
-
-COMMENT ON FUNCTION cod.has_active_helptext(integer) IS '';
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.has_helptext_action(integer) RETURNS boolean
-    LANGUAGE sql
-    VOLATILE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-    SELECT EXISTS(
-        SELECT NULL FROM cod.action WHERE item_id = $1 AND
-            action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText')
-    );
-$_$;
-
-COMMENT ON FUNCTION cod.has_helptext_action(integer) IS '';
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.has_active_action(integer) RETURNS boolean
-    LANGUAGE sql
-    VOLATILE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-    SELECT EXISTS(
-        SELECT NULL FROM cod.action WHERE item_id = $1 AND completed_at IS NULL
-    );
-$_$;
-
-COMMENT ON FUNCTION cod.has_active_action(integer) IS '';
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION cod.has_uncleared_event(integer) RETURNS boolean
-    LANGUAGE sql
-    VOLATILE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-    SELECT EXISTS(
-        SELECT NULL FROM cod.event WHERE item_id = $1 AND end_at IS NULL
-    );
-$_$;
-
-COMMENT ON FUNCTION cod.has_uncleared_event(integer) IS '';
-
-/**********************************************************************************************/
-
-CREATE OR REPLACE FUNCTION standard.enum_id_name_compare_sort(varchar, varchar, integer, varchar, varchar) RETURNS boolean
-    LANGUAGE plpgsql
-    VOLATILE
-    SECURITY INVOKER
-    AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
-*/
-DECLARE
-    v_schema        ALIAS FOR $1;
-    v_table         ALIAS FOR $2;
-    v_id            ALIAS FOR $3;
-    v_name          ALIAS FOR $4;
-    v_comp          ALIAS FOR $5;
-    _table          varchar := quote_ident(v_schema) || '.' || quote_ident(v_table);
-    _output         boolean;
-BEGIN
-    IF v_comp NOT IN ('=', '<>', '!=', '<', '<=', '>=', '>') THEN
-        RAISE EXCEPTION 'Invalid Comparison, "%"', v_comp;
-    END IF;
-    EXECUTE 'SELECT a.sort ' || v_comp || ' b.sort FROM ' || _table || ' AS a, ' || _table || ' AS b WHERE a.id = ' || quote_literal(v_id) || ' AND b.name = ' || quote_literal(v_name) INTO _output;
-    RETURN _output;
-END;
-$_$;
-
-COMMENT ON FUNCTION standard.enum_id_name_compare_sort(varchar, varchar, integer, varchar, varchar) IS '';
 
 COMMIT;
