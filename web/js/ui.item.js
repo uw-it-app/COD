@@ -100,7 +100,7 @@
             $.each(oncalls, function () {
                 ocOptions = ocOptions + '<option value="' + this + '">' + this + '</option>';
             });
-            ocOptions = ocOptions + '<option value="duty_manager">DutyManager</option><option value="_">Custom</option>';
+            ocOptions = ocOptions + '<option value="DutyManager">DutyManager</option><option value="_">Custom</option>';
             $('#escalateTo').html(ocOptions);
             $('.helpText').each(function () {
                 var _content = $(this).text();
