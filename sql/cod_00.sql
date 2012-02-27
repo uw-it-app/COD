@@ -348,7 +348,7 @@ CREATE OR REPLACE FUNCTION cod.dbcache_get(varchar, timestamptz) RETURNS varchar
                   timestamptz: time <= timekey of record
     Returns:      varchar
 */
-    SELECT content FROM cod.dbcache WHERE name = v_name and timekey >= v_timekey;
+    SELECT content FROM cod.dbcache WHERE name = $1 and timekey >= $2;
 $_$;
 
 COMMENT ON FUNCTION cod.dbcache_get(varchar, timestamptz) IS 'DR: Get dbcache record with the provided name and at or after the provided time (DATE)';
