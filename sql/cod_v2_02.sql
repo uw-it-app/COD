@@ -1,3 +1,5 @@
+BEGIN;
+
 /**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION cod_v2.enumerations() RETURNS xml
@@ -25,3 +27,5 @@ SELECT xmlelement(name "Eumerations"
 $_$;
 
 COMMENT ON FUNCTION cod_v2.enumerations() IS 'DR: Return lists of enumeration data for selects (2012-02-25)';
+
+COMMIT;

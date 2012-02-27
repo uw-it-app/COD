@@ -32,7 +32,7 @@ CREATE OR REPLACE FUNCTION cod_v2.comment_post() RETURNS varchar
     IMMUTABLE
     SECURITY INVOKER
     AS $_$
-/*  Function:     cod_v2.comment_post
+/*  Function:     cod_v2.comment_post()
     Description:  Content to insert after comments
     Affects:      nothing
     Arguments:    none
@@ -51,11 +51,11 @@ CREATE OR REPLACE FUNCTION cod_v2.event_xml(integer) RETURNS xml
     STABLE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod_v2.event_xml(integer)
+    Description:  XML Representation of an Event
+    Affects:      nothing
+    Arguments:    integer: event id
+    Returns:      XML Representation
 */
     SELECT xmlelement(name "Event",
         xmlelement(name "Id", event.id),
@@ -84,7 +84,7 @@ CREATE OR REPLACE FUNCTION cod_v2.event_xml(integer) RETURNS xml
      WHERE event.id = $1;
 $_$;
 
-COMMENT ON FUNCTION cod_v2.event_xml(integer) IS '';
+COMMENT ON FUNCTION cod_v2.event_xml(integer) IS 'DR: XML Representation of an Event (2012-02-26)';
 
 /**********************************************************************************************/
 
@@ -93,11 +93,11 @@ CREATE OR REPLACE FUNCTION cod_v2.action_xml(integer) RETURNS xml
     STABLE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod_v2.action_xml(integer)
+    Description:  XML Representation of an action
+    Affects:      nothing
+    Arguments:    integer: action id
+    Returns:      XML Representation
 */
     SELECT xmlelement(name "Action",
         xmlelement(name "Id", action.id),
@@ -117,7 +117,7 @@ CREATE OR REPLACE FUNCTION cod_v2.action_xml(integer) RETURNS xml
      WHERE action.id = $1;
 $_$;
 
-COMMENT ON FUNCTION cod_v2.action_xml(integer) IS '';
+COMMENT ON FUNCTION cod_v2.action_xml(integer) IS 'DR: XML Representation of an action (2012-02-26)';
 
 /**********************************************************************************************/
 
@@ -126,11 +126,11 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
     STABLE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod_v2.escalation_xml(integer)
+    Description:  XML Representation of an Escalation
+    Affects:      nothing
+    Arguments:    integer: escalation id
+    Returns:      XML Representation
 */
     SELECT xmlelement(name "Escalation", 
         xmlelement(name "Id", e.id),
@@ -157,7 +157,7 @@ CREATE OR REPLACE FUNCTION cod_v2.escalation_xml(integer) RETURNS xml
      WHERE e.id = $1;
 $_$;
 
-COMMENT ON FUNCTION cod_v2.escalation_xml(integer) IS '';
+COMMENT ON FUNCTION cod_v2.escalation_xml(integer) IS 'DR: XML Representation of an Escalation (2012-02-26)';
 
 /**********************************************************************************************/
 
@@ -431,24 +431,29 @@ COMMENT ON FUNCTION cod_v2.items_xml() IS 'DR: List of cod items. Uses cod.dbaca
 
 CREATE OR REPLACE FUNCTION cod_v2.can_spawn(varchar) RETURNS boolean
     LANGUAGE plpgsql
-    VOLATILE
+    IMMUTABLE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod_v2.can_spawn(varchar)
+    Description:  True if the uwnetid is premitted to spawn incidents from events
+    Affects:      nothing
+    Arguments:    varchar: uwnetid
+    Returns:      boolean
 */
 DECLARE
+    v_netid     ALIAS FOR $1;
 BEGIN
-    RETURN TRUE;
+    IF ARRAY[v_netid] <@ '{alexc,areed,blakjack,cil5,ddiehl,guerrero,ljahed,lyns,mhouli,rliesik,shrud,tblood,tynand,wizofoz,joby,kkurth,ldugan,kenm}'::varchar[] 
+    THEN
+        RETURN TRUE;
+    END IF;
+    RETURN FALSE;
 EXCEPTION
     WHEN OTHERS THEN RETURN FALSE;
 END;
 $_$;
 
-COMMENT ON FUNCTION cod_v2.can_spawn(varchar) IS '';
+COMMENT ON FUNCTION cod_v2.can_spawn(varchar) IS 'DR: True if the uwnetid is premitted to spawn incidents from events (2012-02-26)';
 
 /**********************************************************************************************/
 
@@ -457,11 +462,11 @@ CREATE OR REPLACE FUNCTION cod_v2.spawn_item_from_alert(xml) RETURNS xml
     VOLATILE
     SECURITY INVOKER
     AS $_$
-/*  Function:     
-    Description:  
-    Affects:      
-    Arguments:    
-    Returns:      
+/*  Function:     cod_v2.spawn_item_from_alert(xml)
+    Description:  Create an incident from an alert
+    Affects:      Inserts Event and Item records
+    Arguments:    xml: Event XML
+    Returns:      xml
 */
 DECLARE
     v_xml       ALIAS FOR $1;
@@ -594,7 +599,7 @@ BEGIN
 END;
 $_$;
 
-COMMENT ON FUNCTION cod_v2.spawn_item_from_alert(xml) IS '';
+COMMENT ON FUNCTION cod_v2.spawn_item_from_alert(xml) IS 'DR: Create an incident from an alert (2012-02-26)';
 
 /**********************************************************************************************/
 
@@ -606,7 +611,7 @@ CREATE OR REPLACE FUNCTION cod_v2.process_hm_update(xml) RETURNS boolean
 /*  Function:     cod_v2.process_hm_update(xml)
     Description:  Process HM Issues state for COD
     Affects:      COD.item/escalation/action associated with this H&M notification
-    Arguments:    
+    Arguments:    xml: XML representation of an H&M Issue
     Returns:      xml
 */
 DECLARE
@@ -741,15 +746,12 @@ CREATE OR REPLACE FUNCTION cod.inject(varchar, varchar) RETURNS xml
     AS $_$
 /*  Function:     cod.inject(varchar, varchar)
     Description:  Inject a faux alert
-    Affects:      
-    Arguments:    
+    Affects:      Creates and incident
+    Arguments:    varchar: hostname
+                  varchar: support model
     Returns:      xml
 */
 SELECT cod_v2.spawn_item_from_alert(('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>' || $2 || '</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>' || $1 || '</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>')::xml);
 $_$;
 
 COMMENT ON FUNCTION cod.inject(varchar, varchar) IS 'DR: Inject a faux alert (2012-02-15)';
-
-
---select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>C</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);
---select cod_v2.spawn_item_from_alert('<Event><Netid>joby</Netid><Operator>AIE-AE</Operator><OnCall>ssg_oncall</OnCall><AltOnCall>uwnetid_joby</AltOnCall><SupportModel>A</SupportModel><LifeCycle>deployed</LifeCycle><Source>prox</Source><VisTime>500</VisTime><Alert><ProblemHost>ssgdev5.cac.washington.edu</ProblemHost><Flavor>prox</Flavor><Origin/><Component>joby-test</Component><Msg>Test</Msg><LongMsg>Just a test by joby</LongMsg><Contact>uwnetid_joby</Contact><Owner/><Ticket/><IssueNum/><ItemNum/><Severity>10</Severity><Count>1</Count><Increment>false</Increment><StartTime>1283699633122</StartTime><AutoClear>true</AutoClear><Action>Upd</Action></Alert></Event>'::xml);

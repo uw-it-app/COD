@@ -1,26 +1,8 @@
- --SELECT standard.create_data_schema('rt', 'RT related data');
+BEGIN;
 
-/**********************************************************************************************
+SELECT standard.create_data_schema('rt', 'RT related data');
 
-CREATE TABLE rt.buffer (
-    modified_at     timestamptz NOT NULL DEFAULT now(),
-    modified_by     varchar     NOT NULL DEFAULT standard.get_uwnetid(),
-    id              serial      PRIMARY KEY,
-    created_at      timestamptz NOT NULL DEFAULT now(),
-    created_by      varchar     NOT NULL DEFAULT standard.get_uwnetid(),
-    ticket          integer,
-    fields          varchar[][],
-    callback        xml,
-    lock            bigint
-);
-
-COMMENT ON TABLE rt.buffer IS 'DR: Data to publish to RT (2011-10-10)';
-
-GRANT SELECT, INSERT ON TABLE rt.buffer TO PUBLIC;
-
-SELECT standard.standardize_table_and_trigger('rt', 'buffer');
-
-**********************************************************************************************/
+/**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION rt.offline_submit(payload varchar) RETURNS varchar
     LANGUAGE plpython2u
@@ -107,3 +89,5 @@ END;
 $_$;
 
 COMMENT ON FUNCTION rt.update_ticket(integer, varchar) IS 'DR: Update an RT ticket with the provided payload (2011-10-20)';
+
+COMMIT;
