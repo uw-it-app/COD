@@ -275,7 +275,7 @@ BEGIN
         UPDATE cod.item SET workflow_lock = FALSE, closed_at = now() WHERE id = v_id;
         _msgType   := 'correspond';
         _msgToSubs := 'none';
-        _msgStatus := 'resovled';
+        _msgStatus := 'resolved';
     ELSEIF _type = 'Clear' THEN
         UPDATE cod.event SET end_at = now() WHERE item_id = v_id;
         UPDATE cod.action SET completed_at = now(), successful = FALSE 
