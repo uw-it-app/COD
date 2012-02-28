@@ -2,8 +2,8 @@ BEGIN;
 
 SELECT standard.create_data_schema('appconfig', 'Configuration settings for applications');
 
-ALTER DEFAULT PRIVILEGES IN SCHEMA cod GRANT USAGE, SELECT ON SEQUENCES TO PUBLIC;
-ALTER DEFAULT PRIVILEGES IN SCHEMA cod_history GRANT USAGE, SELECT ON SEQUENCES TO PUBLIC;
+ALTER DEFAULT PRIVILEGES IN SCHEMA appconfig GRANT USAGE, SELECT ON SEQUENCES TO PUBLIC;
+ALTER DEFAULT PRIVILEGES IN SCHEMA appconfig_history GRANT USAGE, SELECT ON SEQUENCES TO PUBLIC;
 
 /**********************************************************************************************/
 
