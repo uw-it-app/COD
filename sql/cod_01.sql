@@ -403,7 +403,7 @@ BEGIN
         _msg  := xpath.get_varchar('/Event/Alert/Msg', _content);
         _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', _content);
 
-        _tags := array2.ucat(_tags, 'COD-DEV'::varchar);
+        _tags := array2.ucat(_tags, appconfig.get('COD_TAG', ''));
 
         _message := '';
         IF _event.host IS NOT NULL THEN
