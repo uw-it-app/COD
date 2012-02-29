@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION cod_v2.enumerations() RETURNS xml
     Arguments:    none
     Returns:      xml
 */
-SELECT xmlelement(name "Eumerations"
+SELECT xmlelement(name "Enumerations"
     , rest_v1.enum_to_xml('cod', 'support_model', 'SupportModels', 'SupportModel', false)
     , rest_v1.enum_to_xml('cod', 'itil_type', 'ITILTypes', 'ITILType', false)
     , xmlelement(name "Severities"
