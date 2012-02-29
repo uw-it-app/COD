@@ -40,7 +40,7 @@ BEGIN
     _addtags := xpath.get_varchar('/Event/AddTags', _content);
     _cc := COALESCE(xpath.get_varchar('/Event/Cc', _content), '');
 
-    _tags := regexp_split_to_array(_addtags, E'[, ]+', 'g');
+    _tags := regexp_split_to_array(_addtags, E'[, ]+');
     _tags := array2.ucat(_tags, appconfig.get('COD_TAG', ''));
 
     _message := '';
