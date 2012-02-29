@@ -13,4 +13,3 @@
         <!--
         <script src="/shared/third-party/underscore/1.1.6/underscore-min.js" ></script>
         -->
-        <script src="/.cod/js/cod.js"></script>

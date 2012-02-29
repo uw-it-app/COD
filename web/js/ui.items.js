@@ -19,7 +19,7 @@
             COD.createLastUpdated();
             COD.REST.items = $.RESTDataSource(COD.dataSources.items, COD.RESTErrorHandler);
             $(document).on('click', '.item_click', function (e) {
-                window.open('/.cod/item/Id/' + $(this).children('.item_id').text());
+                window.open('/cod/item/Id/' + $(this).children('.item_id').text());
                 return false;
             });
             COD.linker();

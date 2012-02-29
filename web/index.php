@@ -66,11 +66,11 @@
         <!-- end #tools-container -->
 <!-- Start Script block -->
 <?php include('js.php'); ?>
-        <script src="/.cod/js/ui.items.js"></script>
+        <script src="/cod/js/ui.items.js"></script>
         <script>
             var toolsBreadcrumbs = [
                 {title: 'SSG', href: '/'},
-                {title: 'COD', href: '/.cod/'}
+                {title: 'COD', href: '/cod/'}
             ];
             $(document).ready( function() {
                 $('#tools-app-name a').after('<span class="version">v<?php echo $version ?></span>');

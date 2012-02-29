@@ -403,16 +403,13 @@
         <!-- end #tools-container -->
 <!-- Start Script block -->
 <?php include('js.php'); ?>
-        <script src="/.cod/js/ui.item.js"></script>
-        <script src="/.cod/js/ui.actionTile.js"></script>
-        <script src="/.cod/js/ui.suggestSSG.js"></script>
         <script>
             var itemId, toolsBreadcrumbs, urlHash = JSON.parse('<?php echo json_encode(pathinfoToHash()) ?>');
             itemId = urlHash.Id;
             toolsBreadcrumbs = [
                     {title: 'SSG', href: '/'},
-                    {title: 'COD', href: '/.cod/'},
-                    {title: 'Item ' + itemId, href: '/.cod/item/Id/' + itemId}
+                    {title: 'COD', href: '/cod/'},
+                    {title: 'Item ' + itemId, href: '/cod/item/Id/' + itemId}
             ];
             $(document).ready( function() {
                 $('#tools-app-name a').after('<span class="version">v<?php echo $version ?></span>');

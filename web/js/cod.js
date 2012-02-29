@@ -7,7 +7,7 @@
 /*global window*/
 /*global escape*/
 var COD = {},
-    toolsAppName = {title: 'COD', href: '/.cod/'};
+    toolsAppName = {title: 'COD', href: '/cod/'};
 
 (function () {
     'use strict';
