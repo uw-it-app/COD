@@ -339,6 +339,9 @@ BEGIN
             VALUES (v_id, _oncall, standard.enum_value_id('cod', 'page_state', _page));
         IF NOT FOUND THEN
             RAISE EXCEPTION 'Failed to create and escalation to the oncall group %', _oncall;
+        ELSE
+            UPDATE cod.action SET completed_at = now(), successful = TRUE
+                WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Escalate');
         END IF;
     ELSEIF _type = 'Nag' THEN
         IF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Cancel' THEN
