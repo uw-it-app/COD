@@ -49,6 +49,9 @@ CREATE OR REPLACE FUNCTION rt_v2.incident_xml(integer) RETURNS xml
 */
     SELECT xmlelement(name "Incident",
         xmlelement(name "Id", ticket.id),
+        xmlelement(name "AliasIds",
+            (SELECT xmlagg(xmlelement(name "AliasId", id)) FROM tickets_active WHERE effectiveid = ticket.id AND id <> ticket.id)
+        ),
         xmlelement(name "Type", type.content),
         xmlelement(name "Subject", ticket.subject),
         xmlelement(name "Severity", ticket.severity),
@@ -56,9 +59,10 @@ CREATE OR REPLACE FUNCTION rt_v2.incident_xml(integer) RETURNS xml
         xmlelement(name "Queue", queue.name),
         xmlelement(name "Status", ticket.status),
         xmlelement(name "Escalations",
-            (SELECT xmlagg(rt_v2.escalation_xml(link.localbase))
-             FROM public.links AS link
-            WHERE link.localtarget = $1 AND (link.type = 'Super' OR link.type = 'Hierarchy'))
+            (SELECT xmlagg(rt_v2.escalation_xml(link.localbase)) FROM (
+                SELECT DISTINCT link.localbase AS localbase FROM public.links AS link
+                WHERE link.localtarget = $1 AND (link.type = 'Super' OR link.type = 'Hierarchy')
+            ) AS link)
         )
     ) FROM public.tickets_active AS ticket
       JOIN public.objectcustomfieldvalues AS type ON (type.customfield = 270 AND type.objecttype = 'RT::Ticket' AND type.content = 'Incident' AND type.objectid = ticket.id)
@@ -89,7 +93,7 @@ BEGIN
     _queueid := (SELECT id FROM queues WHERE name = v_queue);
     RETURN xmlelement(name "Incidents",
         (SELECT xmlagg(rt_v2.incident_xml(id)) FROM (
-            SELECT t.id 
+            SELECT distinct(t.id)
                 FROM tickets_active AS t 
                 JOIN objectcustomfieldvalues AS o ON (
                     t.id = o.objectid AND 
@@ -97,7 +101,8 @@ BEGIN
                     o.customfield = 270 AND 
                     o.content = 'Incident'
                 ) 
-                WHERE queue = _queueid AND
+                WHERE t.queue = _queueid AND
+                    t.effectiveid = t.id AND
                     (
                         t.status IN ('new', 'open', 'stalled') OR 
                         (t.status IN ('resolved', 'rejected') AND
