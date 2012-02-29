@@ -528,7 +528,7 @@ BEGIN
             END IF;
         END IF;
         PERFORM cod.remove_esc_actions(NEW.id);
-        IF NEW.owner <> OLD.owner THEN
+        IF TG_OP = 'UPDATE' AND NEW.owner <> OLD.owner THEN
             PERFORM rt.update_ticket(NEW.rt_ticket, 'Owner: ' || NEW.owner || E'\n');
         END IF;
     ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Owned')) THEN
@@ -540,7 +540,7 @@ BEGIN
             END IF;
         END IF;
         PERFORM cod.remove_esc_actions(NEW.id);
-        IF NEW.owner <> OLD.owner THEN
+        IF TG_OP = 'UPDATE' AND NEW.owner <> OLD.owner THEN
             PERFORM rt.update_ticket(NEW.rt_ticket, 'Owner: ' || NEW.owner || E'\n');
         END IF;
     ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Passive')) THEN
