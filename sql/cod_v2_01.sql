@@ -62,9 +62,12 @@ BEGIN
             -- foreach escalation
             FOR _j in 1.._count2 LOOP
                 _esc := _escs[_j];
+                RAISE NOTICE 'ESCALATION, %', _esc::varchar;
                 SELECT * INTO _escalation FROM cod.escalation WHERE rt_ticket = xpath.get_integer('/Escalation/Id', _esc);
                 IF _escalation.id IS NULL THEN
-                    IF xpath.get_timestamptz('/Escalation/Created', _incident) < now() - '1 minute'::interval THEN
+                    RAISE NOTICE 'ESCALATION does not exist';
+                    IF xpath.get_timestamptz('/Escalation/Created', _esc) < now() - '1 minute'::interval THEN
+                        RAISE NOTICE 'ESCALATION creating';
                         INSERT INTO cod.escalation (item_id, rt_ticket, esc_state_id, page_state_id, oncall_group, queue, owner, escalated_at) VALUES (
                             _item.id,
                             xpath.get_integer('/Escalation/Id', _esc),
@@ -77,9 +80,11 @@ BEGIN
                         );
                         SELECT * INTO _escalation FROM cod.escalation WHERE rt_ticket = xpath.get_integer('/Escalation/Id', _esc);
                         IF NOT FOUND THEN
+                            RAISE NOTICE 'ESCALATION creation failed';
                             CONTINUE;
                         END IF;
                     ELSE
+                        RAISE NOTICE 'ESCALATION skipping creation, %, %', xpath.get_timestamptz('/Escalation/Created', _incident), xpath.get_timestamptz('/Escalation/Created', _incident) < now() - '1 minute'::interval;
                         CONTINUE;
                     END IF;
                 END IF;
