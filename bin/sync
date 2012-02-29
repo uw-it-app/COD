@@ -8,7 +8,7 @@ $name = exec('uname -n');
 if (preg_match('/^ssgapp\d\d\./', $name)) {
     define('INCIDENT_QUEUE', 'COPS');
 } else {
-    define('INCIDENT_QUEUE', 'SSG::TEST');
+    define('INCIDENT_QUEUE', 'SSG::Test');
 }
 
 try {
