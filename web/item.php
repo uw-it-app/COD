@@ -224,13 +224,37 @@
                             </tr>
                         </table>                        
                     </div>
-                    <div id="ActionRefNumber" class="action_tile tile_block" data-title="Set Reference Number">
+                    <div id="ActionUpdate" class="action_tile tile_block" data-title="Update">
                         <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Subject</th>
+                                <td class="vertical">
+                                    <input id="Item.Subject" name="Subject" class="item_bind full" />
+                                    <input type="hidden" name="Type" value="Update"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="vertical">Model</th>
+                                <td class="vertical">
+                                    <select id="Item.SupportModel" name="SupportModel" class="item_bind"></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="vertical">Severity</th>
+                                <td class="vertical">
+                                    <select id="Item.Severity" name="Severity" class="item_bind" ></select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="vertical">ITIL Type</th>
+                                <td class="vertical">
+                                    <select id="Item.ITILType" name="ITILType" class="item_bind"></select>
+                                </td>
+                            </tr>
                             <tr>
                                 <th class="vertical">Reference#</th>
                                 <td class="vertical">
-                                    <input id="Item.ReferenceNumber" name="Value" class="item_bind full" />
-                                    <input type="hidden" name="Type" value="RefNumber"/>
+                                    <input id="Item.ReferenceNumber" name="RefNo" class="item_bind full" />
                                 </td>
                             </tr>
                             <tr>
@@ -403,6 +427,9 @@
         <!-- end #tools-container -->
 <!-- Start Script block -->
 <?php include('js.php'); ?>
+        <script src="/cod/js/ui.item.js"></script>
+        <script src="/cod/js/ui.actionTile.js"></script>
+        <script src="/cod/js/ui.suggestSSG.js"></script>
         <script>
             var itemId, toolsBreadcrumbs, urlHash = JSON.parse('<?php echo json_encode(pathinfoToHash()) ?>');
             itemId = urlHash.Id;

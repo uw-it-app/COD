@@ -15,9 +15,11 @@
         },
 
         _connectControllerStuff: function () {
-            var _this = this;
-            COD.data.item = {Item: {}};
-            COD.REST.item = $.RESTDataSource(COD.dataSources.item, COD.RESTErrorHandler);
+            var _this      = this;
+            COD.data.item  = {Item: {}};
+            COD.data.enums = null;
+            COD.REST.item  = $.RESTDataSource(COD.dataSources.item, COD.RESTErrorHandler);
+            COD.REST.enums = $.RESTDataSource(COD.dataSources.enums, COD.RESTErrorHandler);
             $(document).on('click', 'a.actSetOwner', function () {
                 var a = $(this),
                     e_id = a.next().val();
@@ -40,7 +42,7 @@
                 if ($('#ActionEscalate').hasClass('highlight')) {
                     $('#ActionEscalate').actionTile('normal').tile('close');
                 }
-                COD.REST.item.put({Id: Item.Id}, {Item: Item}, $.proxy(_this._updateData, _this), null);
+                COD.REST.item.put({Id: Item.Id}, {Item: Item}, $.proxy(_this._refreshData, _this), null);
 
                 return false;
             });
@@ -60,16 +62,58 @@
             $('.action_tile').actionTile();
         },
 
-        _updateData: function (data) {
+        _selectOptions: function (id, values) {
+            var select = $(id).html('');
+            $.each(values, function (key, value) {
+                select.append('<option value="'+value+'">'+value+'</option>');
+            });
+        },
+
+        _enumData: function (ajax) {
+            var data;
+            if (ajax === null) {
+                return;
+            }
+            data = ajax[0];
+            $.badgerfishArray(data, 'Enumerations.ITILTypes.ITILType');
+            $.badgerfishArray(data, 'Enumerations.Severities.Severity');
+            $.badgerfishArray(data, 'Enumerations.SupportModels.SupportModel');
+            COD.data.enums = data;
+            this._selectOptions('select#Item\\.ITILType', data.Enumerations.ITILTypes.ITILType);
+            this._selectOptions('select#Item\\.Severity', data.Enumerations.Severities.Severity);
+            this._selectOptions('select#Item\\.SupportModel', data.Enumerations.SupportModels.SupportModel);
+        },
+
+        _refreshData: function(data) {
+            this._updateData([data]);
+            this.jpopSync();
+        },
+
+        _updateData: function (ajax) {
+            var data = ajax[0];
             $.badgerfishArray(data, 'Item.Escalations.Escalation');
             $.badgerfishArray(data, 'Item.Actions.Action');
             $.badgerfishArray(data, 'Item.Events.Event');
             COD.data.item = data;
-            this.jpopSync();
+        },
+
+        _getEnumRequest: function () {
+            if (COD.data.enums === null) {
+                return COD.REST.enums.get({}, null, null);
+            }
+            return null;
         },
 
         getData: function () {
-            COD.REST.item.get({Id: this.options.Id}, $.proxy(this._updateData, this), null);
+            var _this = this;
+            $.when(
+                this._getEnumRequest(),
+                COD.REST.item.get({Id: this.options.Id}, null, null)
+            ).done(function (ajaxEnum, ajaxItem) {
+                _this._enumData(ajaxEnum);
+                _this._updateData(ajaxItem);
+                _this.jpopSync();
+            });
         },
 
         jpopSync: function () {

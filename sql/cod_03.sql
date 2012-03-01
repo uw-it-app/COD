@@ -1,5 +1,79 @@
 BEGIN;
 
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.item_rt_update() RETURNS trigger
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.item_rt_update()
+    Description:  Update rt with item metadata
+    Affects:      
+    Arguments:    
+    Returns:      trigger
+*/
+DECLARE
+    _payload    varchar  := '';
+    _comment    varchar  := '';
+    _string     varchar;
+BEGIN
+    IF OLD.itil_type IS DISTINCT FROM NEW.itil_type THEN
+        _string  := standard.enum_id_value('cod', 'itil_type', NEW.itil_type);
+        _comment := _comment
+                 || 'ITIL Type: ' || _string || E'\n';
+        IF _string ~ E'^\\(.*\\)$' THEN
+            _string = '';
+        END IF;
+        _payload := _payload
+                 || 'CF-TicketType: ' || _string || E'\n';
+    END IF;
+    IF OLD.support_model_id IS DISTINCT FROM NEW.support_model_id THEN
+        _comment := _comment
+                 || 'Support Model: ' || standard.enum_id_value('cod', 'support_model', NEW.support_model_id) || E'\n';
+    END IF;
+    IF OLD.severity IS DISTINCT FROM NEW.severity THEN
+        _comment := _comment
+                 || 'Severity: ' || NEW.severity::varchar || E'\n';
+        _payload := _payload
+                 || 'Severity: ' || NEW.severity::varchar || E'\n';
+    END IF;
+    IF OLD.reference_no IS DISTINCT FROM NEW.reference_no THEN
+        _comment := _comment
+                 || 'Reference Number: ' || New.reference_no || E'\n';
+    END IF;
+    IF NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed') THEN
+        _payload := _payload
+                 || E'Status: resolved\n';
+
+    END IF;
+    IF OLD.subject IS DISTINCT FROM NEW.subject THEN
+        _payload := _payload
+                 || E'Subject: '|| New.subject || E'\n';
+
+    END IF;
+    IF _comment <> '' THEN
+        _payload := E'UpdateType: comment\n'
+                 || E'CONTENT: ' || _comment || cod_v2.comment_post()
+                 || E'ENDOFCONTENT\n'
+                 || _payload;
+    END IF;
+    IF _payload <> '' THEN
+        PERFORM rt.update_ticket(NEW.rt_ticket, _payload);
+    END IF;
+    RETURN NEW;
+EXCEPTION
+    WHEN OTHERS THEN null;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.item_rt_update() IS 'DR: Update rt with item metadata (2012-02-29)';
+
+CREATE TRIGGER t_70_update_rt
+    BEFORE UPDATE ON cod.item
+    FOR EACH ROW
+    WHEN (NEW.workflow_lock IS NULL)
+    EXECUTE PROCEDURE cod.item_rt_update();
 
 /**********************************************************************************************/
 
@@ -61,7 +135,6 @@ BEGIN
         END IF;
     ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed') THEN
         PERFORM cod.dash_delete_event(id) FROM cod.event WHERE item_id = NEW.id;
-        PERFORM rt.update_ticket(NEW.rt_ticket, E'Status: resolved\n');
         RETURN NEW;
     ELSEIF NEW.state_id = standard.enum_value_id('cod', 'state', 'Resolved') THEN
         IF NOT EXISTS(SELECT NULL FROM cod.action WHERE item_id = NEW.id AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Close') AND completed_at IS NULL)

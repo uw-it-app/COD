@@ -8,8 +8,9 @@
         <script src="/shared/local/core/4.4.8/tools-core.min.js"></script>
         <script src="/shared/local/jquery.jpop/1.0.3/jquery.jpop.js"></script>
         <script src="/shared/local/badgerfishjs/1.0.0/badgerfish.js"></script>
-        <script src="/shared/local/jquery.RESTDataSource/1.0.0/jquery.RESTDataSource.min.js"></script>
+        <script src="/shared/local/jquery.RESTDataSource/1.1.0/jquery.RESTDataSource.min.js"></script>
         <script src="/shared/local/jquery.ui.tile/0.0.6/jquery.ui.tile.js"></script>
         <!--
         <script src="/shared/third-party/underscore/1.1.6/underscore-min.js" ></script>
         -->
+        <script src="/cod/js/cod.js"></script>

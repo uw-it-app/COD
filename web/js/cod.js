@@ -14,6 +14,7 @@ var COD = {},
 
     // Datasource locations
     COD.dataSources = {
+        "enums": "/daw/json/COD/v2/Enumerations",
         "items": "/daw/json/COD/v2/Items",
         "item": "/daw/json/COD/v2/Item"
     };
