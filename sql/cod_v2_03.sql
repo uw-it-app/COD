@@ -395,22 +395,27 @@ BEGIN
             UPDATE cod.escalation SET owner = _owner WHERE item_id = v_id AND id = xpath.get_integer('/Item/Do/EscId', v_xml);
         END IF;
     ELSEIF _type = 'Escalate' THEN
-        IF xpath.get_varchar('/Item/Do/ContactType', v_xml) = 'passive' THEN
-            _page := 'Passive';
-        ELSE
-            _page := 'Active';
-        END IF;
-        _oncall := xpath.get_varchar('/Item/Do/EscalateTo', v_xml);
-        IF _oncall = '_' THEN
-            _oncall = xpath.get_varchar('/Item/Do/Custom', v_xml);
-        END IF;
-        IF NOT hm_v1.valid_oncall(_oncall) THEN
-            RAISE EXCEPTION 'InvalidInput: Not a valid oncall group -- %', _oncall;
-        END IF;
-        INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) 
-            VALUES (v_id, _oncall, standard.enum_value_id('cod', 'page_state', _page));
-        IF NOT FOUND THEN
-            RAISE EXCEPTION 'Failed to create and escalation to the oncall group %', _oncall;
+        IF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Submit' THEN
+            IF xpath.get_varchar('/Item/Do/ContactType', v_xml) = 'passive' THEN
+                _page := 'Passive';
+            ELSE
+                _page := 'Active';
+            END IF;
+            _oncall := xpath.get_varchar('/Item/Do/EscalateTo', v_xml);
+            IF _oncall = '_' THEN
+                _oncall = xpath.get_varchar('/Item/Do/Custom', v_xml);
+            END IF;
+            IF NOT hm_v1.valid_oncall(_oncall) THEN
+                RAISE EXCEPTION 'InvalidInput: Not a valid oncall group -- %', _oncall;
+            END IF;
+            INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) 
+                VALUES (v_id, _oncall, standard.enum_value_id('cod', 'page_state', _page));
+            IF NOT FOUND THEN
+                RAISE EXCEPTION 'Failed to create and escalation to the oncall group %', _oncall;
+            ELSE
+                UPDATE cod.action SET completed_at = now(), successful = TRUE
+                    WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Escalate');
+            END IF;
         ELSE
             UPDATE cod.action SET completed_at = now(), successful = TRUE
                 WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Escalate');

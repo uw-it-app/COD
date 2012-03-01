@@ -341,7 +341,10 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
+                                <td class="vertical" colspan="2">
+                                    <input type="submit" value="Submit" class="actionSubmit half"/>
+                                    <input type="submit" value="Cancel" class="actionSubmit half"/>
+                                </td>
                             </tr>
                         </table>
                     </div>
