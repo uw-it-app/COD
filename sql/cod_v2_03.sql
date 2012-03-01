@@ -352,6 +352,9 @@ BEGIN
                 action_type_id = standard.enum_value_id('cod', 'action_type', 'Escalate');
     ELSEIF _type = 'Reactivate' THEN
         UPDATE cod.event SET end_at = NULL WHERE item_id = v_id;
+        UPDATE cod.action SET completed_at = now(), successful = FALSE 
+            WHERE item_id = v_id AND completed_at IS NULL AND 
+                action_type_id = standard.enum_value_id('cod', 'action_type', 'Close');
     ELSEIF _type = 'PhoneCall' THEN
         IF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Take' THEN
             _success := TRUE;
