@@ -18,8 +18,8 @@ DECLARE
     _comment    varchar  := '';
     _string     varchar;
 BEGIN
-    IF OLD.itil_type IS DISTINCT FROM NEW.itil_type THEN
-        _string  := standard.enum_id_value('cod', 'itil_type', NEW.itil_type);
+    IF OLD.itil_type_id IS DISTINCT FROM NEW.itil_type_id THEN
+        _string  := standard.enum_id_value('cod', 'itil_type', NEW.itil_type_id);
         _comment := _comment
                  || 'ITIL Type: ' || _string || E'\n';
         IF _string ~ E'^\\(.*\\)$' THEN
@@ -36,11 +36,16 @@ BEGIN
         _comment := _comment
                  || 'Severity: ' || NEW.severity::varchar || E'\n';
         _payload := _payload
-                 || 'Severity: ' || NEW.severity::varchar || E'\n';
+                 || 'Severity: Sev' || NEW.severity::varchar || E'\n';
     END IF;
     IF OLD.reference_no IS DISTINCT FROM NEW.reference_no THEN
+        IF NEW.reference_no IS NULL THEN
+            _string := '';
+        ELSE
+            _string := NEW.reference_no;
+        END IF;
         _comment := _comment
-                 || 'Reference Number: ' || New.reference_no || E'\n';
+                 || 'Reference Number: ' || _string || E'\n';
     END IF;
     IF NEW.state_id = standard.enum_value_id('cod', 'state', 'Closed') THEN
         _payload := _payload
@@ -72,7 +77,7 @@ COMMENT ON FUNCTION cod.item_rt_update() IS 'DR: Update rt with item metadata (2
 CREATE TRIGGER t_70_update_rt
     BEFORE UPDATE ON cod.item
     FOR EACH ROW
-    WHEN (NEW.workflow_lock IS NULL)
+    WHEN (NEW.workflow_lock IS FALSE)
     EXECUTE PROCEDURE cod.item_rt_update();
 
 /**********************************************************************************************/
