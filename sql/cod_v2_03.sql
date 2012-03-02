@@ -2,21 +2,23 @@ BEGIN;
 
 /**********************************************************************************************/
 
-CREATE OR REPLACE FUNCTION cod_v2.rt_process_escalation(integer, xml) RETURNS xml
+CREATE OR REPLACE FUNCTION cod_v2.rt_process_escalation(integer, boolean, xml) RETURNS xml
     LANGUAGE plpgsql
     VOLATILE
     SECURITY INVOKER
     AS $_$
-/*  Function:     cod_v2.rt_process_escalation(integer, xml)
+/*  Function:     cod_v2.rt_process_escalation(integer, boolean, xml)
     Description:  Process rt update on an escalation
     Affects:      
     Arguments:    integer: Item Id
+                  boolean: If true do not wait a minute after created time to create
                   xml: Escalation XML Representation
     Returns:      xml
 */
 DECLARE
     v_item_id       ALIAS FOR $1;
-    v_xml           ALIAS FOR $2;
+    v_new           ALIAS FOR $2;
+    v_xml           ALIAS FOR $3;
     _aliases        integer[];
     _status         varchar;
     _escalation     cod.escalation%ROWTYPE;
@@ -30,8 +32,9 @@ BEGIN
         SELECT * INTO _escalation FROM cod.escalation WHERE ARRAY[rt_ticket]::integer[] <@ _aliases LIMIT 1;
         IF _escalation.id IS NOT NULL THEN
             UPDATE cod.escalation SET rt_ticket = xpath.get_integer('/Escalation/Id', v_xml) WHERE id = _escalation.id;
-
-        ELSEIF xpath.get_timestamptz('/Escalation/Created', v_xml) < now() - '1 minute'::interval THEN
+        ELSEIF xpath.get_varchar('/Escalation/Type', v_xml) <> 'Incident' THEN
+            RETURN '<Skipped/>'::xml;
+        ELSEIF v_new OR xpath.get_timestamptz('/Escalation/Created', v_xml) < now() - '1 minute'::interval THEN
             RAISE NOTICE 'ESCALATION creating';
             INSERT INTO cod.escalation (item_id, rt_ticket, esc_state_id, page_state_id, oncall_group, queue, owner, escalated_at) VALUES (
                 v_item.id,
@@ -46,11 +49,11 @@ BEGIN
             SELECT * INTO _escalation FROM cod.escalation WHERE rt_ticket = xpath.get_integer('/Escalation/Id', v_xml);
             IF NOT FOUND THEN
                 RAISE NOTICE 'ESCALATION creation failed';
-                CONTINUE;
+                RETURN '<FailedToCreate/>'::xml;
             END IF;
         ELSE
             RAISE NOTICE 'ESCALATION skipping creation, %, %', xpath.get_timestamptz('/Escalation/Created', _incident), xpath.get_timestamptz('/Escalation/Created', _incident) < now() - '1 minute'::interval;
-            CONTINUE;
+            RETURN '<Skipped/>'::xml;
         END IF;
     END IF;
     -- set severity from RT???
@@ -78,7 +81,7 @@ BEGIN
         SET esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Merged'),
             resolved_at = now()
         WHERE ARRAY[rt_ticket]::integer[] <@ _aliases;
-    RETURN '<Processed/>';
+    RETURN '<Processed/>'::xml;
 END;
 $_$;
 
@@ -106,9 +109,12 @@ DECLARE
     _incident   xml;
     _escs       xml[];
     _status     varchar;
+    _aliases    integer[];
     _i          integer;
     _j          integer;
     _item       cod.item%ROWTYPE;
+    _unlock     boolean     := FALSE;
+    _new        boolean     := FALSE:
     _output     varchar;
 BEGIN
     _incidents := xpath('/Incidents/Incident', v_xml);
@@ -119,8 +125,16 @@ BEGIN
     -- foreach incident
     FOR _i in 1.._count LOOP
         _incident := _incidents[_i];
+        _aliases := xpath.get_varchar_array('/Incident/AliasIds/AliasId', v_xml)::integer[];
         SELECT * INTO _item FROM cod.item WHERE rt_ticket = xpath.get_integer('/Incident/Id', _incident);
         IF _item.id IS NULL THEN
+            SELECT * INTO _item FROM cod.item WHERE ARRAY[rt_ticket]::integer[] <@ _aliases LIMIT 1;
+            IF _item.id IS NOT NULL THEN
+                UPDATE cod.item SET rt_ticket = xpath.get_integer('/Incident/Id', v_xml) WHERE id = _item.id;
+            ELSEIF xpath.get_varchar('/Incident/Type', v_xml) <> 'Incident' THEN
+                CONTINUE;
+                -- do nothing.
+            ELSE
             IF xpath.get_timestamptz('/Incident/Created', _incident) < now() - '1 minute'::interval THEN
                 INSERT INTO cod.item (rt_ticket, subject, state_id, itil_type_id, support_model_id, severity, workflow_lock) VALUES (
                     xpath.get_integer('/Incident/Id', _incident),
@@ -131,6 +145,8 @@ BEGIN
                     xpath.get_integer('/Incident/Severity', _incident),
                     TRUE
                 );
+                _unlock := TRUE;
+                _new    := TRUE;
                 SELECT * INTO _item FROM cod.item WHERE rt_ticket = xpath.get_integer('/Incident/Id', _incident);
                 IF NOT FOUND THEN
                     CONTINUE;
@@ -139,18 +155,23 @@ BEGIN
                 CONTINUE;
             END IF;
         END IF;
+        IF _new.workflow_lock IS FALSE THEN
+            UPDATE cod.item SET workflow_lock = TRUE WHERE id = _item.id;
+        END IF;
+        -- Merge in other tickets
+        UPDATE cod.item_merge(_item.id, id, FALSE) FROM cod.item WHERE ARRAY[rt_ticket]::integer[] <@ _aliases
+
         -- check status (?reset closed if closed?)
         _escs   := xpath('/Incident/Escalations/Escalation', _incident);
         _count2 := array_upper(_escs, 1);
         IF _count2 IS NOT NULL THEN
             -- foreach escalation
             FOR _j in 1.._count2 LOOP
-                PERFORM cod_v2.rt_process_escalation(_item.id, _escs[_j]);
+                PERFORM cod_v2.rt_process_escalation(_item.id, _new, _escs[_j]);
             END LOOP;
         END IF;
-        IF _item.workflow_lock IS TRUE THEN
-            UPDATE cod.item SET workflow_lock = FALSE WHERE id = _item.id;
-        END IF;
+        UPDATE cod.item SET workflow_lock = FALSE WHERE id = _item.id;
+
     END LOOP;
     RETURN '<Success/>'::xml;
 END;

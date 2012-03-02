@@ -1,5 +1,76 @@
 BEGIN;
 
+INSERT INTO cod.stage (sort, name, description) VALUES (0, '', '');
+
+INSERT INTO cod.state (sort, name, description) VALUES (100, 'Merged', 'Merged into another Item');
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.lock_merged() RETURNS trigger
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.lock_merged()
+    Description:  Ensure that merged items are workflow_locked
+    Affects:      
+    Arguments:    
+    Returns:      trigger
+*/
+DECLARE
+BEGIN
+    NEW.workflow_lock := TRUE;
+    IF NEW.closed_at IS NULL THEN
+        NEW.closed_at := now()
+    END IF;
+    RETURN NEW;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.lock_merged() IS 'DR: Ensure that merged items are workflow_locked (2012-03-01)';
+
+CREATE TRIGGER t_10_lock_merged
+    BEFORE INSERT OR UPDATE ON cod.item
+    FOR EACH ROW
+    WHEN (state_id = 9) -- 'Merged'
+    EXECUTE PROCEDURE cod.lock_merged;
+
+/**********************************************************************************************/
+
+CREATE OR REPLACE FUNCTION cod.item_merge(integer, integer, boolean) RETURNS boolean
+    LANGUAGE plpgsql
+    VOLATILE
+    SECURITY INVOKER
+    AS $_$
+/*  Function:     cod.item_merge(integer, integer)
+    Description:  Merge item id 2 into id 1
+    Affects:      
+    Arguments:    
+    Returns:      boolean
+*/
+DECLARE
+    v_root      ALIAS FOR $1;
+    v_branch    ALIAS FOR $2;
+    v_lock      ALIAS FOR $3;
+    _mergeid    integer;
+BEGIN
+    IF v_lock THEN
+        UPDATE cod.item SET workflow_lock = TRUE WHERE id = v_root;
+    END IF;
+    _mergeid := standard.enum_value_id('cod', 'state', 'Merged');
+    UPDATE cod.item SET state_id = _mergeid WHERE id = v_branch AND state_id <> _mergeid;
+    UPDATE cod.event SET item_id = v_root WHERE item_id = v_branch;
+    UPDATE cod.escalation SET item_id = v_root WHERE item_id = v_branch;
+    UPDATE cod.action SET item_id = v_root WHERE item_id = v_branch;
+    IF v_lock THEN
+        UPDATE cod.item SET workflow_lock = FALSE WHERE id = v_root;
+    END IF;
+    RETURN TRUE;
+END;
+$_$;
+
+COMMENT ON FUNCTION cod.item_merge(integer, integer) IS 'DR: Merge item id 2 into id 1 (2012-03-01)';
+
 /**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION cod.item_rt_update() RETURNS trigger

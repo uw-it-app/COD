@@ -26,9 +26,9 @@ CREATE OR REPLACE FUNCTION rt_v2.escalation_xml(integer) RETURNS xml
         xmlelement(name "Status", ticket.status),
         xmlelement(name "Owner", lower(users.name))
     ) FROM public.tickets_active AS ticket
-      JOIN public.objectcustomfieldvalues AS type ON (type.customfield = 270 AND type.objecttype = 'RT::Ticket' AND type.content = 'Incident' AND type.objectid = ticket.id)
       JOIN public.queues AS queue ON (ticket.queue = queue.id)
       JOIN public.users AS users ON (ticket.owner = users.id)
+      LEFT JOIN public.objectcustomfieldvalues AS type ON (type.customfield = 270 AND type.objecttype = 'RT::Ticket' AND type.objectid = ticket.id)
      WHERE ticket.id = $1;
 $_$;
 
@@ -65,8 +65,8 @@ CREATE OR REPLACE FUNCTION rt_v2.incident_xml(integer) RETURNS xml
             ) AS link)
         )
     ) FROM public.tickets_active AS ticket
-      JOIN public.objectcustomfieldvalues AS type ON (type.customfield = 270 AND type.objecttype = 'RT::Ticket' AND type.content = 'Incident' AND type.objectid = ticket.id)
       JOIN public.queues AS queue ON (ticket.queue = queue.id)
+      LEFT JOIN public.objectcustomfieldvalues AS type ON (type.customfield = 270 AND type.objecttype = 'RT::Ticket' AND type.objectid = ticket.id)
      WHERE ticket.id = $1;
 $_$;
 
