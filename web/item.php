@@ -245,12 +245,12 @@
                                     <select id="Item.Severity" name="Severity" class="item_bind" ></select>
                                 </td>
                             </tr>
-                            <tr>
+<!--                            <tr>
                                 <th class="vertical">ITIL Type</th>
                                 <td class="vertical">
                                     <select id="Item.ITILType" name="ITILType" class="item_bind"></select>
                                 </td>
-                            </tr>
+                            </tr>-->
                             <tr>
                                 <th class="vertical">Reference#</th>
                                 <td class="vertical">
