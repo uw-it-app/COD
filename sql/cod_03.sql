@@ -1,9 +1,5 @@
 BEGIN;
 
-INSERT INTO cod.stage (sort, name, description) VALUES (0, '', '');
-
-INSERT INTO cod.state (sort, name, description) VALUES (100, 'Merged', 'Merged into another Item');
-
 /**********************************************************************************************/
 
 CREATE OR REPLACE FUNCTION cod.lock_merged() RETURNS trigger
@@ -21,7 +17,7 @@ DECLARE
 BEGIN
     NEW.workflow_lock := TRUE;
     IF NEW.closed_at IS NULL THEN
-        NEW.closed_at := now()
+        NEW.closed_at := now();
     END IF;
     RETURN NEW;
 END;
@@ -32,8 +28,8 @@ COMMENT ON FUNCTION cod.lock_merged() IS 'DR: Ensure that merged items are workf
 CREATE TRIGGER t_10_lock_merged
     BEFORE INSERT OR UPDATE ON cod.item
     FOR EACH ROW
-    WHEN (state_id = 9) -- 'Merged'
-    EXECUTE PROCEDURE cod.lock_merged;
+    WHEN (NEW.state_id = 9) -- 'Merged'
+    EXECUTE PROCEDURE cod.lock_merged();
 
 /**********************************************************************************************/
 
@@ -42,7 +38,7 @@ CREATE OR REPLACE FUNCTION cod.item_merge(integer, integer, boolean) RETURNS boo
     VOLATILE
     SECURITY INVOKER
     AS $_$
-/*  Function:     cod.item_merge(integer, integer)
+/*  Function:     cod.item_merge(integer, integer, boolean)
     Description:  Merge item id 2 into id 1
     Affects:      
     Arguments:    
@@ -69,7 +65,7 @@ BEGIN
 END;
 $_$;
 
-COMMENT ON FUNCTION cod.item_merge(integer, integer) IS 'DR: Merge item id 2 into id 1 (2012-03-01)';
+COMMENT ON FUNCTION cod.item_merge(integer, integer, boolean) IS 'DR: Merge item id 2 into id 1 (2012-03-01)';
 
 /**********************************************************************************************/
 
