@@ -61,10 +61,28 @@ ALTER SEQUENCE action_type_id_seq OWNED BY action_type.id;
 
 
 --
+-- Name: action_type_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
+--
+
+SELECT pg_catalog.setval('action_type_id_seq', 34, true);
+
+
+--
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
 ALTER TABLE action_type ALTER COLUMN id SET DEFAULT nextval('action_type_id_seq'::regclass);
+
+
+--
+-- Data for Name: action_type; Type: TABLE DATA; Schema: cod; Owner: postgres
+--
+
+INSERT INTO action_type (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 1, 'HelpText', 'Work the help text for the component', 0, false);
+INSERT INTO action_type (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 2, 'PhoneCall', 'Call the listed person', 0, false);
+INSERT INTO action_type (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 3, 'Escalate', 'Manually escalate to an oncall group', 0, false);
+INSERT INTO action_type (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 4, 'Close', 'Incident cleared and all escalations resolved', 0, false);
+INSERT INTO action_type (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 5, 'Nag', 'Request update on progress from escalations', 0, false);
 
 
 --

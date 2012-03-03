@@ -61,10 +61,30 @@ ALTER SEQUENCE page_state_id_seq OWNED BY page_state.id;
 
 
 --
+-- Name: page_state_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
+--
+
+SELECT pg_catalog.setval('page_state_id_seq', 34, true);
+
+
+--
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
 ALTER TABLE page_state ALTER COLUMN id SET DEFAULT nextval('page_state_id_seq'::regclass);
+
+
+--
+-- Data for Name: page_state; Type: TABLE DATA; Schema: cod; Owner: postgres
+--
+
+INSERT INTO page_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 1, 'Passive', 'No paging', 0, false);
+INSERT INTO page_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 2, 'Active', 'Paging to start', 10, false);
+INSERT INTO page_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 3, 'Act', 'Action required -- make phone call', 20, false);
+INSERT INTO page_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 4, 'Escalating', 'Paging happening in the background', 30, false);
+INSERT INTO page_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 5, 'Closed', 'Found an owner', 40, false);
+INSERT INTO page_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 6, 'Cancelled', 'Paging cancelled', 50, false);
+INSERT INTO page_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 7, 'Failed', 'Paging failed to find an owner', 60, false);
 
 
 --

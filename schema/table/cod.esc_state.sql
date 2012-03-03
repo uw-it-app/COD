@@ -61,10 +61,31 @@ ALTER SEQUENCE esc_state_id_seq OWNED BY esc_state.id;
 
 
 --
+-- Name: esc_state_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
+--
+
+SELECT pg_catalog.setval('esc_state_id_seq', 34, true);
+
+
+--
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
 ALTER TABLE esc_state ALTER COLUMN id SET DEFAULT nextval('esc_state_id_seq'::regclass);
+
+
+--
+-- Data for Name: esc_state; Type: TABLE DATA; Schema: cod; Owner: postgres
+--
+
+INSERT INTO esc_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 1, 'Building', 'Underconstruction', 0, false);
+INSERT INTO esc_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 2, 'Active', 'Active contact to Tier 2/3 support', 30, false);
+INSERT INTO esc_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 3, 'Failed', 'Failed notification to Tier 2/3 support', 33, false);
+INSERT INTO esc_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 4, 'Passive', 'Passive contact to Tier 2/3 support', 40, false);
+INSERT INTO esc_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 5, 'Owned', 'Tier 2/3 acknowedged issue', 60, false);
+INSERT INTO esc_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 6, 'Resolved', 'All work completed', 90, false);
+INSERT INTO esc_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 7, 'Rejected', 'Escalation misrouted', 91, false);
+INSERT INTO esc_state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 8, 'Merged', 'Escalation merged into another ticket', 92, false);
 
 
 --

@@ -65,10 +65,28 @@ ALTER SEQUENCE support_model_id_seq OWNED BY support_model.id;
 
 
 --
+-- Name: support_model_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
+--
+
+SELECT pg_catalog.setval('support_model_id_seq', 34, true);
+
+
+--
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
 ALTER TABLE support_model ALTER COLUMN id SET DEFAULT nextval('support_model_id_seq'::regclass);
+
+
+--
+-- Data for Name: support_model; Type: TABLE DATA; Schema: cod; Owner: postgres
+--
+
+INSERT INTO support_model (modified_at, modified_by, id, name, description, sort, disabled, reject, help_text, active_notification, nag) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 1, '', 'No Model', 99, false, false, false, false, false);
+INSERT INTO support_model (modified_at, modified_by, id, name, description, sort, disabled, reject, help_text, active_notification, nag) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 2, 'A', 'Immediate escalation with active notification', 10, false, false, false, true, true);
+INSERT INTO support_model (modified_at, modified_by, id, name, description, sort, disabled, reject, help_text, active_notification, nag) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 3, 'B', 'L1 works help text then escalation with active notification', 20, false, false, true, true, true);
+INSERT INTO support_model (modified_at, modified_by, id, name, description, sort, disabled, reject, help_text, active_notification, nag) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 4, 'C', 'L1 works help text then escalation with passive notification', 30, false, false, true, false, false);
+INSERT INTO support_model (modified_at, modified_by, id, name, description, sort, disabled, reject, help_text, active_notification, nag) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 5, 'D', 'No support', 40, false, true, false, false, false);
 
 
 --

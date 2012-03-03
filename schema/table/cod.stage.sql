@@ -61,10 +61,34 @@ ALTER SEQUENCE stage_id_seq OWNED BY stage.id;
 
 
 --
+-- Name: stage_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
+--
+
+SELECT pg_catalog.setval('stage_id_seq', 44, true);
+
+
+--
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
 ALTER TABLE stage ALTER COLUMN id SET DEFAULT nextval('stage_id_seq'::regclass);
+
+
+--
+-- Data for Name: stage; Type: TABLE DATA; Schema: cod; Owner: postgres
+--
+
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 1, 'Identification', '', 10, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 2, 'Logging', '', 20, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 3, 'Categorization', '', 30, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 4, 'Prioritization', '', 40, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 5, 'Initial Diagnosis', '', 50, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 6, 'Functional Escalation', '', 60, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 7, 'Management Escalation', '', 70, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 8, 'Investigation and Diagnosis', '', 80, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 9, 'Resolution and Recovery', '', 90, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 10, 'Closure', '', 99, false);
+INSERT INTO stage (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-03-01 17:04:26.591756-08', 'postgres', 11, '', '', 0, false);
 
 
 --
