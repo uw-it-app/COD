@@ -20,8 +20,10 @@ CREATE OR REPLACE FUNCTION item_merge(integer, integer, boolean) RETURNS boolean
     AS $_$
 /*  Function:     cod.item_merge(integer, integer, boolean)
     Description:  Merge item id 2 into id 1
-    Affects:      
-    Arguments:    
+    Affects:      Both items and records associated with item 2
+    Arguments:    integer: Id of Item to merge into
+                  integer: ID of Item to merge
+                  boolean: Lock and unlock root item
     Returns:      boolean
 */
 DECLARE
