@@ -353,9 +353,9 @@ BEGIN
             SET subject = xpath.get_varchar('/Item/Do/Subject', v_xml),
                 reference_no = xpath.get_varchar('/Item/Do/RefNo', v_xml),
                 severity = xpath.get_integer('/Item/Do/Severity', v_xml),
-                support_model_id = standard.enum_value_id('cod', 'support_model', xpath.get_varchar('/Item/Do/SupportModel', v_xml)),
-                itil_type_id = standard.enum_value_id('cod', 'itil_type', xpath.get_varchar('/Item/Do/ITILType', v_xml))
+                support_model_id = standard.enum_value_id('cod', 'support_model', xpath.get_varchar('/Item/Do/SupportModel', v_xml))
             WHERE id = v_id;
+        --  itil_type_id = standard.enum_value_id('cod', 'itil_type', xpath.get_varchar('/Item/Do/ITILType', v_xml))    
     ELSEIF _type = 'Close' THEN
         UPDATE cod.item SET workflow_lock = TRUE WHERE id = v_id;
         UPDATE cod.action SET completed_at = now(), successful = TRUE
