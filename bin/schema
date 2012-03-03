@@ -1,0 +1,2 @@
+#!/bin/bash
+pg_extractor.pl -U postgres -h localhost -d ssgapp -n cod,cod_history,cod_v1 --gettables --getviews --getfuncs --gettypes --orreplace --hostname . --dbdir schema --delete
