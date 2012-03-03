@@ -61,10 +61,26 @@ ALTER SEQUENCE itil_type_id_seq OWNED BY itil_type.id;
 
 
 --
+-- Name: itil_type_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
+--
+
+SELECT pg_catalog.setval('itil_type_id_seq', 34, true);
+
+
+--
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
 ALTER TABLE itil_type ALTER COLUMN id SET DEFAULT nextval('itil_type_id_seq'::regclass);
+
+
+--
+-- Data for Name: itil_type; Type: TABLE DATA; Schema: cod; Owner: postgres
+--
+
+INSERT INTO itil_type (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 1, 'Incident', '', 10, false);
+INSERT INTO itil_type (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 2, 'Request', '', 30, false);
+INSERT INTO itil_type (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 3, '(Notification)', '', 99, false);
 
 
 --

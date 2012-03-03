@@ -61,10 +61,32 @@ ALTER SEQUENCE state_id_seq OWNED BY state.id;
 
 
 --
+-- Name: state_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
+--
+
+SELECT pg_catalog.setval('state_id_seq', 41, true);
+
+
+--
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
 ALTER TABLE state ALTER COLUMN id SET DEFAULT nextval('state_id_seq'::regclass);
+
+
+--
+-- Data for Name: state; Type: TABLE DATA; Schema: cod; Owner: postgres
+--
+
+INSERT INTO state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 1, 'Building', 'Underconstruction', 0, false);
+INSERT INTO state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 2, 'Act', 'COPS has an action to perform', 10, false);
+INSERT INTO state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 3, 'Processing', 'COD is updating data in the background', 20, false);
+INSERT INTO state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 4, 'Escalating', 'Active contact to Level 2/3 support', 30, false);
+INSERT INTO state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 5, 'Tier2', 'Escalated to Tier 2', 60, false);
+INSERT INTO state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 6, 'Cleared', 'Impact cleared but not resolved', 80, false);
+INSERT INTO state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 7, 'Resolved', 'All work completed', 90, false);
+INSERT INTO state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-02-28 08:32:20.677493-08', 'postgres', 8, 'Closed', 'Closure Complete', 99, false);
+INSERT INTO state (modified_at, modified_by, id, name, description, sort, disabled) VALUES ('2012-03-01 17:04:26.60117-08', 'postgres', 9, 'Merged', 'Merged into another Item', 100, false);
 
 
 --
