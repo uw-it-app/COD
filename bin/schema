@@ -2,5 +2,5 @@
 basepath=$(dirname $0)
 enumtables="cod.action_type,cod.esc_state,cod.itil_type,cod.page_state,cod.source,cod.stage,cod.state,cod.support_model"
 cd $basepath/..
-pg_extractor.pl -U postgres -h localhost -d ssgapp -n cod,cod_history,cod_v1 -T $enumtables --gettables --getviews --getfuncs --gettypes --orreplace --hostname . --dbdir schema --delete
+pg_extractor.pl -U postgres -h localhost -d ssgapp -n cod,cod_history,cod_v2 -T $enumtables --gettables --getviews --getfuncs --gettypes --orreplace --hostname . --dbdir schema --delete
 pg_extractor.pl -U postgres -h localhost -d ssgapp -n cod --t $enumtables --gettables --getdata --column-inserts --hostname . --dbdir schema 
