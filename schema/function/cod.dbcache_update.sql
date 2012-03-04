@@ -38,9 +38,11 @@ BEGIN
         _timekey := v_timekey;
     END IF;
 
-    UPDATE cod.dbcache SET content = v_content, timekey = _timekey WHERE name = v_name;
-    IF NOT FOUND THEN
+    UPDATE cod.dbcache SET content = v_content, timekey = _timekey WHERE name = v_name and timekey < _timekey;
+    IF NOT FOUND AND NOT EXISTS (SELECT NULL FROM cod.dbcache WHERE name = v_name) THEN
         INSERT INTO cod.dbcache (name, content, timekey) VALUES (v_name, v_content, _timekey);
+    ELSE 
+        RETURN FALSE
     END IF;
     RETURN TRUE;
 END;
