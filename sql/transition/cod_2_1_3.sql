@@ -45,7 +45,7 @@ BEGIN
     IF NOT FOUND AND NOT EXISTS (SELECT NULL FROM cod.dbcache WHERE name = v_name) THEN
         INSERT INTO cod.dbcache (name, content, timekey) VALUES (v_name, v_content, _timekey);
     ELSE 
-        RETURN FALSE
+        RETURN FALSE;
     END IF;
     RETURN TRUE;
 END;
