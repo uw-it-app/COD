@@ -152,7 +152,7 @@ CREATE TRIGGER t_50_modified BEFORE INSERT OR UPDATE ON item FOR EACH ROW EXECUT
 -- Name: t_70_update_rt; Type: TRIGGER; Schema: cod; Owner: postgres
 --
 
-CREATE TRIGGER t_70_update_rt BEFORE UPDATE ON item FOR EACH ROW WHEN ((new.workflow_lock IS FALSE AND new.rt_ticket IS NOT NULL)) EXECUTE PROCEDURE item_rt_update();
+CREATE TRIGGER t_70_update_rt BEFORE UPDATE ON item FOR EACH ROW WHEN (((new.workflow_lock IS FALSE) AND (new.rt_ticket IS NOT NULL))) EXECUTE PROCEDURE item_rt_update();
 
 
 --
