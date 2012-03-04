@@ -1,3 +1,6 @@
+BEGIN;
+
+
 --
 -- PostgreSQL database dump
 --
@@ -62,3 +65,6 @@ COMMENT ON FUNCTION dbcache_update(character varying, character varying, timesta
 -- PostgreSQL database dump complete
 --
 
+
+
+COMMIT;
