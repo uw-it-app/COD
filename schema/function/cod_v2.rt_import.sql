@@ -77,12 +77,14 @@ BEGIN
                 CONTINUE;
             END IF;
         END IF;
-        IF _item.workflow_lock IS FALSE THEN
-            UPDATE cod.item SET workflow_lock = TRUE WHERE id = _item.id;
-        END IF;
+        --IF _item.workflow_lock IS FALSE THEN
+        --    UPDATE cod.item SET workflow_lock = TRUE WHERE id = _item.id;
+        --END IF;
         -- Merge in other tickets
+        -- get count of ticket to merge (that haven't been merged)
+        -- if >0 then lock and perform merge
         PERFORM cod.item_merge(_item.id, id, FALSE) FROM cod.item WHERE ARRAY[rt_ticket]::integer[] <@ _aliases;
-
+        -- endif
         -- check status (?reset closed if closed?)
         _escs   := xpath('/Incident/Escalations/Escalation', _incident);
         _count2 := array_upper(_escs, 1);
