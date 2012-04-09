@@ -30,7 +30,7 @@ var COD = {},
         if (XHR.status === 401) {
             window.setTimeout(function () {
                 window.location = '/norns/?path=' + escape(window.location.pathname);
-            }, 2000);
+            }, 1000);
             window.toolsAlert('Login Required - Redirecting...');
         } else {
             data = JSON.parse(XHR.responseText);
