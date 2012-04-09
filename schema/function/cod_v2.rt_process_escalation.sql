@@ -91,7 +91,8 @@ BEGIN
     UPDATE cod.escalation 
         SET esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Merged'),
             resolved_at = now()
-        WHERE ARRAY[rt_ticket]::integer[] <@ _aliases;
+        WHERE ARRAY[rt_ticket]::integer[] <@ _aliases
+            AND esc_state_id <> standard.enum_value_id('cod', 'esc_state', 'Merged');
     RETURN '<Processed/>'::xml;
 END;
 $_$;
