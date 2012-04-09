@@ -1,3 +1,6 @@
+BEGIN;
+
+
 --
 -- PostgreSQL database dump
 --
@@ -114,3 +117,6 @@ COMMENT ON FUNCTION rt_import(xml) IS 'DR: Process RT import data (2012-02-16)';
 -- PostgreSQL database dump complete
 --
 
+
+
+COMMIT;

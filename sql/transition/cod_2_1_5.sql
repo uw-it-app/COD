@@ -1,3 +1,6 @@
+BEGIN;
+
+
 --
 -- PostgreSQL database dump
 --
@@ -111,3 +114,6 @@ COMMENT ON FUNCTION rt_process_escalation(integer, boolean, xml) IS 'DR: Process
 -- PostgreSQL database dump complete
 --
 
+
+
+COMMIT;

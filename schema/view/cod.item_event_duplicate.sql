@@ -22,6 +22,13 @@ CREATE OR REPLACE VIEW item_event_duplicate AS
 ALTER TABLE cod.item_event_duplicate OWNER TO postgres;
 
 --
+-- Name: VIEW item_event_duplicate; Type: COMMENT; Schema: cod; Owner: postgres
+--
+
+COMMENT ON VIEW item_event_duplicate IS 'DR: View to find duplicate event/items to an incoming event (2011-10-20)';
+
+
+--
 -- Name: item_event_duplicate; Type: ACL; Schema: cod; Owner: postgres
 --
 
