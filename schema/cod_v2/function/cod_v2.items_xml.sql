@@ -32,7 +32,7 @@ BEGIN
     _cache   := (cod.dbcache_get('ITEMS', _lastmod))::xml;
     IF _cache IS NULL THEN
         _cache := xmlelement(name "Items",
-            (SELECT xmlagg(cod_v2.item_xml(id)) FROM (
+            (SELECT xmlagg(cod_v2.item_brief_xml(id)) FROM (
                 SELECT i.id FROM cod.item i JOIN cod.state s ON (i.state_id=s.id) 
                     WHERE s.sort < 90 OR i.closed_at > now() - '1 hour'::interval ORDER BY s.sort ASC, i.rt_ticket DESC
             ) AS foo),
