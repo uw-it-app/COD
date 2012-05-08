@@ -16,15 +16,13 @@ SET search_path = cod_history, pg_catalog;
 --
 
 CREATE OR REPLACE VIEW escalation_last AS
-    SELECT modified_at, modified_by, id, item_id, rt_ticket, hm_issue, esc_state_id, page_state_id, oncall_group, queue, owner, escalated_at, owned_at, resolved_at, content 
-    FROM cod_history.escalation
-    JOIN (SELECT id AS uid, max(modified_at) AS mod FROM cod_history.escalation GROUP BY id) AS uni ON (id = uid AND modified_at = mod);
+    SELECT escalation.modified_at, escalation.modified_by, escalation.id, escalation.item_id, escalation.rt_ticket, escalation.hm_issue, escalation.esc_state_id, escalation.page_state_id, escalation.oncall_group, escalation.queue, escalation.owner, escalation.escalated_at, escalation.owned_at, escalation.resolved_at, escalation.content FROM (escalation JOIN (SELECT escalation.id AS uid, max(escalation.modified_at) AS mod FROM escalation GROUP BY escalation.id) uni ON (((escalation.id = uni.uid) AND (escalation.modified_at = uni.mod))));
 
 
 ALTER TABLE cod_history.escalation_last OWNER TO postgres;
 
 --
--- Name: TABLE escalation_last; Type: COMMENT; Schema: cod; Owner: postgres
+-- Name: VIEW escalation_last; Type: COMMENT; Schema: cod_history; Owner: postgres
 --
 
 COMMENT ON VIEW escalation_last IS 'DR: Show the last state of an escalation (2012-04-16)';
@@ -43,3 +41,4 @@ GRANT SELECT ON TABLE escalation_last TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
+

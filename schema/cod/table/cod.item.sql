@@ -41,7 +41,7 @@ CREATE TABLE item (
     closed_at timestamp with time zone,
     content character varying,
     workflow_lock boolean DEFAULT false NOT NULL,
-    nag_interval character varying DEFAULT ('00:30:00'::interval)::character varying NOT NULL,
+    nag_interval character varying,
     nag_next timestamp with time zone,
     CONSTRAINT item_severity_check CHECK (((severity >= 1) AND (severity <= 5)))
 );

@@ -16,15 +16,13 @@ SET search_path = cod_history, pg_catalog;
 --
 
 CREATE OR REPLACE VIEW action_last AS
-    SELECT modified_at, modified_by, id, item_id, escalation_id, action_type_id, started_at, completed_at, completed_by, skipped, successful, content
-    FROM cod_history.action
-    JOIN (SELECT id AS uid, max(modified_at) AS mod FROM cod_history.action GROUP BY id) AS uni ON (id = uid AND modified_at = mod);
+    SELECT action.modified_at, action.modified_by, action.id, action.item_id, action.escalation_id, action.action_type_id, action.started_at, action.completed_at, action.completed_by, action.skipped, action.successful, action.content FROM (action JOIN (SELECT action.id AS uid, max(action.modified_at) AS mod FROM action GROUP BY action.id) uni ON (((action.id = uni.uid) AND (action.modified_at = uni.mod))));
 
 
 ALTER TABLE cod_history.action_last OWNER TO postgres;
 
 --
--- Name: TABLE action_last; Type: COMMENT; Schema: cod; Owner: postgres
+-- Name: VIEW action_last; Type: COMMENT; Schema: cod_history; Owner: postgres
 --
 
 COMMENT ON VIEW action_last IS 'DR: Show the last state of an action (2012-04-16)';
@@ -43,3 +41,4 @@ GRANT SELECT ON TABLE action_last TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
+

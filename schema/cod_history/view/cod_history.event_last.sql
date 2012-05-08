@@ -16,15 +16,13 @@ SET search_path = cod_history, pg_catalog;
 --
 
 CREATE OR REPLACE VIEW event_last AS
-    SELECT modified_at, modified_by, id, item_id, host, component, support_model_id, severity, contact, oncall_primary, oncall_alternate, helptext, source_id, start_at, end_at, content 
-    FROM cod_history.event 
-    JOIN (SELECT id AS uid, max(modified_at) AS mod FROM cod_history.event GROUP BY id) AS uni ON (id = uid AND modified_at = mod);
+    SELECT event.modified_at, event.modified_by, event.id, event.item_id, event.host, event.component, event.support_model_id, event.severity, event.contact, event.oncall_primary, event.oncall_alternate, event.helptext, event.source_id, event.start_at, event.end_at, event.content FROM (event JOIN (SELECT event.id AS uid, max(event.modified_at) AS mod FROM event GROUP BY event.id) uni ON (((event.id = uni.uid) AND (event.modified_at = uni.mod))));
 
 
 ALTER TABLE cod_history.event_last OWNER TO postgres;
 
 --
--- Name: TABLE event_last; Type: COMMENT; Schema: cod; Owner: postgres
+-- Name: VIEW event_last; Type: COMMENT; Schema: cod_history; Owner: postgres
 --
 
 COMMENT ON VIEW event_last IS 'DR: Most recent state of an event (2012-04-16)';
@@ -43,3 +41,4 @@ GRANT SELECT ON TABLE event_last TO PUBLIC;
 --
 -- PostgreSQL database dump complete
 --
+

@@ -31,7 +31,8 @@ CREATE TABLE support_model (
     reject boolean DEFAULT false NOT NULL,
     help_text boolean DEFAULT false NOT NULL,
     active_notification boolean DEFAULT false NOT NULL,
-    nag boolean DEFAULT false NOT NULL
+    nag boolean DEFAULT false NOT NULL,
+    nag_owned_period text DEFAULT '24 hours BHO'::text
 );
 
 

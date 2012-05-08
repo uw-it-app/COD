@@ -17,7 +17,7 @@ SET search_path = cod, pg_catalog;
 
 CREATE OR REPLACE FUNCTION incident_nag_check() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
+    AS $_$
 /*  Function:     cod.incident_nag_check()
     Description:  Ensure the nag_next time is properly set or unset
     Affects:      Active row
@@ -68,7 +68,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$;
+$_$;
 
 
 ALTER FUNCTION cod.incident_nag_check() OWNER TO postgres;
