@@ -31,6 +31,7 @@ DECLARE
     _type       varchar;
     _message    varchar;
     _msgType    varchar     := 'comment';
+    _msgToSuper boolean     := true;
     _msgToSubs  varchar     := 'open';
     _success    boolean;
     _payload    varchar     := '';
@@ -49,6 +50,10 @@ BEGIN
     _type    := xpath.get_varchar('/Item/Do/Type', v_xml);
     _message := xpath.get_varchar('/Item/Do/Message', v_xml);
     IF _type = 'Update' THEN
+        IF _row.reference_no IS DISTINCT FROM xpath.get_varchar('/Item/Do/RefNo', v_xml) THEN
+            _msgToSuper := false;
+            _message := 'Reference Number: ' || COALESCE(xpath.get_varchar('/Item/Do/RefNo', v_xml), '') || E'\n';
+        END IF;
         UPDATE cod.item 
             SET subject = xpath.get_varchar('/Item/Do/Subject', v_xml),
                 reference_no = xpath.get_varchar('/Item/Do/RefNo', v_xml),
@@ -168,7 +173,9 @@ BEGIN
                  || _payload;
     END IF;
     IF _payload <> '' THEN
-        PERFORM rt.update_ticket(_row.rt_ticket, _payload);
+        IF _msgToSuper THEN
+            PERFORM rt.update_ticket(_row.rt_ticket, _payload);
+        END IF;
         IF _msgToSubs = 'all' THEN
             PERFORM rt.update_ticket(rt_ticket, _payload) FROM cod.escalation WHERE item_id = _row.id;
         ELSEIF _msgToSubs = 'open' THEN

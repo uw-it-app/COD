@@ -1,4 +1,3 @@
-/*jslint nomen: true, regexp: true */
 /*global $ */
 /*global logger */
 /*global COD */

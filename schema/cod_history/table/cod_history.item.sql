@@ -42,7 +42,7 @@ CREATE TABLE item (
     closed_at timestamp with time zone,
     content character varying,
     workflow_lock boolean NOT NULL,
-    nag_interval character varying NOT NULL,
+    nag_interval character varying,
     nag_next timestamp with time zone
 );
 
