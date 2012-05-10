@@ -64,14 +64,14 @@ ALTER SEQUENCE esc_state_id_seq OWNED BY esc_state.id;
 -- Name: esc_state_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
 --
 
-SELECT pg_catalog.setval('esc_state_id_seq', 34, true);
+SELECT pg_catalog.setval('esc_state_id_seq', 8, true);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE esc_state ALTER COLUMN id SET DEFAULT nextval('esc_state_id_seq'::regclass);
+ALTER TABLE ONLY esc_state ALTER COLUMN id SET DEFAULT nextval('esc_state_id_seq'::regclass);
 
 
 --

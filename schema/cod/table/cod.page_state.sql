@@ -64,14 +64,14 @@ ALTER SEQUENCE page_state_id_seq OWNED BY page_state.id;
 -- Name: page_state_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
 --
 
-SELECT pg_catalog.setval('page_state_id_seq', 34, true);
+SELECT pg_catalog.setval('page_state_id_seq', 7, true);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE page_state ALTER COLUMN id SET DEFAULT nextval('page_state_id_seq'::regclass);
+ALTER TABLE ONLY page_state ALTER COLUMN id SET DEFAULT nextval('page_state_id_seq'::regclass);
 
 
 --

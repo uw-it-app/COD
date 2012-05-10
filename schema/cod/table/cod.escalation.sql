@@ -72,7 +72,7 @@ ALTER SEQUENCE escalation_id_seq OWNED BY escalation.id;
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE escalation ALTER COLUMN id SET DEFAULT nextval('escalation_id_seq'::regclass);
+ALTER TABLE ONLY escalation ALTER COLUMN id SET DEFAULT nextval('escalation_id_seq'::regclass);
 
 
 --

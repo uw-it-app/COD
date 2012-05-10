@@ -63,7 +63,7 @@ ALTER SEQUENCE dbcache_id_seq OWNED BY dbcache.id;
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE dbcache ALTER COLUMN id SET DEFAULT nextval('dbcache_id_seq'::regclass);
+ALTER TABLE ONLY dbcache ALTER COLUMN id SET DEFAULT nextval('dbcache_id_seq'::regclass);
 
 
 --

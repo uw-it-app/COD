@@ -71,7 +71,6 @@ BEGIN
 END;
 $_$;
 
--- 144, 411
 
 ALTER FUNCTION cod_history.restore_item(integer) OWNER TO postgres;
 

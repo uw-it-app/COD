@@ -64,14 +64,14 @@ ALTER SEQUENCE stage_id_seq OWNED BY stage.id;
 -- Name: stage_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
 --
 
-SELECT pg_catalog.setval('stage_id_seq', 44, true);
+SELECT pg_catalog.setval('stage_id_seq', 12, true);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE stage ALTER COLUMN id SET DEFAULT nextval('stage_id_seq'::regclass);
+ALTER TABLE ONLY stage ALTER COLUMN id SET DEFAULT nextval('stage_id_seq'::regclass);
 
 
 --

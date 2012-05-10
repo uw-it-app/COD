@@ -64,14 +64,14 @@ ALTER SEQUENCE itil_type_id_seq OWNED BY itil_type.id;
 -- Name: itil_type_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
 --
 
-SELECT pg_catalog.setval('itil_type_id_seq', 34, true);
+SELECT pg_catalog.setval('itil_type_id_seq', 3, true);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE itil_type ALTER COLUMN id SET DEFAULT nextval('itil_type_id_seq'::regclass);
+ALTER TABLE ONLY itil_type ALTER COLUMN id SET DEFAULT nextval('itil_type_id_seq'::regclass);
 
 
 --

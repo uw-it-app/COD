@@ -81,7 +81,7 @@ ALTER SEQUENCE item_id_seq OWNED BY item.id;
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE item ALTER COLUMN id SET DEFAULT nextval('item_id_seq'::regclass);
+ALTER TABLE ONLY item ALTER COLUMN id SET DEFAULT nextval('item_id_seq'::regclass);
 
 
 --

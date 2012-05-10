@@ -74,7 +74,7 @@ ALTER SEQUENCE event_id_seq OWNED BY event.id;
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE event ALTER COLUMN id SET DEFAULT nextval('event_id_seq'::regclass);
+ALTER TABLE ONLY event ALTER COLUMN id SET DEFAULT nextval('event_id_seq'::regclass);
 
 
 --

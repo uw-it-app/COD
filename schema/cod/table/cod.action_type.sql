@@ -64,14 +64,14 @@ ALTER SEQUENCE action_type_id_seq OWNED BY action_type.id;
 -- Name: action_type_id_seq; Type: SEQUENCE SET; Schema: cod; Owner: postgres
 --
 
-SELECT pg_catalog.setval('action_type_id_seq', 34, true);
+SELECT pg_catalog.setval('action_type_id_seq', 5, true);
 
 
 --
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE action_type ALTER COLUMN id SET DEFAULT nextval('action_type_id_seq'::regclass);
+ALTER TABLE ONLY action_type ALTER COLUMN id SET DEFAULT nextval('action_type_id_seq'::regclass);
 
 
 --

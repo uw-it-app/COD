@@ -69,7 +69,7 @@ ALTER SEQUENCE action_id_seq OWNED BY action.id;
 -- Name: id; Type: DEFAULT; Schema: cod; Owner: postgres
 --
 
-ALTER TABLE action ALTER COLUMN id SET DEFAULT nextval('action_id_seq'::regclass);
+ALTER TABLE ONLY action ALTER COLUMN id SET DEFAULT nextval('action_id_seq'::regclass);
 
 
 --
