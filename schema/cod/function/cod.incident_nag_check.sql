@@ -30,7 +30,8 @@ DECLARE
     _model      cod.support_model%ROWTYPE;
 BEGIN
     SELECT * INTO _model FROM cod.support_model WHERE id = NEW.support_model_id;
-    IF _model.nag IS TRUE AND EXISTS(SELECT NULL FROM cod.escalation WHERE item_id = NEW.id) THEN
+    IF _model.nag IS TRUE AND EXISTS(SELECT NULL FROM cod.escalation JOIN cod.esc_state ON (cod.escalation.esc_state_id = cod.esc_state.id) WHERE cod.escalation.item_id = NEW.id AND cod.esc_state.name NOT IN ('Resolved', 'Rejected', 'Merged') )
+    THEN
 
         IF NEW.nag_interval IS NOT NULL THEN
             -- use item specific interval if set
