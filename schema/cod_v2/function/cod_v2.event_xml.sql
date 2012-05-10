@@ -37,6 +37,7 @@ CREATE OR REPLACE FUNCTION event_xml(integer) RETURNS xml
         xmlelement(name "Subject", xpath.get_varchar('/Event/Subject', event.content::xml)),
         xmlelement(name "Message", xpath.get_varchar('/Event/Alert/Msg', event.content::xml)),
         xmlelement(name "LongMessage", xpath.get_varchar('/Event/Alert/LongMsg', event.content::xml)),
+        xmlelement(name "Source", source.description),
         xmlelement(name "Content", event.content::xml),
         xmlelement(name "Modified",
             xmlelement(name "At", date_trunc('second', event.modified_at)::timestamp::varchar),
@@ -48,6 +49,7 @@ CREATE OR REPLACE FUNCTION event_xml(integer) RETURNS xml
         )
     ) FROM cod.event AS event
       JOIN cod.support_model AS model ON (event.support_model_id = model.id)
+      JOIN cod.source AS source ON (event.source_id = source.id)
      WHERE event.id = $1;
 $_$;
 

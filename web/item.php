@@ -386,6 +386,10 @@
                 <div id="Item.Events:Event" class="item_bind  tile_event">
                     <table cellspacing="0" class="item full">
                         <tr>
+                            <th class="vertical">Source</th>
+                            <td id="Event.Source" class="vertical item_bind"></td>
+                        </tr>
+                        <tr>
                             <th class="vertical">Subject</th>
                             <td id="Event.Subject" class="vertical item_bind hide_blank_row"></td>
                         </tr>
