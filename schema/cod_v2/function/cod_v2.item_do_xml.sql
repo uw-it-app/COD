@@ -148,6 +148,9 @@ BEGIN
         IF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Cancel' THEN
             _message := NULL;
         END IF;
+        _msgToSuper := FALSE;
+        _msgType    := 'correspond';
+        _msgToSubs  := 'open';
         UPDATE cod.item SET workflow_lock = TRUE WHERE id = _row.id;
         UPDATE cod.action SET completed_at = now(), successful = true WHERE item_id = _row.id AND completed_at IS NULL 
             AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Nag');
