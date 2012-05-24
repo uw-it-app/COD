@@ -43,21 +43,22 @@ BEGIN
         IF _activity = 'closed' THEN
             IF _row.owner = 'nobody' AND xpath.get_varchar('/Issue/Owner', v_xml) <> 'nobody' THEN
                 Update cod.escalation SET 
+                    hm_issue = _hm_id,
                     owner = xpath.get_varchar('/Issue/Owner', v_xml),
                     page_state_id = standard.enum_value_id('cod', 'page_state', 'Closed')
                     WHERE id = _row.id;
             ELSE
-                Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Closed') WHERE id = _row.id;
+                Update cod.escalation SET hm_issue = _hm_id, page_state_id = standard.enum_value_id('cod', 'page_state', 'Closed') WHERE id = _row.id;
             END IF;    
         ELSEIF _activity = 'cancelled' THEN
             PERFORM cod.remove_esc_actions(_row.id);
-            Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Cancelled') WHERE id = _row.id;
+            Update cod.escalation SET hm_issue = _hm_id, page_state_id = standard.enum_value_id('cod', 'page_state', 'Cancelled') WHERE id = _row.id;
         ELSEIF _activity = 'failed' THEN
             PERFORM cod.remove_esc_actions(_row.id);
-            Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Failed') WHERE id = _row.id;
+            Update cod.escalation SET hm_issue = _hm_id, page_state_id = standard.enum_value_id('cod', 'page_state', 'Failed') WHERE id = _row.id;
         ELSEIF _activity = 'escalating' THEN
             PERFORM cod.remove_esc_actions(_row.id);
-            Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating') WHERE id = _row.id;
+            Update cod.escalation SET hm_issue = _hm_id, page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating') WHERE id = _row.id;
         ELSEIF _activity = 'act' THEN
             UPDATE cod.action SET completed_at = now(), successful = FALSE
                 WHERE escalation_id = _row.id AND completed_at IS NULL AND content <> _content;
@@ -69,11 +70,11 @@ BEGIN
                     standard.enum_value_id('cod', 'action_type', 'PhoneCall'),
                     _content
                 );
-                Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') WHERE id = _row.id;
+                Update cod.escalation SET hm_issue = _hm_id, page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') WHERE id = _row.id;
             ELSEIF _action.completed_at IS NULL THEN
-                Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') WHERE id = _row.id;
+                Update cod.escalation SET hm_issue = _hm_id, page_state_id = standard.enum_value_id('cod', 'page_state', 'Act') WHERE id = _row.id;
             ELSE
-                Update cod.escalation SET page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating') WHERE id = _row.id;
+                Update cod.escalation SET hm_issue = _hm_id, page_state_id = standard.enum_value_id('cod', 'page_state', 'Escalating') WHERE id = _row.id;
             END IF;
         END IF;
         RETURN TRUE;
@@ -107,6 +108,9 @@ BEGIN
         END IF;
         RETURN TRUE;
     ELSE
+        IF _row.hm_issue <> _hm_id THEN
+            UPDATE cod.item SET hm_issue = _hm_id WHERE id = _row.id;
+        END IF;
         IF ARRAY[_activity] <@ ARRAY['closed', 'cancelled', 'failed']::varchar[] THEN
             -- remove all phoncalls for this item;
             UPDATE cod.action SET completed_at = now(), successful = false 
