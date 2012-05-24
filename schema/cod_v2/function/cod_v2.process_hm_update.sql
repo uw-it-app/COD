@@ -38,7 +38,7 @@ BEGIN
     _ticket   := xpath.get_integer('/Issue/Ticket', v_xml);
     _activity := xpath.get_varchar('/Issue/Activity', v_xml);
     _content  := xpath('/Issue/CurrentSquawk', v_xml)::text::varchar;
-    SELECT * INTO _row FROM cod.escalation WHERE hm_issue = _hm_id OR (rt_ticket = _ticket AND hm_issue IS NULL);
+    SELECT * INTO _row FROM cod.escalation WHERE hm_issue = _hm_id OR rt_ticket = _ticket;
     IF _row.id IS NOT NULL THEN
         IF _activity = 'closed' THEN
             IF _row.owner = 'nobody' AND xpath.get_varchar('/Issue/Owner', v_xml) <> 'nobody' THEN
@@ -79,10 +79,7 @@ BEGIN
         RETURN TRUE;
     END IF;
 
-    SELECT * INTO _row FROM cod.item 
-        WHERE (rt_ticket IS NULL OR rt_ticket = _ticket) 
-          AND (hm_issue IS NULL OR hm_issue = _hm_id)
-          AND (rt_ticket IS NOT NULL OR hm_issue IS NOT NULL);
+    SELECT * INTO _row FROM cod.item WHERE rt_ticket = _ticket OR hm_issue = _hm_id;
 
     IF _row.id IS NULL THEN
         IF ARRAY[_activity] <@ ARRAY['closed', 'cancelled', 'failed']::varchar[] THEN
