@@ -32,6 +32,7 @@ DECLARE
     _host       varchar;
     _comp       varchar;
     _model      varchar;
+    _supsev     varchar;
     _smid       integer;
     _contact    varchar;
     _hostpri    varchar;
@@ -76,7 +77,11 @@ BEGIN
 
     _host := xpath.get_varchar('/Event/Alert/ProblemHost', v_xml);      -- subject(item); (event)
     _comp := xpath.get_varchar('/Event/Alert/Component', v_xml);        -- subject(item); (event)
-    _model := upper(xpath.get_varchar('/Event/SupportModel', v_xml));   -- (item); (event)
+    _model := upper(xpath.get_varchar('/Event/Alert/SupportModel', v_xml));   -- (item); (event)
+    IF _model IS NULL THEN
+        _model := upper(xpath.get_varchar('/Event/SupportModel', v_xml));
+    END IF;
+    _supsev := xpath.get_varchar('/Event/Alert/SupportModel');         -- (item); (event)
     _contact := xpath.get_varchar('/Event/Alert/Contact', v_xml);       -- (event)
     _hostpri := xpath.get_varchar('/Event/OnCall', v_xml);        -- (event)
     _hostalt := xpath.get_varchar('/Event/AltOnCall', v_xml);     -- (event)
@@ -94,10 +99,15 @@ BEGIN
     _starts := now() - (COALESCE(xpath.get_integer('/Event/VisTime', v_xml), 0)::varchar || ' seconds')::interval; -- (item)
 
     _smid = standard.enum_value_id('cod', 'support_model', _model);        -- (item); (event)
-    _severity = 3;                                                      -- (item); (event)
-    IF _model = 'A' OR _model = 'B' THEN
-        _severity = 2;
-    END IF;
+
+    _severity := 3;
+    CASE _supsev
+        WHEN 'Sev1' THEN _severity := 1;
+        WHEN 'Sev2' THEN _severity := 2;
+        WHEN 'Sev3' THEN _severity := 3;
+        WHEN 'Sev4' THEN _severity := 4;
+        WHEN 'Sev5' THEN _severity := 5;
+    END CASE;
 
     -- check to see if exact duplicate
     SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate 
