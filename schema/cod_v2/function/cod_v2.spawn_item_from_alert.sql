@@ -52,7 +52,7 @@ DECLARE
     _event_id   integer;
 BEGIN
     -- read event data
-    
+
     _netid := xpath.get_varchar('/Event/Netid', v_xml);
     -- can this netid spawn?
     IF cod_v2.can_spawn(_netid) IS TRUE THEN
@@ -90,7 +90,7 @@ BEGIN
 
     _source := COALESCE(xpath.get_varchar('/Event/Source', v_xml), xpath.get_varchar('/Event/Alert/Flavor', v_xml));
     _source_id := COALESCE(standard.enum_value_id('cod', 'source', _source), 1);
-    
+
     _subject := COALESCE(xpath.get_varchar('/Event/Subject', v_xml), _host || ': ' || _comp); -- subject(item)
     _addtags := xpath.get_varchar('/Event/AddTags', v_xml);             -- ticket
     _cc := xpath.get_varchar('/Event/Cc', v_xml);                       -- ticket
@@ -100,7 +100,6 @@ BEGIN
 
     _smid = standard.enum_value_id('cod', 'support_model', _model);        -- (item); (event)
 
-    _severity := 3;
     CASE _supsev
         WHEN 'Sev1' THEN _severity := 1;
         WHEN 'Sev2' THEN _severity := 2;
@@ -108,9 +107,16 @@ BEGIN
         WHEN 'Sev4' THEN _severity := 4;
         WHEN 'Sev5' THEN _severity := 5;
     END CASE;
+    IF _severity IS NULL THEN
+        IF _model IN ('A', 'B') THEN
+            _severity := 2;
+        ELSE
+            _severity := 3;
+        END IF;
+    END IF;
 
     -- check to see if exact duplicate
-    SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate 
+    SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate
         WHERE host = _host AND component = _comp ORDER BY item_id ASC LIMIT 1;
     IF _row.item_id IS NOT NULL THEN
         RETURN xmlelement(name "Incident",
@@ -122,7 +128,7 @@ BEGIN
 /*
     SELECT * INTO _row FROM cod.item_event_duplicate WHERE host = _host AND contact = _contact ORDER BY item_id ASC LIMIT 1;
     IF _row.item_id IS NOT NULL THEN
-        INSERT INTO cod.event (item_id, host, component, support_model_id, severity, contact, 
+        INSERT INTO cod.event (item_id, host, component, support_model_id, severity, contact,
                                oncall_primary, oncall_alternate, content)
             VALUES (_row.item_id, _host, _comp, _smid, _severity, _contact, _hostpri, _hostalt, v_xml);
         RETURN xmlelement(name "Incident",
@@ -131,7 +137,7 @@ BEGIN
         );
     END IF;
 */
-    -- insert new (incident) item 
+    -- insert new (incident) item
     _item_id := nextval('cod.item_id_seq'::regclass);
     INSERT INTO cod.item (id, subject, state_id, itil_type_id, support_model_id, severity, stage_id, started_at, workflow_lock) VALUES (
         _item_id,
@@ -146,15 +152,15 @@ BEGIN
     );
     -- create alert
     _event_id := nextval('cod.event_id_seq'::regclass);
-    INSERT INTO cod.event (id, item_id, host, component, support_model_id, severity, contact, 
+    INSERT INTO cod.event (id, item_id, host, component, support_model_id, severity, contact,
                            oncall_primary, oncall_alternate, source_id, start_at, content)
-        VALUES (_event_id, _item_id, _host, _comp, _smid, _severity, _contact, 
+        VALUES (_event_id, _item_id, _host, _comp, _smid, _severity, _contact,
                 _hostpri, _hostalt, _source_id, _starts, replace(v_xml::text::varchar, E'<?xml version="1.0"?>\n', ''));
     -- get ticket # for item
-    _ticket := cod.create_incident_ticket_from_event(_event_id); 
+    _ticket := cod.create_incident_ticket_from_event(_event_id);
     -- update item for workflow
-    UPDATE cod.item SET 
-        rt_ticket     = _ticket, stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis'), 
+    UPDATE cod.item SET
+        rt_ticket     = _ticket, stage_id = standard.enum_value_id('cod', 'stage', 'Initial Diagnosis'),
         workflow_lock = FALSE
         WHERE id  = _item_id;
     -- IW trigger should execute;
