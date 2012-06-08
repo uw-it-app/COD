@@ -81,7 +81,7 @@ BEGIN
     IF _model IS NULL THEN
         _model := upper(xpath.get_varchar('/Event/SupportModel', v_xml));
     END IF;
-    _supsev := xpath.get_varchar('/Event/Alert/SupportModel');         -- (item); (event)
+    _supsev := xpath.get_varchar('/Event/Alert/SupportModel', v_xml);         -- (item); (event)
     _contact := xpath.get_varchar('/Event/Alert/Contact', v_xml);       -- (event)
     _hostpri := xpath.get_varchar('/Event/OnCall', v_xml);        -- (event)
     _hostalt := xpath.get_varchar('/Event/AltOnCall', v_xml);     -- (event)
@@ -106,14 +106,13 @@ BEGIN
         WHEN 'Sev3' THEN _severity := 3;
         WHEN 'Sev4' THEN _severity := 4;
         WHEN 'Sev5' THEN _severity := 5;
-    END CASE;
-    IF _severity IS NULL THEN
-        IF _model IN ('A', 'B') THEN
-            _severity := 2;
         ELSE
-            _severity := 3;
-        END IF;
-    END IF;
+            IF _model IN ('A', 'B') THEN
+                _severity := 2;
+            ELSE
+                _severity := 3;
+            END IF;
+    END CASE;
 
     -- check to see if exact duplicate
     SELECT item_id, rt_ticket INTO _row FROM cod.item_event_duplicate
