@@ -78,7 +78,7 @@ BEGIN
     _host := xpath.get_varchar('/Event/Alert/ProblemHost', v_xml);      -- subject(item); (event)
     _comp := xpath.get_varchar('/Event/Alert/Component', v_xml);        -- subject(item); (event)
     _model := upper(xpath.get_varchar('/Event/Alert/SupportModel', v_xml));   -- (item); (event)
-    IF _model IS NULL THEN
+    IF _model IS NULL OR _model = 'NULL' THEN
         _model := upper(xpath.get_varchar('/Event/SupportModel', v_xml));
     END IF;
     _supsev := xpath.get_varchar('/Event/Alert/SupportModel', v_xml);         -- (item); (event)
