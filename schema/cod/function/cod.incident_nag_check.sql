@@ -36,7 +36,7 @@ BEGIN
         IF NEW.nag_interval IS NOT NULL THEN
             -- use item specific interval if set
             _interval := NEW.nag_interval;
-        ELSEIF EXISTS(SELECT NULL FROM cod.escalation WHERE item_id = NEW.id AND esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Owned')) 
+        ELSEIF EXISTS(SELECT NULL FROM cod.escalation WHERE item_id = NEW.id AND esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Owned'))
         THEN
             -- otherwise if there is an owned escalation use the Support Model nag_owned_period
             _interval := _model.nag_owned_period;
@@ -49,7 +49,7 @@ BEGIN
 
         IF _interval ~* 'BHO$' THEN
             -- if the interval end with BHO then it should be during business hours only
-            _interval = regexp_replace(_interval, 'BHO$', '');
+            _interval := regexp_replace(_interval, 'BHO$', '');
             _next := hm_v1.get_business_timestamp(
                 _interval::interval,
                 appconfig.get('COD_NAG_BUSINESS_START')::time,
