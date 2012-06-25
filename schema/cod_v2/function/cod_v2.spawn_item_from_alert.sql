@@ -77,12 +77,25 @@ BEGIN
 
     _host := xpath.get_varchar('/Event/Alert/ProblemHost', v_xml);      -- subject(item); (event)
     _comp := xpath.get_varchar('/Event/Alert/Component', v_xml);        -- subject(item); (event)
-    _model := upper(xpath.get_varchar('/Event/Alert/SupportModel', v_xml));   -- (item); (event)
+    _model := upper(xpath.get_varchar('/Event/Finalized/SupportModel', v_xml));   -- (item); (event)
+
+    -- TODO: remove after transition
     IF _model IS NULL OR _model = 'NULL' THEN
-        _model := upper(xpath.get_varchar('/Event/SupportModel', v_xml));
+        _model := upper(xpath.get_varchar('/Event/Alert/SupportModel', v_xml));
+        IF _model IS NULL OR _model = 'NULL' THEN
+            _model := upper(xpath.get_varchar('/Event/SupportModel', v_xml));
+        END IF;
     END IF;
-    _supsev := xpath.get_varchar('/Event/Alert/SupportModel', v_xml);         -- (item); (event)
-    _contact := xpath.get_varchar('/Event/Alert/Contact', v_xml);       -- (event)
+
+    _supsev := xpath.get_varchar('/Event/Finalized/SupportSeverity', v_xml);         -- (item); (event)
+
+    _contact := xpath.get_varchar('/Event/Finalized/Contact', v_xml);       -- (event)
+
+    -- TODO: remove after transition
+    IF _contact IS NULL or _contact = 'NULL' THEN
+        _contact := xpath.get_varchar('/Event/Alert/Contact', v_xml);       -- (event)
+    END IF;
+
     _hostpri := xpath.get_varchar('/Event/OnCall', v_xml);        -- (event)
     _hostalt := xpath.get_varchar('/Event/AltOnCall', v_xml);     -- (event)
     _msg := xpath.get_varchar('/Event/Alert/Msg', v_xml);               -- for ticket
