@@ -54,13 +54,13 @@ BEGIN
             _msgToSuper := false;
             _message := 'Reference Number: ' || COALESCE(xpath.get_varchar('/Item/Do/RefNo', v_xml), '') || E'\n';
         END IF;
-        UPDATE cod.item 
+        UPDATE cod.item
             SET subject = xpath.get_varchar('/Item/Do/Subject', v_xml),
                 reference_no = xpath.get_varchar('/Item/Do/RefNo', v_xml),
                 severity = xpath.get_integer('/Item/Do/Severity', v_xml),
                 support_model_id = standard.enum_value_id('cod', 'support_model', xpath.get_varchar('/Item/Do/SupportModel', v_xml))
             WHERE id = v_id;
-        --  itil_type_id = standard.enum_value_id('cod', 'itil_type', xpath.get_varchar('/Item/Do/ITILType', v_xml))    
+        --  itil_type_id = standard.enum_value_id('cod', 'itil_type', xpath.get_varchar('/Item/Do/ITILType', v_xml))
     ELSEIF _type = 'Close' THEN
         UPDATE cod.item SET workflow_lock = TRUE WHERE id = v_id;
         UPDATE cod.action SET completed_at = now(), successful = TRUE
@@ -71,13 +71,13 @@ BEGIN
         _payload   := E'Status: resolved\n';
     ELSEIF _type = 'Clear' THEN
         UPDATE cod.event SET end_at = now() WHERE item_id = v_id;
-        UPDATE cod.action SET completed_at = now(), successful = FALSE 
-            WHERE item_id = v_id AND completed_at IS NULL AND 
+        UPDATE cod.action SET completed_at = now(), successful = FALSE
+            WHERE item_id = v_id AND completed_at IS NULL AND
                 action_type_id = standard.enum_value_id('cod', 'action_type', 'Escalate');
     ELSEIF _type = 'Reactivate' THEN
         UPDATE cod.event SET end_at = NULL WHERE item_id = v_id;
-        UPDATE cod.action SET completed_at = now(), successful = FALSE 
-            WHERE item_id = v_id AND completed_at IS NULL AND 
+        UPDATE cod.action SET completed_at = now(), successful = FALSE
+            WHERE item_id = v_id AND completed_at IS NULL AND
                 action_type_id = standard.enum_value_id('cod', 'action_type', 'Close');
     ELSEIF _type = 'PhoneCall' THEN
         IF xpath.get_varchar('/Item/Do/Submit', v_xml) = 'Take' THEN
@@ -106,7 +106,7 @@ BEGIN
             UPDATE cod.event set end_at = now() WHERE item_id = v_id;
             UPDATE cod.item SET workflow_lock = FALSE WHERE id = v_id;
         ELSE
-            UPDATE cod.action SET completed_at = now(), successful = FALSE
+            UPDATE cod.action SET completed_at = now(), successful = FALSE, content = xmlelement(name "Note", _message)
                 WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText');
         END IF;
         _msgToSubs := 'none';
@@ -132,7 +132,7 @@ BEGIN
             IF NOT hm_v1.valid_oncall(_oncall) THEN
                 RAISE EXCEPTION 'InvalidInput: Not a valid oncall group -- %', _oncall;
             END IF;
-            INSERT INTO cod.escalation (item_id, oncall_group, page_state_id) 
+            INSERT INTO cod.escalation (item_id, oncall_group, page_state_id)
                 VALUES (v_id, _oncall, standard.enum_value_id('cod', 'page_state', _page));
             IF NOT FOUND THEN
                 RAISE EXCEPTION 'Failed to create and escalation to the oncall group %', _oncall;
@@ -152,7 +152,7 @@ BEGIN
         _msgType    := 'correspond';
         _msgToSubs  := 'open';
         UPDATE cod.item SET workflow_lock = TRUE WHERE id = _row.id;
-        UPDATE cod.action SET completed_at = now(), successful = true WHERE item_id = _row.id AND completed_at IS NULL 
+        UPDATE cod.action SET completed_at = now(), successful = true WHERE item_id = _row.id AND completed_at IS NULL
             AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Nag');
         UPDATE cod.item SET workflow_lock = FALSE, nag_next = NULL WHERE id = _row.id;
     ELSEIF _type = 'SetNag' THEN
@@ -165,7 +165,7 @@ BEGIN
             RAISE EXCEPTION 'InvalidInput: Nag period must be in minutes, hours, or days not "%"', _period;
         END IF;
         UPDATE cod.item SET workflow_lock = TRUE WHERE id = _row.id;
-        UPDATE cod.action SET completed_at = now(), successful = false WHERE item_id = _row.id AND completed_at IS NULL 
+        UPDATE cod.action SET completed_at = now(), successful = false WHERE item_id = _row.id AND completed_at IS NULL
             AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Nag');
         UPDATE cod.item SET workflow_lock = FALSE, nag_next = NULL, nag_interval = _number::varchar || ' ' || _period WHERE id = _row.id;
     END IF;
@@ -182,11 +182,11 @@ BEGIN
         IF _msgToSubs = 'all' THEN
             PERFORM rt.update_ticket(rt_ticket, _payload) FROM cod.escalation WHERE item_id = _row.id;
         ELSEIF _msgToSubs = 'open' THEN
-            PERFORM rt.update_ticket(rt_ticket, _payload) FROM cod.escalation WHERE item_id = _row.id 
-                AND esc_state_id <> standard.enum_value_id('cod', 'esc_state', 'Resolved') 
+            PERFORM rt.update_ticket(rt_ticket, _payload) FROM cod.escalation WHERE item_id = _row.id
+                AND esc_state_id <> standard.enum_value_id('cod', 'esc_state', 'Resolved')
                 AND esc_state_id <> standard.enum_value_id('cod', 'esc_state', 'Rejected');
         ELSEIF _msgToSubs = 'owned' THEN
-            PERFORM rt.update_ticket(rt_ticket, _payload) FROM cod.escalation WHERE item_id = _row.id 
+            PERFORM rt.update_ticket(rt_ticket, _payload) FROM cod.escalation WHERE item_id = _row.id
                 AND esc_state_id <> standard.enum_value_id('cod', 'esc_state', 'Owned');
         END IF;
     END IF;

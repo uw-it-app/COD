@@ -28,8 +28,10 @@ DECLARE
     _sep        varchar := E'------------------------------------------\n';
     _item       cod.item%ROWTYPE;
     _event      cod.event%ROWTYPE;
+    _help       cod.action%ROWTYPE;
     _payload    varchar;
     _content    xml;
+    _helpnote   varchar;
     _msg        varchar;
     _lmsg       varchar;
     _message    varchar;
@@ -46,7 +48,11 @@ BEGIN
         -- create ticket
         SELECT * INTO _item FROM cod.item WHERE id = NEW.item_id;
         SELECT * INTO _event FROM cod.event WHERE item_id = NEW.item_id ORDER BY id ASC LIMIT 1;
+        SELECT * INTO _help FROM cod.action WHERE item_id = NEW.item_id ORDER BY id DESC LIMIT 1;
+
        _content = _event.content::xml;
+
+       _helpnote = xpath.get_varchar('/Note', _help.content::xml);
 
         _msg  := xpath.get_varchar('/Event/Alert/Msg', _content);
         _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', _content);
@@ -68,6 +74,9 @@ BEGIN
         IF _lmsg IS NOT NULL OR _lmsg <> _msg THEN
             _message := _message || _sep || _lmsg || E'\n';
         END IF;
+        IF _helpnote IS NOT NULL THEN
+            _message := _message || _sep || E'Operations Performed Actions:\n' || _helpnote || E'\n';
+        END IF;
 
         _payload := 'Subject: ' || _item.subject || E'\n' ||
                     'Queue: ' || NEW.queue || E'\n' ||
@@ -76,7 +85,7 @@ BEGIN
                     'Super: ' || _item.rt_ticket || E'\n' ||
                     'Content: ' || _message || E'\n' ||
                     E'ENDOFCONTENT\nCF-TicketType: Incident\n';
-        
+
         NEW.rt_ticket    := rt.create_ticket(_payload);
     END IF;
     IF NEW.page_state_id = standard.enum_value_id('cod', 'page_state', 'Passive') THEN
