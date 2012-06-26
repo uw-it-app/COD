@@ -62,13 +62,13 @@ BEGIN
             WHERE id = v_id;
         --  itil_type_id = standard.enum_value_id('cod', 'itil_type', xpath.get_varchar('/Item/Do/ITILType', v_xml))
     ELSEIF _type = 'Close' THEN
-        UPDATE cod.item SET workflow_lock = TRUE WHERE id = v_id;
+        UPDATE cod.item SET workflow_lock = TRUE, severity = xpath.get_integer('/Item/Do/Severity', v_xml) WHERE id = v_id;
         UPDATE cod.action SET completed_at = now(), successful = TRUE
             WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Close');
         UPDATE cod.item SET workflow_lock = FALSE, closed_at = now() WHERE id = v_id;
         _msgType   := 'correspond';
         _msgToSubs := 'none';
-        _payload   := E'Status: resolved\n';
+        _payload   := E'Status: resolved\nSeverity: Sev' || xpath.get_varchar('/Item/Do/Severity', v_xml);
     ELSEIF _type = 'Clear' THEN
         UPDATE cod.event SET end_at = now() WHERE item_id = v_id;
         UPDATE cod.action SET completed_at = now(), successful = FALSE

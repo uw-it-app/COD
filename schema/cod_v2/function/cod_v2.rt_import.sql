@@ -101,7 +101,7 @@ BEGIN
                 END IF;
             END LOOP;
         END IF;
-        IF _setsev IS NOT NULL THEN
+        IF _setsev IS NOT NULL AND _item.state_id IN (SELECT id FROM cod.state WHERE sort < 99) THEN
             UPDATE cod.item SET workflow_lock = FALSE, severity = _setsev WHERE id = _item.id;
         ELSE
             UPDATE cod.item SET workflow_lock = FALSE WHERE id = _item.id;
