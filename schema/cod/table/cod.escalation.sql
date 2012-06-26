@@ -16,7 +16,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: escalation; Type: TABLE; Schema: cod; Owner: postgres; Tablespace: 
+-- Name: escalation; Type: TABLE; Schema: cod; Owner: postgres; Tablespace:
 --
 
 CREATE TABLE escalation (
@@ -76,7 +76,7 @@ ALTER TABLE ONLY escalation ALTER COLUMN id SET DEFAULT nextval('escalation_id_s
 
 
 --
--- Name: escalation_pkey; Type: CONSTRAINT; Schema: cod; Owner: postgres; Tablespace: 
+-- Name: escalation_pkey; Type: CONSTRAINT; Schema: cod; Owner: postgres; Tablespace:
 --
 
 ALTER TABLE ONLY escalation
@@ -137,6 +137,16 @@ CREATE TRIGGER t_90_saver AFTER INSERT OR DELETE OR UPDATE ON escalation FOR EAC
 --
 
 CREATE TRIGGER t_91_update_item AFTER INSERT OR UPDATE ON escalation FOR EACH ROW EXECUTE PROCEDURE update_item();
+
+--
+-- Name: NAME; Type: TRIGGER; Schema: SCHEMA; Owner: postgres
+--
+
+CREATE TRIGGER t_95_notify_peers
+    AFTER INSERT ON cod.escalation
+    FOR EACH ROW
+    EXECUTE PROCEDURE cod.escalation_notify_peers();
+
 
 
 --

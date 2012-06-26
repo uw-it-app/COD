@@ -106,8 +106,10 @@ BEGIN
             UPDATE cod.event set end_at = now() WHERE item_id = v_id;
             UPDATE cod.item SET workflow_lock = FALSE WHERE id = v_id;
         ELSE
-            UPDATE cod.action SET completed_at = now(), successful = FALSE, content = xmlelement(name "Note", _message)
+            UPDATE cod.action SET completed_at = now(), successful = FALSE,
+                    content = xmlelement(name "Action", xmlelement(name "Note", _message))
                 WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText');
+            _message := NULL;
         END IF;
         _msgToSubs := 'none';
     ELSEIF _type = 'Message' THEN
@@ -132,13 +134,19 @@ BEGIN
             IF NOT hm_v1.valid_oncall(_oncall) THEN
                 RAISE EXCEPTION 'InvalidInput: Not a valid oncall group -- %', _oncall;
             END IF;
-            INSERT INTO cod.escalation (item_id, oncall_group, page_state_id)
-                VALUES (v_id, _oncall, standard.enum_value_id('cod', 'page_state', _page));
+            INSERT INTO cod.escalation (item_id, oncall_group, page_state_id, content)
+                VALUES (
+                    v_id,
+                    _oncall,
+                    standard.enum_value_id('cod', 'page_state', _page),
+                    xmlelement(name "Escalation", xmlelement(name "Note", _message))::varchar
+                );
             IF NOT FOUND THEN
                 RAISE EXCEPTION 'Failed to create and escalation to the oncall group %', _oncall;
             ELSE
                 UPDATE cod.action SET completed_at = now(), successful = TRUE
                     WHERE item_id = v_id AND completed_at IS NULL AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Escalate');
+                _message := NULL;
             END IF;
         ELSE
             UPDATE cod.action SET completed_at = now(), successful = TRUE

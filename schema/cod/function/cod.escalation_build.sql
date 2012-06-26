@@ -32,6 +32,7 @@ DECLARE
     _payload    varchar;
     _content    xml;
     _helpnote   varchar;
+    _selfnote   varchar;
     _msg        varchar;
     _lmsg       varchar;
     _message    varchar;
@@ -50,9 +51,10 @@ BEGIN
         SELECT * INTO _event FROM cod.event WHERE item_id = NEW.item_id ORDER BY id ASC LIMIT 1;
         SELECT * INTO _help FROM cod.action WHERE item_id = NEW.item_id ORDER BY id DESC LIMIT 1;
 
-       _content = _event.content::xml;
+       _content := _event.content::xml;
 
-       _helpnote = xpath.get_varchar('/Note', _help.content::xml);
+       _helpnote := xpath.get_varchar('/Action/Note', _help.content::xml);
+       _selfnote := xpath.get_varchar('/Escalation/Note', NEW.content::xml);
 
         _msg  := xpath.get_varchar('/Event/Alert/Msg', _content);
         _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', _content);
@@ -77,13 +79,16 @@ BEGIN
         IF _helpnote IS NOT NULL THEN
             _message := _message || _sep || E'Operations Performed Actions:\n' || _helpnote || E'\n';
         END IF;
+        IF _selfnote IS NOT NULL THEN
+            _message := _message || _sep || E'Escalation Note:\n' || _selfnote || E'\n';
+        END IF;
 
         _payload := 'Subject: ' || _item.subject || E'\n' ||
                     'Queue: ' || NEW.queue || E'\n' ||
                     'Severity: ' || _item.severity::varchar ||  E'\n' ||
                     'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
                     'Super: ' || _item.rt_ticket || E'\n' ||
-                    'Content: ' || _message || E'\n' ||
+                    'Content: ' || _message || cod_v2.comment_post() ||
                     E'ENDOFCONTENT\nCF-TicketType: Incident\n';
 
         NEW.rt_ticket    := rt.create_ticket(_payload);
