@@ -27,6 +27,12 @@ Table of Contents (order of these sections is significant)
     .state_Closed {
         background-color: #EEE;
     }
+    .ert {
+        width: 5em;
+    }
+    .ehm {
+        width: 3em;
+    }
     div.minor{
         float: left;
     }
@@ -42,7 +48,7 @@ Table of Contents (order of these sections is significant)
     .highlight {
         background-color: #EDE !important;
     }
-    
+
     .tile_row {
         width: 100%;
     }
@@ -58,7 +64,7 @@ Table of Contents (order of these sections is significant)
     textarea {
         min-height: 7em;
     }
-    
+
     #tools-app-title-bar-right {
         text-align: right;
     }

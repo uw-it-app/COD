@@ -41,15 +41,15 @@
             <td>
                 <table class="full">
                     <tr>
-                        <th class="">Oncall</th>
-                        <th class="">RT</th>
-                        <th class="">H&amp;M</th>
+                        <th class="eoncall">Oncall</th>
+                        <th class="ert">RT</th>
+                        <th class="ehm">H&amp;M</th>
                     </tr>
                 <tbody class="items_bind" id="Item.Escalations:Escalation">
                     <tr>
-                        <td class="items_bind" id="Escalation.OncallGroup"></td>
-                        <td><a class="items_bind rtlink" id="Escalation.RTTicket" href="#" target="RTSub"></a></td>
-                        <td><a class="items_bind hmlink" id="Escalation.HMIssue" href="#" target="HM"></a></td>
+                        <td class="items_bind eoncall" id="Escalation.OncallGroup"></td>
+                        <td class="ert"><a class="items_bind rtlink" id="Escalation.RTTicket" href="#" target="RTSub"></a></td>
+                        <td class="ehm"><a class="items_bind hmlink" id="Escalation.HMIssue" href="#" target="HM"></a></td>
                     </tr>
                 </tbody>
                 </table>
