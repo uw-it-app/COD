@@ -20,7 +20,7 @@ CREATE OR REPLACE FUNCTION rt_process_escalation(integer, boolean, xml) RETURNS 
     AS $_$
 /*  Function:     cod_v2.rt_process_escalation(integer, boolean, xml)
     Description:  Process rt update on an escalation
-    Affects:      
+    Affects:
     Arguments:    integer: Item Id
                   boolean: If true do not wait a minute after created time to create
                   xml: Escalation XML Representation
@@ -35,7 +35,7 @@ DECLARE
     _escalation     cod.escalation%ROWTYPE;
 BEGIN
     _aliases := xpath.get_varchar_array('/Escalation/AliasIds/AliasId', v_xml)::integer[];
-    RAISE NOTICE 'ESCALATION, %', v_xml::varchar;
+    --RAISE NOTICE 'ESCALATION, %', v_xml::varchar;
     SELECT * INTO _escalation FROM cod.escalation WHERE rt_ticket = xpath.get_integer('/Escalation/Id', v_xml);
     IF _escalation.id IS NULL THEN
         RAISE NOTICE 'ESCALATION does not exist';
@@ -81,14 +81,14 @@ BEGIN
             _escalation.esc_state_id := standard.enum_value_id('cod', 'esc_state', 'Resolved');
         END IF;
     END IF;
-    UPDATE cod.escalation SET 
+    UPDATE cod.escalation SET
         resolved_at = _escalation.resolved_at,
         queue = xpath.get_varchar('/Escalation/Queue', v_xml),
         owner = xpath.get_varchar('/Escalation/Owner', v_xml),
         esc_state_id = _escalation.esc_state_id
         WHERE id = _escalation.id;
     --foreach aliasid, if it exists then set status to merged
-    UPDATE cod.escalation 
+    UPDATE cod.escalation
         SET esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Merged'),
             resolved_at = now()
         WHERE ARRAY[rt_ticket]::integer[] <@ _aliases

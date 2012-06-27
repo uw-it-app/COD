@@ -32,6 +32,8 @@ DECLARE
     _incident   xml;
     _escs       xml[];
     _status     varchar;
+    _subsev     integer;
+    _setsev     integer;
     _aliases    integer[];
     _i          integer;
     _j          integer;
@@ -47,6 +49,7 @@ BEGIN
     END IF;
     -- foreach incident
     FOR _i in 1.._count LOOP
+        _setsev := NULL;
         _incident := _incidents[_i];
         _aliases := xpath.get_varchar_array('/Incident/AliasIds/AliasId', v_xml)::integer[];
         SELECT * INTO _item FROM cod.item WHERE rt_ticket = xpath.get_integer('/Incident/Id', _incident);
@@ -92,9 +95,17 @@ BEGIN
             -- foreach escalation
             FOR _j in 1.._count2 LOOP
                 PERFORM cod_v2.rt_process_escalation(_item.id, _new, _escs[_j]);
+                _subsev := xpath.get_integer('/Escalation/Severity', _escs[_j]);
+                IF _subsev IS NOT NULL AND (_subsev > _setsev OR _setsev IS NULL) THEN
+                    _setsev := _subsev;
+                END IF;
             END LOOP;
         END IF;
-        UPDATE cod.item SET workflow_lock = FALSE WHERE id = _item.id;
+        IF _setsev IS NOT NULL AND _item.state_id IN (SELECT id FROM cod.state WHERE sort < 99) THEN
+            UPDATE cod.item SET workflow_lock = FALSE, severity = _setsev WHERE id = _item.id;
+        ELSE
+            UPDATE cod.item SET workflow_lock = FALSE WHERE id = _item.id;
+        END IF;
     END LOOP;
     RETURN '<Success/>'::xml;
 END;

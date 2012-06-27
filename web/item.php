@@ -53,7 +53,7 @@
             <div class="tile_block">
                 <div id="Item.ReferenceNumber" class="item_bind box"></div>
                 <div class="label"><span class="help">Ref#</span></div>
-            </div>            
+            </div>
         </div>
     </div><!-- End item_header -->
     <div class="item_content">
@@ -97,16 +97,22 @@
                     <div id="ActionClose" class="action_tile tile_block prompted_action" data-title="Close">
                         <table cellspacing="0" class="item full">
                             <tr>
-                                <th class="vertical">Message</th>
+                                <th class="vertical">Severity</th>
+                                <td class="vertical">
+                                    <select id="Item.Severity" name="Severity" class="item_bind" ></select>
+                                </td>
                             </tr>
                             <tr>
-                                <td class="vertical">
+                                <th class="vertical" colspan="2">Message</th>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2">
                                     <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
                                     <input type="hidden" name="Type" value="Close"/>
                                 </td>
                             </tr>
                             <tr>
-                                <td class="vertical"><input type="submit" value="Submit" class="actionSubmit full"/></td>
+                                <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
                         </table>
                     </div>
@@ -222,7 +228,7 @@
                             <tr>
                                 <td class="vertical"><input type="submit" value="Submit" class="actionSubmit full"/></td>
                             </tr>
-                        </table>                        
+                        </table>
                     </div>
                     <div id="ActionUpdate" class="action_tile tile_block" data-title="Update">
                         <table cellspacing="0" class="item full">
