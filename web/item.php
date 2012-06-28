@@ -77,14 +77,14 @@
                             <td><a id="Esclation.RTTicket" class="item_bind rtlink" href='#' target='RTSub'></a></td>
                             <td>
                                 <a id="Esclation.HMIssue" class="item_bind hmlink" href='#' target='HM'></a>
-                                (<span id="Esclation.PageState" class="item_bind"></span>)
+                                (<span id="Esclation.PageState" class="item_bind pageState"></span>)
                             </td>
                             <td id="Esclation.OncallGroup" class="item_bind"></td>
                             <td id="Esclation.Queue" class="item_bind"></td>
                             <td id="Esclation.Owner" class="item_bind"></td>
                             <td>
-                                <a href="#" class="actSetOwner">SetOwner</a>
                                 <input type="hidden" id="Escalation.Id" class="item_bind"/>
+                                <a href="#" class="actSetOwner">SetOwner</a> | <a href="#" class="toggleNote">Notification</a>
                             </td>
                         </tr>
                     </tbody>
@@ -153,6 +153,54 @@
                                     <input name="Owner" class="sync_clear full suggest" data-url="/daw/json/HM/1/NetidSuggest"/>
                                     <input type="hidden" name="Type" value="SetOwner"/>
                                     <input type="hidden" name="EscId" id="Action.Data.EscalationId" class="sync_clear SetOwner_action_bind" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="vertical" colspan="2">Message</th>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2">
+                                    <textarea name="Message" class="full" placeholder="Message"></textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div id="ActionActivateNotification" class="action_tile tile_block prompted_action" data-title="Activate Notification">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical">Oncall Group</th>
+                                <td class="vertical">
+                                    <input name="Notify" id="Action.Data.Notify" value="" placeholder="Enter oncall group" class="full suggest sync_clear ActivateNotification_action_bind" data-url="/daw/json/HM/1/OncallSuggest"/>
+                                    <input type="hidden" name="Type" value="ActivateNotification"/>
+                                    <input type="hidden" name="EscId" id="Action.Data.EscalationId" class="sync_clear ActivateNotification_action_bind" />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="vertical" colspan="2">Message</th>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2">
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2"><input type="submit" value="Submit" class="actionSubmit full"/></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div id="ActionCancelNotification" class="action_tile tile_block prompted_action" data-title="Cancel Notification">
+                        <table cellspacing="0" class="item full">
+                            <tr>
+                                <th class="vertical" colspan="2">Message</th>
+                            </tr>
+                            <tr>
+                                <td class="vertical" colspan="2">
+                                    <textarea name="Message" class="full sync_clear" placeholder="Message"></textarea>
+                                    <input type="hidden" name="Type" value="CancelNotification"/>
+                                    <input type="hidden" name="EscId" id="Action.Data.EscalationId" class="sync_clear CancelNotification_action_bind" />
                                 </td>
                             </tr>
                             <tr>

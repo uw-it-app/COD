@@ -176,7 +176,23 @@ BEGIN
         UPDATE cod.action SET completed_at = now(), successful = false WHERE item_id = _row.id AND completed_at IS NULL
             AND action_type_id = standard.enum_value_id('cod', 'action_type', 'Nag');
         UPDATE cod.item SET workflow_lock = FALSE, nag_next = NULL, nag_interval = _number::varchar || ' ' || _period WHERE id = _row.id;
+    ELSEIF _type = 'ActivateNotification' THEN
+        UPDATE cod.escalation
+            SET hm_issue = NULL,
+                esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Active'),
+                page_state_id = standard.enum_value_id('cod', 'page_state', 'Active'),
+                content = xmlelement(name "Escalation", xmlelement(name "Note", _message))
+            WHERE item_id = v_id AND id = xpath.get_integer('/Item/Do/EscId', v_xml);
+        _message := NULL;
+    ELSEIF _type = 'CancelNotification' THEN
+        PERFORM hm_v1.close_issue(
+            (SELECT hm_issue FROM cod.escalation WHERE item_id = v_id AND id = xpath.get_integer('/Item/Do/EscId', v_xml)),
+            'nobody',
+            _message
+        );
+        _message := NULL;
     END IF;
+
     IF _message IS NOT NULL THEN
         _payload := E'UpdateType: ' || _msgType || E'\n'
                  || E'CONTENT: ' || _message || cod_v2.comment_post()
@@ -209,7 +225,7 @@ ALTER FUNCTION cod_v2.item_do_xml(integer, xml) OWNER TO postgres;
 -- Name: FUNCTION item_do_xml(integer, xml); Type: COMMENT; Schema: cod_v2; Owner: postgres
 --
 
-COMMENT ON FUNCTION item_do_xml(integer, xml) IS 'DR: Perform actions on an item (2012-02-13)';
+COMMENT ON FUNCTION item_do_xml(integer, xml) IS 'DR: Perform actions on an item (2012-06-27)';
 
 
 --

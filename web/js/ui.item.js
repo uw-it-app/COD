@@ -21,8 +21,25 @@
             COD.REST.enums = $.RESTDataSource(COD.dataSources.enums, COD.RESTErrorHandler);
             $(document).on('click', 'a.actSetOwner', function () {
                 var a = $(this),
-                    e_id = a.next().val();
+                    e_id = a.siblings(':first').val();
                 $('#ActionSetOwner').actionTile('newData', {Action: {Type: "SetOwner", Data: {EscalationId: e_id}}}).actionTile('highlight');
+                return false;
+            });
+            $(document).on('click', 'a.actActivateNotification', function () {
+                var a = $(this),
+                    e_id = a.siblings(':first').val(),
+                    e_oncall = $(a.parent().siblings()[3]).text();
+                $('#ActionActivateNotification')
+                    .actionTile('newData', {Action: {Type: "ActivateNotification", Data: {EscalationId: e_id, Notify: e_oncall}}})
+                    .actionTile('highlight');
+                return false;
+            });
+            $(document).on('click', 'a.actCancelNotification', function () {
+                var a = $(this),
+                    e_id = a.siblings(':first').val();
+                $('#ActionCancelNotification')
+                    .actionTile('newData', {Action: {Type: "CancelNotification", Data: {EscalationId: e_id}}})
+                    .actionTile('highlight');
                 return false;
             });
             $(document).on('click', 'input[type="submit"]', function () {
@@ -127,6 +144,15 @@
                     $(this).parent().hide();
                 } else {
                     $(this).parent().show();
+                }
+            });
+            $('.toggleNote').each(function () {
+                var _this = $(this),
+                    state = $('.pageState', _this.parent().siblings()[2]).text();
+                if ($.inArray(state, ['Active', 'Act', 'Escalating']) === -1) {
+                    _this.text('Activate Notification').addClass('actActivateNotification');
+                } else {
+                    _this.text('Cancel Notification').addClass('actCancelNotification');
                 }
             });
             $.each(Item.Events.Event, function () {

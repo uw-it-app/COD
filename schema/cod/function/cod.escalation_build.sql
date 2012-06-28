@@ -26,15 +26,11 @@ CREATE OR REPLACE FUNCTION escalation_build() RETURNS trigger
 */
 DECLARE
     _sep        varchar := E'------------------------------------------\n';
+    _ln         varchar := E'\n';
     _item       cod.item%ROWTYPE;
     _event      cod.event%ROWTYPE;
-    _help       cod.action%ROWTYPE;
     _payload    varchar;
     _content    xml;
-    _helpnote   varchar;
-    _selfnote   varchar;
-    _msg        varchar;
-    _lmsg       varchar;
     _message    varchar;
     _tags       varchar[];
 BEGIN
@@ -49,47 +45,37 @@ BEGIN
         -- create ticket
         SELECT * INTO _item FROM cod.item WHERE id = NEW.item_id;
         SELECT * INTO _event FROM cod.event WHERE item_id = NEW.item_id ORDER BY id ASC LIMIT 1;
-        SELECT * INTO _help FROM cod.action WHERE item_id = NEW.item_id ORDER BY id DESC LIMIT 1;
 
-       _content := _event.content::xml;
-
-       _helpnote := xpath.get_varchar('/Action/Note', _help.content::xml);
-       _selfnote := xpath.get_varchar('/Escalation/Note', NEW.content::xml);
-
-        _msg  := xpath.get_varchar('/Event/Alert/Msg', _content);
-        _lmsg := xpath.get_varchar('/Event/Alert/LongMsg', _content);
+        _content := _event.content::xml;
 
         _tags := array2.ucat(_tags, appconfig.get('COD_TAG', ''));
 
         _message := '';
         IF _event.host IS NOT NULL THEN
             _tags := array2.ucat(_tags, _event.host);
-            _message := _message || 'Hostname: ' || _event.host || E'\n';
+            _message := _message || 'Hostname: ' || _event.host || _ln;
         END IF;
         IF _event.component IS NOT NULL THEN
             _tags := array2.ucat(_tags, _event.component);
-            _message := _message || 'Component: ' || _event.component || E'\n';
+            _message := _message || 'Component: ' || _event.component || _ln;
         END IF;
-        IF _msg IS NOT NULL THEN
-            _message := _message || _sep || _msg || E'\n';
-        END IF;
-        IF _lmsg IS NOT NULL OR _lmsg <> _msg THEN
-            _message := _message || _sep || _lmsg || E'\n';
-        END IF;
-        IF _helpnote IS NOT NULL THEN
-            _message := _message || _sep || E'Operations Performed Actions:\n' || _helpnote || E'\n';
-        END IF;
-        IF _selfnote IS NOT NULL THEN
-            _message := _message || _sep || E'Escalation Note:\n' || _selfnote || E'\n';
-        END IF;
-
-        _payload := 'Subject: ' || _item.subject || E'\n' ||
-                    'Queue: ' || NEW.queue || E'\n' ||
-                    'Severity: ' || _item.severity::varchar ||  E'\n' ||
-                    'Tags: ' || array_to_string(_tags, ' ') || E'\n' ||
-                    'Super: ' || _item.rt_ticket || E'\n' ||
-                    'Content: ' || _message || cod_v2.comment_post() ||
-                    E'ENDOFCONTENT\nCF-TicketType: Incident\n';
+        _message := _message
+            || COALESCE(_sep || xpath.get_varchar('/Event/Alert/Msg', _content) ||  _ln, '')
+            || COALESCE(_sep || xpath.get_varchar('/Event/Alert/LongMsg', _content) || _ln, '')
+            || COALESCE(_sep || E'Operations Performed Actions:\n'
+            || xpath.get_varchar('/Action/Note',
+                (SELECT content::xml FROM cod.action WHERE item_id = NEW.item_id AND
+                    action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText') ORDER BY id DESC LIMIT 1)) || _ln, '')
+            || COALESCE(_sep || E'Escalation Note:\n' || xpath.get_varchar('/Escalation/Note', NEW.content::xml) || _ln, '')
+            || cod_v2.comment_post();
+        _payload := ''
+            || 'Subject: ' || _item.subject || _ln
+            || 'Queue: ' || NEW.queue || _ln
+            || 'Severity: ' || _item.severity::varchar ||  _ln
+            || 'Tags: ' || array_to_string(_tags, ' ') || _ln
+            || 'Super: ' || _item.rt_ticket || _ln
+            || 'Content: ' || _message
+            || E'ENDOFCONTENT\nCF-TicketType: Incident\n';
 
         NEW.rt_ticket    := rt.create_ticket(_payload);
     END IF;

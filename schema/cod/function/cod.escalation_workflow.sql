@@ -25,6 +25,10 @@ CREATE OR REPLACE FUNCTION escalation_workflow() RETURNS trigger
     Returns:      trigger
 */
 DECLARE
+    _sep            varchar := E'------------------------------------------\n';
+    _ln             varchar := E'\n';
+    _content        xml;
+    _message        varchar;
     _payload        xml;
 BEGIN
     IF standard.enum_id_value('cod', 'esc_state', NEW.esc_state_id) IN ('Resolved', 'Rejected', 'Merged') THEN
@@ -58,12 +62,22 @@ BEGIN
         INSERT INTO cod.action (item_id, escalation_id, action_type_id, content) VALUES (NEW.item_id, NEW.id, standard.enum_value_id('cod', 'action_type', 'Escalate'), '<Note>Escalation Failed to ' || NEW.oncall_group || ' -- Contact Duty Manager</Note>');
     ELSEIF (NEW.esc_state_id = standard.enum_value_id('cod', 'esc_state', 'Active')) THEN
         IF NEW.hm_issue IS NULL THEN
-            _payload := xmlelement(name "Issue", 
+            _content := (SELECT content::xml FROM cod.event WHERE item_id = NEW.item_id ORDER BY id ASC LIMIT 1);
+            _message := ''
+                || COALESCE(_sep || xpath.get_varchar('/Event/Alert/Msg', _content) ||  _ln, '')
+                || COALESCE(_sep || xpath.get_varchar('/Event/Alert/LongMsg', _content) || _ln, '')
+                || COALESCE(_sep || E'Operations Performed Actions:\n'
+                || xpath.get_varchar('/Action/Note',
+                    (SELECT content::xml FROM cod.action WHERE item_id = NEW.item_id
+                        AND action_type_id = standard.enum_value_id('cod', 'action_type', 'HelpText') ORDER BY id DESC LIMIT 1)) || _ln, '')
+                || COALESCE(_sep || E'Escalation Note:\n' || xpath.get_varchar('/Escalation/Note', NEW.content::xml) || _ln, '')
+                || cod_v2.comment_post();
+            _payload := xmlelement(name "Issue",
                 xmlforest(
                     NEW.oncall_group AS "Oncall",
                     NEW.rt_ticket AS "Ticket",
                     (SELECT subject FROM cod.item WHERE id = NEW.item_id) AS "Subject",
-                    null AS "Message",
+                    _message AS "Message",
                     null AS "ShortMessage",
                     'COPS' AS "Origin"
                 )
