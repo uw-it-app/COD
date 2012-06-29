@@ -139,8 +139,19 @@ CREATE TRIGGER t_90_saver AFTER INSERT OR DELETE OR UPDATE ON escalation FOR EAC
 CREATE TRIGGER t_91_update_item AFTER INSERT OR UPDATE ON escalation FOR EACH ROW EXECUTE PROCEDURE update_item();
 
 --
--- Name: NAME; Type: TRIGGER; Schema: SCHEMA; Owner: postgres
+-- Name: t_93_dash_on_insert; Type: TRIGGER; Schema: cod; Owner: postgres
 --
+
+CREATE TRIGGER t_93_dash_on_insert
+    AFTER INSERT ON cod.escalation
+    FOR EACH ROW
+    EXECUTE PROCEDURE cod.escalation_dash_update();
+
+CREATE TRIGGER t_93_dash_on_update
+    AFTER UPDATE ON cod.escalation
+    FOR EACH ROW WHEN (OLD.owner <> NEW.owner)
+    EXECUTE PROCEDURE cod.escalation_dash_update();
+
 
 CREATE TRIGGER t_95_notify_peers
     AFTER INSERT ON cod.escalation
