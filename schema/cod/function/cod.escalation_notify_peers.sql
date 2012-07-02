@@ -17,7 +17,7 @@ SET search_path = cod, pg_catalog;
 
 CREATE OR REPLACE FUNCTION escalation_notify_peers() RETURNS trigger
     LANGUAGE plpgsql
-    AS $_$
+    AS $$
 /*  Function:     cod.escalation_notify_peers()
     Description:  Updates peer escalations (subs) of new escalation
     Affects:      Peer Escalation RT tickets
@@ -43,7 +43,7 @@ BEGIN
 EXCEPTION
     WHEN OTHERS THEN RETURN NULL;
 END;
-$_$;
+$$;
 
 
 ALTER FUNCTION cod.escalation_notify_peers() OWNER TO postgres;

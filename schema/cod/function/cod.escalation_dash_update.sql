@@ -17,7 +17,7 @@ SET search_path = cod, pg_catalog;
 
 CREATE OR REPLACE FUNCTION escalation_dash_update() RETURNS trigger
     LANGUAGE plpgsql
-    AS $_$
+    AS $$
 /*  Function:     cod.escalation_dash_update()
     Description:  Update dash with escalation ownership
     Affects:      Sends data to Dash
@@ -31,7 +31,7 @@ BEGIN
 EXCEPTION
     WHEN OTHERS THEN RETURN NEW;
 END;
-$_$;
+$$;
 
 
 ALTER FUNCTION cod.escalation_dash_update() OWNER TO postgres;
