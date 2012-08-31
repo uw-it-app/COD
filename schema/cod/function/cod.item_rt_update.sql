@@ -63,6 +63,13 @@ BEGIN
                  || E'Status: resolved\n';
 
     END IF;
+    IF NEW.state <> OLD.state AND
+        OLD.state IN (SELECT id FROM cod.state WHERE name IN ('Closed', 'Merged')) AND
+        NEW.state NOT IN (SELECT id FROM cod.state WHERE name IN ('Closed', 'Merged'))
+    THEN
+        _payload := _payload
+                 || E'Status: open\n';
+    END IF;
     IF OLD.subject IS DISTINCT FROM NEW.subject THEN
         _payload := _payload
                  || E'Subject: '|| New.subject || E'\n';
