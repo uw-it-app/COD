@@ -20,8 +20,8 @@ CREATE OR REPLACE FUNCTION item_rt_update() RETURNS trigger
     AS $_$
 /*  Function:     cod.item_rt_update()
     Description:  Update rt with item metadata
-    Affects:      
-    Arguments:    
+    Affects:
+    Arguments:
     Returns:      trigger
 */
 DECLARE
@@ -47,7 +47,7 @@ BEGIN
         _comment := _comment
                  || 'Severity: ' || NEW.severity::varchar || E'\n';
         _payload := _payload
-                 || 'Severity: Sev' || NEW.severity::varchar || E'\n';
+                 || 'Severity: ' || NEW.severity::varchar || E'\n';
     END IF;
     IF OLD.reference_no IS DISTINCT FROM NEW.reference_no THEN
         IF NEW.reference_no IS NULL THEN
@@ -62,6 +62,13 @@ BEGIN
         _payload := _payload
                  || E'Status: resolved\n';
 
+    END IF;
+    IF NEW.state <> OLD.state AND
+        OLD.state IN (SELECT id FROM cod.state WHERE name IN ('Closed', 'Merged')) AND
+        NEW.state NOT IN (SELECT id FROM cod.state WHERE name IN ('Closed', 'Merged'))
+    THEN
+        _payload := _payload
+                 || E'Status: open\n';
     END IF;
     IF OLD.subject IS DISTINCT FROM NEW.subject THEN
         _payload := _payload

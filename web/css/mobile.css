@@ -1,4 +1,4 @@
-/* 
+/*
     Document   : mobile
     Created on : Jan 31, 2012, 1:21:30 PM
     Author     : joby
@@ -8,9 +8,24 @@
 
 body {
     -webkit-text-size-adjust: none;
+    /*max-width: 1024px;*/
+    font-size: 32px;
 }
 
-.half{
+select, input, textarea {
+    font-size: 24px;
+}
+
+#tools-content {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.ui-accordion .ui-accordion-content{
+    padding-left: .25em;
+    padding-right: .25em;
+}
+
+.half {
     width: 100%;
 }
-
