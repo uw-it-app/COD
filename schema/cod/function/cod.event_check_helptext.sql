@@ -27,8 +27,8 @@ CREATE OR REPLACE FUNCTION event_check_helptext() RETURNS trigger
 DECLARE
 BEGIN
     IF NEW.helptext IS NULL AND NEW.component <> '' THEN
-        NEW.helptext := 'https://wiki.cac.washington.edu/display/monhelp/component-' || 
-            regexp_replace(regexp_replace(NEW.component, E'\\(.*\\)', '', 'g'), E'\\:\\,\\@ ', '_', 'g');
+        NEW.helptext := 'https://wiki.cac.washington.edu/display/monhelp/component-' ||
+            regexp_replace(regexp_replace(NEW.component, E'\\(.*\\)', '', 'g'), E'[\\:\\,\\@ ]', '_', 'g');
     END IF;
     RETURN NEW;
 END;

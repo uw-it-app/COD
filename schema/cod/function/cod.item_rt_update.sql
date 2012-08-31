@@ -63,9 +63,9 @@ BEGIN
                  || E'Status: resolved\n';
 
     END IF;
-    IF NEW.state <> OLD.state AND
-        OLD.state IN (SELECT id FROM cod.state WHERE name IN ('Closed', 'Merged')) AND
-        NEW.state NOT IN (SELECT id FROM cod.state WHERE name IN ('Closed', 'Merged'))
+    IF NEW.state_id <> OLD.state_id AND
+        OLD.state_id IN (SELECT id FROM cod.state WHERE name IN ('Closed', 'Merged')) AND
+        NEW.state_id NOT IN (SELECT id FROM cod.state WHERE name IN ('Closed', 'Merged'))
     THEN
         _payload := _payload
                  || E'Status: open\n';
@@ -86,7 +86,7 @@ BEGIN
     END IF;
     RETURN NEW;
 EXCEPTION
-    WHEN OTHERS THEN null;
+    WHEN OTHERS THEN RETURN NEW;
 END;
 $_$;
 
